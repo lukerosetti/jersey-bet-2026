@@ -298,7 +298,7 @@ function GameModal({ game, onClose, customizations }) {
       <div className="modal" onClick={e => e.stopPropagation()}>
         <div className="modal-handle"></div>
         <div className="modal-head">
-          <span className="modal-title">{game.region?.charAt(0).toUpperCase() + game.region?.slice(1)} Region</span>
+          <span className="modal-title">{game.label || (game.region ? game.region.charAt(0).toUpperCase() + game.region.slice(1) + ' Region' : scoringSystem.roundNames[game.round] || 'Game')}</span>
           <button className="modal-close" onClick={onClose}>×</button>
         </div>
         <div className="modal-body">
@@ -307,7 +307,7 @@ function GameModal({ game, onClose, customizations }) {
             <div className="m-teams">
               <div className="m-team">
                 <div className="m-logo">{getTeamLogo(game.t1) ? <img src={getTeamLogo(game.t1)} alt={game.t1} className="m-logo-img" /> : game.s1}</div>
-                <div className="m-seed">#{game.s1} Seed</div>
+                {game.s1 && <div className="m-seed">#{game.s1} Seed</div>}
                 <div className="m-name">{game.t1}</div>
                 <div className="m-owner"><div className="owner-dot" style={{ background: owner1 ? getCustomColor(owner1, customizations) : '#555' }}></div>{owner1?.name || 'Unowned'}</div>
                 {(isLive || isFinal) && <div className={`m-score ${game.sc1 < game.sc2 ? 'losing' : ''}`}>{game.sc1}</div>}
@@ -315,7 +315,7 @@ function GameModal({ game, onClose, customizations }) {
               <div className="m-vs">VS</div>
               <div className="m-team">
                 <div className="m-logo">{getTeamLogo(game.t2) ? <img src={getTeamLogo(game.t2)} alt={game.t2} className="m-logo-img" /> : game.s2}</div>
-                <div className="m-seed">#{game.s2} Seed</div>
+                {game.s2 && <div className="m-seed">#{game.s2} Seed</div>}
                 <div className="m-name">{game.t2}</div>
                 <div className="m-owner"><div className="owner-dot" style={{ background: owner2 ? getCustomColor(owner2, customizations) : '#555' }}></div>{owner2?.name || 'Unowned'}</div>
                 {(isLive || isFinal) && <div className={`m-score ${game.sc2 < game.sc1 ? 'losing' : ''}`}>{game.sc2}</div>}
@@ -331,14 +331,14 @@ function GameModal({ game, onClose, customizations }) {
           {activeTab === 'boxscore' && renderBoxScore()}
           {activeTab === 'teamstats' && renderTeamStats()}
           {activeTab === 'playbyplay' && renderPlayByPlay()}
-          <div className="bet-box">
+          {(game.spread || game.total || game.ml) && <div className="bet-box">
             <div className="bet-head">Game Lines</div>
             <div className="bet-grid">
-              <div className="m-bet-item"><div className="m-bet-label">Spread</div><div className="m-bet-val">{game.spread}</div></div>
-              <div className="m-bet-item"><div className="m-bet-label">Over/Under</div><div className="m-bet-val">{game.total}</div></div>
-              <div className="m-bet-item"><div className="m-bet-label">Moneyline</div><div className="m-bet-val">{game.ml}</div></div>
+              {game.spread && <div className="m-bet-item"><div className="m-bet-label">Spread</div><div className="m-bet-val">{game.spread}</div></div>}
+              {game.total && <div className="m-bet-item"><div className="m-bet-label">Over/Under</div><div className="m-bet-val">{game.total}</div></div>}
+              {game.ml && <div className="m-bet-item"><div className="m-bet-label">Moneyline</div><div className="m-bet-val">{game.ml}</div></div>}
             </div>
-          </div>
+          </div>}
           {streaming && (
             <div className="watch-box">
               <div className="sec-title">Where to Watch</div>
@@ -986,38 +986,44 @@ function Graveyard({ liveGames, playInWinners, customizations }) {
 function ProjectionTool({ liveGames, playInWinners, customizations }) {
   const [overrides, setOverrides] = useState({});
   
+  const resolved = buildResolvedGames(liveGames, playInWinners);
   const completedGames = [];
   Object.values(staticRegions).forEach(region => {
     region.games.forEach(staticGame => {
-      const game = mergeWithLiveData(staticGame, liveGames, playInWinners);
+      const game = resolved[staticGame.id] || mergeWithLiveData(staticGame, liveGames, playInWinners, resolved);
       if (game.status === 'final') completedGames.push({ ...game, region: region.name });
     });
   });
+  finalFourGames.forEach(fg => {
+    const game = resolved[fg.id] || mergeWithLiveData(fg, liveGames, playInWinners, resolved);
+    if (game.status === 'final') completedGames.push({ ...game, region: 'Final Four' });
+  });
   
   const calculateWithOverrides = useCallback(() => {
+    const allStaticGames = [];
+    Object.values(staticRegions).forEach(region => allStaticGames.push(...region.games));
+    allStaticGames.push(...finalFourGames);
     return owners.map(owner => {
       let points = 0;
       let teamsAlive = owner.teams.length;
-      Object.values(staticRegions).forEach(region => {
-        region.games.forEach(staticGame => {
-          const game = mergeWithLiveData(staticGame, liveGames, playInWinners);
-          if (game.status === 'final') {
-            const gameKey = `${game.t1}_${game.t2}`;
-            const actualWinner = game.sc1 > game.sc2 ? game.t1 : game.t2;
-            const overrideWinner = overrides[gameKey];
-            const winner = overrideWinner || actualWinner;
-            const loser = winner === game.t1 ? game.t2 : game.t1;
-            if (owner.teams.includes(winner)) {
-              const winnerSeed = winner === game.t1 ? game.s1 : game.s2;
-              points += (scoringSystem.rounds[game.round || 1] || 1) * scoringSystem.getSeedMultiplier(winnerSeed);
-            }
-            if (owner.teams.includes(loser)) teamsAlive--;
+      allStaticGames.forEach(staticGame => {
+        const game = resolved[staticGame.id] || mergeWithLiveData(staticGame, liveGames, playInWinners, resolved);
+        if (game.status === 'final') {
+          const gameKey = `${game.t1}_${game.t2}`;
+          const actualWinner = game.sc1 > game.sc2 ? game.t1 : game.t2;
+          const overrideWinner = overrides[gameKey];
+          const winner = overrideWinner || actualWinner;
+          const loser = winner === game.t1 ? game.t2 : game.t1;
+          if (owner.teams.includes(winner)) {
+            const winnerSeed = winner === game.t1 ? game.s1 : game.s2;
+            points += (scoringSystem.rounds[game.round || 1] || 1) * scoringSystem.getSeedMultiplier(winnerSeed);
           }
-        });
+          if (owner.teams.includes(loser)) teamsAlive--;
+        }
       });
       return { ...owner, points: Math.round(points * 100) / 100, teamsAlive };
     }).sort((a, b) => b.points - a.points || b.teamsAlive - a.teamsAlive);
-  }, [liveGames, playInWinners, overrides]);
+  }, [liveGames, playInWinners, overrides, resolved]);
   
   const actualStandings = calculateStandings(liveGames, playInWinners);
   const projectedStandings = calculateWithOverrides();
@@ -1463,6 +1469,12 @@ function Settings({ currentUser, setCurrentUser, customizations, setCustomizatio
         <h3 className="settings-section-title">Scoring</h3>
         <div className="scoring-grid">{Object.entries(scoringSystem.rounds).map(([round, points]) => (<div key={round} className="scoring-item"><div className="scoring-round">{scoringSystem.roundNames[round]}</div><div className="scoring-points">{points}</div></div>))}</div>
         <div className="scoring-multipliers">Seed multipliers: 1-4 (1x) · 5-8 (1.5x) · 9-13 (1.75x) · 14-16 (2x)</div>
+      </div>
+
+      <div className="settings-section">
+        <h3 className="settings-section-title">Data</h3>
+        <p style={{ color: 'var(--muted)', fontSize: '0.8rem', margin: '0 0 0.75rem' }}>Clear cached game data to force a fresh pull from ESPN. Your settings and customizations will be kept.</p>
+        <button className="clear-cache-btn" onClick={() => { localStorage.removeItem('jerseyBetGames'); localStorage.removeItem('jerseyBetPlayInWinners'); window.location.reload(); }} style={{ background: '#dc2626', color: '#fff', border: 'none', borderRadius: '0.5rem', padding: '0.6rem 1.2rem', fontWeight: 600, cursor: 'pointer', fontSize: '0.85rem' }}>Clear Game Cache & Reload</button>
       </div>
     </div>
   );
