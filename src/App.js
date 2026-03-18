@@ -844,6 +844,280 @@ function ProjectionTool({ liveGames, playInWinners, customizations }) {
   );
 }
 
+// Head-to-Head Comparison
+function HeadToHead({ liveGames, playInWinners, customizations }) {
+  const [ownerA, setOwnerA] = useState(owners[0].id);
+  const [ownerB, setOwnerB] = useState(owners[1].id);
+  const standings = calculateStandings(liveGames, playInWinners);
+  const a = standings.find(s => s.id === ownerA) || standings[0];
+  const b = standings.find(s => s.id === ownerB) || standings[1];
+
+  // Find all completed games and determine team seeds
+  const allGames = [];
+  const teamSeeds = {};
+  Object.values(staticRegions).forEach(region => {
+    region.games.forEach(sg => {
+      const game = mergeWithLiveData(sg, liveGames, playInWinners);
+      teamSeeds[game.t1] = game.s1;
+      teamSeeds[game.t2] = game.s2;
+      if (game.status === 'final') allGames.push(game);
+    });
+  });
+
+  // Find direct matchups
+  const directMatchups = allGames.filter(g => {
+    const winner = g.sc1 > g.sc2 ? g.t1 : g.t2;
+    const loser = g.sc1 > g.sc2 ? g.t2 : g.t1;
+    const ownerAObj = owners.find(o => o.id === ownerA);
+    const ownerBObj = owners.find(o => o.id === ownerB);
+    return (ownerAObj.teams.includes(winner) && ownerBObj.teams.includes(loser)) ||
+           (ownerBObj.teams.includes(winner) && ownerAObj.teams.includes(loser));
+  });
+
+  const aWins = directMatchups.filter(g => {
+    const winner = g.sc1 > g.sc2 ? g.t1 : g.t2;
+    return owners.find(o => o.id === ownerA).teams.includes(winner);
+  }).length;
+
+  const getTeamStatus = (team, owner) => {
+    const elim = owner.eliminatedTeams?.find(e => e.team === team);
+    return elim ? { alive: false, round: scoringSystem.roundNames[elim.round] || 'R64' } : { alive: true };
+  };
+
+  const renderStat = (aVal, bVal, label, lowerBetter = false) => {
+    const aWin = lowerBetter ? aVal < bVal : aVal > bVal;
+    const bWin = lowerBetter ? bVal < aVal : bVal > aVal;
+    return (
+      <div className="h2h-stat-row">
+        <div className={`h2h-val-left ${aWin ? 'h2h-winner' : aVal === bVal ? '' : 'h2h-loser'}`}>{aVal}</div>
+        <div className="h2h-label">{label}</div>
+        <div className={`h2h-val-right ${bWin ? 'h2h-winner' : aVal === bVal ? '' : 'h2h-loser'}`}>{bVal}</div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="h2h-container">
+      <div className="page-title"><h2>Head-to-Head</h2><p>Compare two owners side by side</p></div>
+      <div className="h2h-selectors">
+        <select className="h2h-select" value={ownerA} onChange={e => setOwnerA(e.target.value)} style={{ borderColor: getCustomColor(a, customizations) }}>
+          {owners.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
+        </select>
+        <span className="h2h-vs">VS</span>
+        <select className="h2h-select" value={ownerB} onChange={e => setOwnerB(e.target.value)} style={{ borderColor: getCustomColor(b, customizations) }}>
+          {owners.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
+        </select>
+      </div>
+
+      <div className="h2h-stats">
+        <div className="h2h-stat-row h2h-stat-header">
+          <div className="h2h-val-left" style={{ color: getCustomColor(a, customizations) }}>{a.name}</div>
+          <div className="h2h-label"></div>
+          <div className="h2h-val-right" style={{ color: getCustomColor(b, customizations) }}>{b.name}</div>
+        </div>
+        {renderStat(a.points, b.points, 'Points')}
+        {renderStat(a.teamsAlive, b.teamsAlive, 'Teams Alive')}
+        {renderStat(a.teamsEliminated, b.teamsEliminated, 'Eliminated', true)}
+        {renderStat(a.maxPossible, b.maxPossible, 'Max Possible')}
+      </div>
+
+      <div className="h2h-teams-section">
+        <div className="h2h-teams-header">
+          <div className="h2h-teams-col-title"><span className="h2h-dot" style={{ background: getCustomColor(a, customizations) }}></span>{a.name}'s Teams</div>
+          <div className="h2h-teams-col-title"><span className="h2h-dot" style={{ background: getCustomColor(b, customizations) }}></span>{b.name}'s Teams</div>
+        </div>
+        <div className="h2h-teams-grid">
+          {Array.from({ length: Math.max(a.teams.length, b.teams.length) }).map((_, i) => (
+            <React.Fragment key={i}>
+              {a.teams[i] ? (() => {
+                const status = getTeamStatus(a.teams[i], a);
+                return (
+                  <div className={`h2h-team-card ${!status.alive ? 'eliminated' : ''}`}>
+                    {getTeamLogo(a.teams[i]) && <img src={getTeamLogo(a.teams[i])} alt="" className="h2h-team-logo" />}
+                    <span className="h2h-team-name">{a.teams[i]}</span>
+                    {teamSeeds[a.teams[i]] && <span className="h2h-team-seed">#{teamSeeds[a.teams[i]]}</span>}
+                    <span className={`h2h-team-status ${status.alive ? 'alive' : 'elim'}`}>{status.alive ? 'ALIVE' : status.round}</span>
+                  </div>
+                );
+              })() : <div></div>}
+              {b.teams[i] ? (() => {
+                const status = getTeamStatus(b.teams[i], b);
+                return (
+                  <div className={`h2h-team-card ${!status.alive ? 'eliminated' : ''}`}>
+                    {getTeamLogo(b.teams[i]) && <img src={getTeamLogo(b.teams[i])} alt="" className="h2h-team-logo" />}
+                    <span className="h2h-team-name">{b.teams[i]}</span>
+                    {teamSeeds[b.teams[i]] && <span className="h2h-team-seed">#{teamSeeds[b.teams[i]]}</span>}
+                    <span className={`h2h-team-status ${status.alive ? 'alive' : 'elim'}`}>{status.alive ? 'ALIVE' : status.round}</span>
+                  </div>
+                );
+              })() : <div></div>}
+            </React.Fragment>
+          ))}
+        </div>
+      </div>
+
+      {directMatchups.length > 0 && (
+        <div className="h2h-matchups">
+          <div className="h2h-matchups-title">Direct Matchups</div>
+          {directMatchups.map((g, i) => {
+            const winner = g.sc1 > g.sc2 ? g.t1 : g.t2;
+            const loser = g.sc1 > g.sc2 ? g.t2 : g.t1;
+            const wScore = Math.max(g.sc1, g.sc2);
+            const lScore = Math.min(g.sc1, g.sc2);
+            return (
+              <div key={i} className="matchup-card">
+                <div className="matchup-round">{scoringSystem.roundNames[g.round || 1]} - {g.region ? `${g.region.charAt(0).toUpperCase() + g.region.slice(1)} Region` : ''}</div>
+                <div className="matchup-teams">
+                  <div className={`matchup-team ${g.t1 === winner ? 'matchup-winner' : ''}`}>
+                    {getTeamLogo(g.t1) && <img src={getTeamLogo(g.t1)} alt="" className="h2h-team-logo" />}
+                    {g.t1} <span className="matchup-score">{g.sc1}</span>
+                  </div>
+                  <span className="matchup-vs">vs</span>
+                  <div className={`matchup-team ${g.t2 === winner ? 'matchup-winner' : ''}`}>
+                    <span className="matchup-score">{g.sc2}</span> {g.t2}
+                    {getTeamLogo(g.t2) && <img src={getTeamLogo(g.t2)} alt="" className="h2h-team-logo" />}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+          <div className="matchup-summary">{a.name} leads {aWins}-{directMatchups.length - aWins} in direct matchups vs {b.name}</div>
+        </div>
+      )}
+      {directMatchups.length === 0 && (
+        <div className="h2h-no-matchups">No direct matchups yet between {a.name} and {b.name}'s teams</div>
+      )}
+    </div>
+  );
+}
+
+// Bracket History
+function BracketHistory({ liveGames, playInWinners, customizations }) {
+  const [selectedRound, setSelectedRound] = useState('current');
+  const [history, setHistory] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('jerseyBetBracketHistory')) || {}; } catch { return {}; }
+  });
+
+  const roundNames = { 1: 'R64', 2: 'R32', 3: 'S16', 4: 'E8', 5: 'F4', 6: 'Final' };
+
+  // Auto-snapshot: check if any round is fully complete
+  useEffect(() => {
+    const allMergedGames = [];
+    Object.entries(staticRegions).forEach(([regionKey, region]) => {
+      region.games.forEach(sg => {
+        const game = mergeWithLiveData(sg, liveGames, playInWinners);
+        allMergedGames.push({ ...game, regionKey });
+      });
+    });
+
+    for (let round = 1; round <= 6; round++) {
+      const roundGames = allMergedGames.filter(g => (g.round || 1) === round);
+      if (roundGames.length > 0 && roundGames.every(g => g.status === 'final') && !history[round]) {
+        const snapshot = {
+          timestamp: new Date().toISOString(),
+          standings: calculateStandings(liveGames, playInWinners).map(s => ({ id: s.id, name: s.name, points: s.points, teamsAlive: s.teamsAlive, teamsEliminated: s.teamsEliminated })),
+          games: allMergedGames.filter(g => (g.round || 1) <= round && g.status === 'final').map(g => ({
+            t1: g.t1, t2: g.t2, s1: g.s1, s2: g.s2, sc1: g.sc1, sc2: g.sc2, round: g.round || 1, regionKey: g.regionKey
+          }))
+        };
+        const newHistory = { ...history, [round]: snapshot };
+        setHistory(newHistory);
+        try { localStorage.setItem('jerseyBetBracketHistory', JSON.stringify(newHistory)); } catch {}
+      }
+    }
+  }, [liveGames, playInWinners, history]);
+
+  const currentStandings = calculateStandings(liveGames, playInWinners);
+  const snapshot = selectedRound === 'current' ? null : history[selectedRound];
+
+  const displayStandings = snapshot ? snapshot.standings : currentStandings;
+  const displayGames = snapshot ? snapshot.games : (() => {
+    const games = [];
+    Object.entries(staticRegions).forEach(([regionKey, region]) => {
+      region.games.forEach(sg => {
+        const game = mergeWithLiveData(sg, liveGames, playInWinners);
+        if (game.status === 'final') games.push({ ...game, regionKey });
+      });
+    });
+    return games;
+  })();
+
+  const regionNames = { east: 'East', west: 'West', south: 'South', midwest: 'Midwest' };
+  const gamesByRegion = {};
+  displayGames.forEach(g => {
+    if (!gamesByRegion[g.regionKey]) gamesByRegion[g.regionKey] = [];
+    gamesByRegion[g.regionKey].push(g);
+  });
+
+  return (
+    <div className="history-container">
+      <div className="page-title"><h2>Bracket History</h2><p>Relive the tournament round by round</p></div>
+      <div className="history-rounds">
+        {Object.entries(roundNames).map(([round, name]) => (
+          <button key={round} className={`history-round-btn ${selectedRound === round ? 'active' : ''} ${!history[round] ? 'disabled' : ''}`}
+            onClick={() => history[round] && setSelectedRound(round)}>{name}</button>
+        ))}
+        <button className={`history-round-btn ${selectedRound === 'current' ? 'active' : ''}`} onClick={() => setSelectedRound('current')}>Current</button>
+      </div>
+
+      {displayGames.length === 0 ? (
+        <div className="history-empty">
+          <div className="history-empty-icon">📋</div>
+          <div>Bracket history will appear as rounds complete</div>
+          <div className="history-empty-sub">Results are automatically saved after each round</div>
+        </div>
+      ) : (
+        <>
+          {Object.entries(gamesByRegion).map(([regionKey, games]) => (
+            <div key={regionKey} className="history-bracket">
+              <div className="history-bracket-title">
+                {regionNames[regionKey] || regionKey.charAt(0).toUpperCase() + regionKey.slice(1)} Region
+                <span>{selectedRound === 'current' ? 'Current' : `After ${roundNames[selectedRound]}`}</span>
+              </div>
+              {games.map((g, i) => {
+                const winner = g.sc1 > g.sc2 ? g.t1 : g.t2;
+                return (
+                  <div key={i} className="history-game">
+                    <div className={`history-team ${g.t1 === winner ? 'winner' : 'loser'}`}>
+                      <span className="history-seed">({g.s1})</span>
+                      {getTeamLogo(g.t1) && <img src={getTeamLogo(g.t1)} alt="" className="history-logo" />}
+                      {g.t1}
+                    </div>
+                    <div className="history-score">{g.sc1}-{g.sc2}</div>
+                    <div className={`history-team ${g.t2 === winner ? 'winner' : 'loser'}`}>
+                      {g.t2}
+                      {getTeamLogo(g.t2) && <img src={getTeamLogo(g.t2)} alt="" className="history-logo" />}
+                      <span className="history-seed">({g.s2})</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+
+          <div className="history-standings">
+            <div className="history-standings-title">Standings {selectedRound === 'current' ? '(Current)' : `After ${roundNames[selectedRound]}`}</div>
+            {displayStandings.map((s, i) => (
+              <div key={s.id} className="history-standing-row">
+                <div className="history-standing-left">
+                  <span className="history-standing-rank">{i + 1}</span>
+                  <span className="history-standing-dot" style={{ background: getCustomColor(owners.find(o => o.id === s.id) || owners[0], customizations) }}></span>
+                  <span className="history-standing-name">{s.name}</span>
+                </div>
+                <div className="history-standing-right">
+                  <div className="history-standing-pts" style={{ color: getCustomColor(owners.find(o => o.id === s.id) || owners[0], customizations) }}>{s.points} pts</div>
+                  <div className="history-standing-detail">{s.teamsAlive} alive / {s.teamsEliminated} out</div>
+                </div>
+              </div>
+            ))}
+            {snapshot && <div className="history-timestamp">Snapshot: {new Date(snapshot.timestamp).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}</div>}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 // Other Cool Stuff Hub
 function OtherCoolStuff({ liveGames, playInWinners, setSubView }) {
   const standings = calculateStandings(liveGames, playInWinners);
@@ -855,7 +1129,9 @@ function OtherCoolStuff({ liveGames, playInWinners, setSubView }) {
     { id: 'achievements', icon: '🏆', title: 'Achievements', desc: 'Glory badges, shame badges, and bragging rights.', badge: `${totalBadges} earned`, color: '#fbbf24' },
     { id: 'portfolio', icon: '📈', title: 'Portfolio', desc: 'Track your portfolio value over time.', badge: 'Live', badgeType: 'live', color: '#22d3ee' },
     { id: 'projection', icon: '🔮', title: 'Projection Tool', desc: 'Toggle past game outcomes to see impact.', badge: 'New', badgeType: 'new', color: '#a855f7' },
-    { id: 'graveyard', icon: '🪦', title: 'Graveyard', desc: 'Cemetery for eliminated teams.', badge: `${totalEliminated} dead`, color: '#ef4444' }
+    { id: 'graveyard', icon: '🪦', title: 'Graveyard', desc: 'Cemetery for eliminated teams.', badge: `${totalEliminated} dead`, color: '#ef4444' },
+    { id: 'h2h', icon: '⚔️', title: 'Head-to-Head', desc: 'Compare two owners side by side.', badge: 'New', badgeType: 'new', color: '#22d3ee' },
+    { id: 'history', icon: '📜', title: 'Bracket History', desc: 'Relive the bracket round by round.', badge: 'New', badgeType: 'new', color: '#facc15' }
   ];
 
   return (
@@ -970,6 +1246,8 @@ function App() {
     if (coolStuffSubView === 'portfolio') return <><button className="back-btn" onClick={() => setCoolStuffSubView(null)}>← Back</button><Portfolio liveGames={liveGames} playInWinners={playInWinners} customizations={customizations} /></>;
     if (coolStuffSubView === 'projection') return <><button className="back-btn" onClick={() => setCoolStuffSubView(null)}>← Back</button><ProjectionTool liveGames={liveGames} playInWinners={playInWinners} customizations={customizations} /></>;
     if (coolStuffSubView === 'graveyard') return <><button className="back-btn" onClick={() => setCoolStuffSubView(null)}>← Back</button><Graveyard liveGames={liveGames} playInWinners={playInWinners} customizations={customizations} /></>;
+    if (coolStuffSubView === 'h2h') return <><button className="back-btn" onClick={() => setCoolStuffSubView(null)}>← Back</button><HeadToHead liveGames={liveGames} playInWinners={playInWinners} customizations={customizations} /></>;
+    if (coolStuffSubView === 'history') return <><button className="back-btn" onClick={() => setCoolStuffSubView(null)}>← Back</button><BracketHistory liveGames={liveGames} playInWinners={playInWinners} customizations={customizations} /></>;
     return <OtherCoolStuff liveGames={liveGames} playInWinners={playInWinners} setSubView={setCoolStuffSubView} />;
   };
 
