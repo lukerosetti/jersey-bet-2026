@@ -372,7 +372,7 @@ function RegionsView({ onGameClick, liveGames, playInWinners, customizations }) 
           </button>
         ))}
       </div>
-      {staticRegions[activeRegion]?.games?.map((staticGame, idx) => {
+      {staticRegions[activeRegion]?.games?.filter(g => g.round === 1).map((staticGame, idx) => {
         const game = mergeWithLiveData(staticGame, liveGames, playInWinners);
         return <GameCard key={idx} game={game} onClick={() => onGameClick(game, activeRegion)} customizations={customizations} />;
       })}
