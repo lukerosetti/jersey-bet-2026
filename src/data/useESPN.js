@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { playInGames } from '../data/bracketData';
 import { teamSeasonStats } from '../data/teamStats';
 
@@ -118,11 +118,12 @@ export function useLiveScores() {
   const [lastUpdate, setLastUpdate] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const hasInitialFetch = useRef(false);
 
   const fetchScores = useCallback(async () => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
       // Load cached completed games
       let cachedGames = {};
@@ -131,13 +132,18 @@ export function useLiveScores() {
         cachedGames = JSON.parse(localStorage.getItem('jerseyBetGames')) || {};
         cachedWinners = JSON.parse(localStorage.getItem('jerseyBetPlayInWinners')) || {};
       } catch { }
-      
-      // Fetch past 28 days to cover the entire tournament window
+
+      // First load: fetch 28 days to recover all historical games
+      // Subsequent polls: only fetch past 4 days for live updates
+      const isFirstFetch = !hasInitialFetch.current;
+      const daysToFetch = isFirstFetch ? 28 : 4;
+      hasInitialFetch.current = true;
+
       const today = new Date();
       const freshGames = {};
       const freshWinners = {};
 
-      for (let i = 0; i < 28; i++) {
+      for (let i = 0; i < daysToFetch; i++) {
         const date = new Date(today);
         date.setDate(date.getDate() - i);
         const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '');
@@ -396,17 +402,21 @@ export function mergeWithLiveData(staticGame, liveGames, playInWinners, resolved
     if (winner) game.t1 = winner;
   }
 
-  // Resolve later-round TBD teams from earlier-round winners
+  // Resolve later-round TBD teams from earlier-round winners (propagate seed too)
   if (resolvedGames && game.t1From && game.t1 === 'TBD') {
     const feederGame = resolvedGames[game.t1From];
-    if (feederGame && feederGame.status === 'final' && feederGame.sc1 != null) {
-      game.t1 = feederGame.sc1 > feederGame.sc2 ? feederGame.t1 : feederGame.t2;
+    if (feederGame && feederGame.status === 'final' && feederGame.sc1 != null && feederGame.sc1 !== feederGame.sc2) {
+      const t1Won = feederGame.sc1 > feederGame.sc2;
+      game.t1 = t1Won ? feederGame.t1 : feederGame.t2;
+      game.s1 = t1Won ? feederGame.s1 : feederGame.s2;
     }
   }
   if (resolvedGames && game.t2From && game.t2 === 'TBD') {
     const feederGame = resolvedGames[game.t2From];
-    if (feederGame && feederGame.status === 'final' && feederGame.sc1 != null) {
-      game.t2 = feederGame.sc1 > feederGame.sc2 ? feederGame.t1 : feederGame.t2;
+    if (feederGame && feederGame.status === 'final' && feederGame.sc1 != null && feederGame.sc1 !== feederGame.sc2) {
+      const t1Won = feederGame.sc1 > feederGame.sc2;
+      game.t2 = t1Won ? feederGame.t1 : feederGame.t2;
+      game.s2 = t1Won ? feederGame.s1 : feederGame.s2;
     }
   }
 
