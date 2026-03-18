@@ -356,11 +356,49 @@ function GameModal({ game, onClose, customizations }) {
 
 function RegionsView({ onGameClick, liveGames, playInWinners, customizations }) {
   const [activeRegion, setActiveRegion] = useState('east');
-  const regionNames = Object.keys(staticRegions);
-  const hasLiveInRegion = (regionName) => staticRegions[regionName]?.games?.some(game => {
-    const merged = mergeWithLiveData(game, liveGames, playInWinners);
-    return merged.status === 'live' || merged.status === 'halftime';
-  });
+  const resolved = buildResolvedGames(liveGames, playInWinners);
+  const regionNames = [...Object.keys(staticRegions), 'finalfour'];
+
+  const hasLiveInRegion = (regionName) => {
+    if (regionName === 'finalfour') return false;
+    return staticRegions[regionName]?.games?.some(game => {
+      const merged = resolved[game.id] || mergeWithLiveData(game, liveGames, playInWinners, resolved);
+      return merged.status === 'live' || merged.status === 'halftime';
+    });
+  };
+
+  // Determine current round for a region: show the latest round that has resolved (non-TBD) games
+  const getCurrentRound = (regionName) => {
+    if (regionName === 'finalfour') return 5;
+    const games = staticRegions[regionName]?.games || [];
+    for (let round = 4; round >= 1; round--) {
+      const roundGames = games.filter(g => g.round === round);
+      const hasResolvedGame = roundGames.some(g => {
+        const merged = resolved[g.id] || mergeWithLiveData(g, liveGames, playInWinners, resolved);
+        return merged.t1 !== 'TBD' && merged.t2 !== 'TBD';
+      });
+      if (hasResolvedGame) return round;
+    }
+    return 1;
+  };
+
+  const currentRound = getCurrentRound(activeRegion);
+  const roundLabel = scoringSystem.roundNames[currentRound] || 'R64';
+
+  // Get games for the active region/round
+  const getDisplayGames = () => {
+    if (activeRegion === 'finalfour') {
+      return finalFourGames.map(fg => resolved[fg.id] || mergeWithLiveData(fg, liveGames, playInWinners, resolved));
+    }
+    const games = staticRegions[activeRegion]?.games?.filter(g => g.round === currentRound) || [];
+    return games.map(g => resolved[g.id] || mergeWithLiveData(g, liveGames, playInWinners, resolved));
+  };
+
+  const displayGames = getDisplayGames();
+  const regionLabel = (name) => {
+    if (name === 'finalfour') return 'Final Four';
+    return staticRegions[name]?.name || name;
+  };
 
   return (
     <div>
@@ -368,14 +406,14 @@ function RegionsView({ onGameClick, liveGames, playInWinners, customizations }) 
       <div className="region-tabs">
         {regionNames.map(name => (
           <button key={name} className={`region-tab ${activeRegion === name ? 'active' : ''}`} onClick={() => setActiveRegion(name)}>
-            {staticRegions[name]?.name || name}{hasLiveInRegion(name) && <span className="live-dot"></span>}
+            {regionLabel(name)}{hasLiveInRegion(name) && <span className="live-dot"></span>}
           </button>
         ))}
       </div>
-      {staticRegions[activeRegion]?.games?.filter(g => g.round === 1).map((staticGame, idx) => {
-        const game = mergeWithLiveData(staticGame, liveGames, playInWinners);
-        return <GameCard key={idx} game={game} onClick={() => onGameClick(game, activeRegion)} customizations={customizations} />;
-      })}
+      {activeRegion !== 'finalfour' && <div style={{ textAlign: 'center', fontSize: 12, color: 'var(--text2)', margin: '8px 0' }}>{roundLabel}</div>}
+      {displayGames.map((game, idx) => (
+        <GameCard key={idx} game={game} onClick={() => !(game.t1 === 'TBD' && game.t2 === 'TBD') && onGameClick(game, activeRegion)} customizations={customizations} />
+      ))}
     </div>
   );
 }
