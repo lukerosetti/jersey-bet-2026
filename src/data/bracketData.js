@@ -40,6 +40,31 @@ export const teamColors = {
   'Prairie View AM': '#4F2D7F', 'NC State': '#CC0000', 'UMBC': '#F7B500', 'Miami OH': '#B61E2E'
 };
 
+export const espnTeamIds = {
+  'Duke': 150, 'Siena': 2561, 'Ohio State': 194, 'TCU': 2628,
+  'St Johns': 2599, 'Northern Iowa': 2460, 'Kansas': 2305, 'Cal Baptist': 2856,
+  'Louisville': 97, 'South Florida': 58, 'Michigan St': 127, 'North Dakota St': 2449,
+  'UCLA': 26, 'UCF': 2116, 'UConn': 41, 'Furman': 231,
+  'Arizona': 12, 'LIU': 288, 'Villanova': 222, 'Utah State': 328,
+  'Wisconsin': 275, 'High Point': 2272, 'Arkansas': 8, 'Hawaii': 62,
+  'BYU': 252, 'Texas': 251, 'Gonzaga': 2250, 'Kennesaw St': 338,
+  'Miami FL': 2390, 'Missouri': 142, 'Purdue': 2509, 'Queens': 2772,
+  'Florida': 57, 'Michigan': 130, 'Howard': 47, 'Georgia': 61,
+  'Saint Louis': 139, 'Texas Tech': 2641, 'Akron': 2006, 'Alabama': 333,
+  'Hofstra': 2275, 'Tennessee': 2633, 'Virginia': 258, 'Wright St': 2750,
+  'Kentucky': 96, 'Santa Clara': 2541, 'Iowa State': 66, 'Tennessee St': 2634,
+  'Clemson': 228, 'Iowa': 2294, 'Vanderbilt': 238, 'McNeese': 2377,
+  'Nebraska': 158, 'Troy': 2653, 'North Carolina': 153, 'VCU': 2670,
+  'Illinois': 356, 'Penn': 219, 'Saint Marys': 2608, 'Texas A&M': 245,
+  'Houston': 248, 'Idaho': 70, 'SMU': 2567, 'Miami OH': 193,
+  'Lehigh': 2329, 'Prairie View AM': 2504, 'NC State': 152, 'UMBC': 2674
+};
+
+export const getTeamLogo = (teamName) => {
+  const id = espnTeamIds[teamName];
+  return id ? `https://a.espncdn.com/i/teamlogos/ncaa/500/${id}.png` : null;
+};
+
 export const getOwner = (teamName) => owners.find(o => o.teams.includes(teamName));
 export const getTeamColor = (teamName) => teamColors[teamName] || '#555555';
 

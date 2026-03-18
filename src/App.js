@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { owners, regions as staticRegions, playInGames, getOwner, getTeamColor, getStreaming, scoringSystem, badges } from './data/bracketData';
+import { owners, regions as staticRegions, playInGames, getOwner, getTeamColor, getTeamLogo, getStreaming, scoringSystem, badges } from './data/bracketData';
 import { useLiveScores, mergeWithLiveData, fetchGameDetails, fetchTeamRoster } from './data/useESPN';
+
+const getCustomColor = (owner, customizations) => customizations?.[owner.id]?.color || owner.color;
+const getCustomInitials = (owner, customizations) => customizations?.[owner.id]?.initials || owner.initials;
 
 function LiveIndicator({ lastUpdate, isLoading, error }) {
   const formatTime = (date) => date ? date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '--:--';
@@ -12,7 +15,7 @@ function LiveIndicator({ lastUpdate, isLoading, error }) {
   );
 }
 
-function PlayInGames({ liveGames, playInWinners }) {
+function PlayInGames({ liveGames, playInWinners, customizations }) {
   const renderPlayInGame = (pi) => {
     const gameKey = [pi.t1, pi.t2].sort().join('_');
     const liveData = liveGames[gameKey];
@@ -38,20 +41,22 @@ function PlayInGames({ liveGames, playInWinners }) {
         </div>
         <div className="game-teams">
           <div className="team-row">
-            <div className="team-seed">•</div>
+            <div className="team-seed"></div>
             <div className="team-color" style={{ background: color1 }}></div>
+            {getTeamLogo(pi.t1) && <img className="team-logo" src={getTeamLogo(pi.t1)} alt="" />}
             <div className="team-info">
               <div className={`team-name ${team2Won ? 'loser' : ''}`}>{pi.t1}</div>
-              <div className="team-meta">{owner1 && <span className="owner-badge"><span className="owner-dot" style={{ background: owner1.color }}></span>{owner1.name}</span>}</div>
+              <div className="team-meta">{owner1 && <span className="owner-badge"><span className="owner-dot" style={{ background: getCustomColor(owner1, customizations) }}></span>{owner1.name}</span>}</div>
             </div>
             {(isLive || isFinal) && <span className={`team-score ${team2Won ? 'loser' : ''}`}>{score1 || 0}</span>}
           </div>
           <div className="team-row">
-            <div className="team-seed">•</div>
+            <div className="team-seed"></div>
             <div className="team-color" style={{ background: color2 }}></div>
+            {getTeamLogo(pi.t2) && <img className="team-logo" src={getTeamLogo(pi.t2)} alt="" />}
             <div className="team-info">
               <div className={`team-name ${team1Won ? 'loser' : ''}`}>{pi.t2}</div>
-              <div className="team-meta">{owner2 && <span className="owner-badge"><span className="owner-dot" style={{ background: owner2.color }}></span>{owner2.name}</span>}</div>
+              <div className="team-meta">{owner2 && <span className="owner-badge"><span className="owner-dot" style={{ background: getCustomColor(owner2, customizations) }}></span>{owner2.name}</span>}</div>
             </div>
             {(isLive || isFinal) && <span className={`team-score ${team1Won ? 'loser' : ''}`}>{score2 || 0}</span>}
           </div>
@@ -77,7 +82,7 @@ function PlayInGames({ liveGames, playInWinners }) {
   );
 }
 
-function GameCard({ game, onClick }) {
+function GameCard({ game, onClick, customizations }) {
   const isLive = game.status === 'live' || game.status === 'halftime';
   const isFinal = game.status === 'final';
   const owner1 = getOwner(game.t1);
@@ -100,18 +105,20 @@ function GameCard({ game, onClick }) {
         <div className="team-row">
           <div className="team-seed">{game.s1}</div>
           <div className="team-color" style={{ background: color1 }}></div>
+          {getTeamLogo(game.t1) && <img className="team-logo" src={getTeamLogo(game.t1)} alt="" />}
           <div className="team-info">
             <div className={`team-name ${team2Winning ? 'loser' : ''}`}>{game.t1}</div>
-            <div className="team-meta">{owner1 && <span className="owner-badge"><span className="owner-dot" style={{ background: owner1.color }}></span>{owner1.name}</span>}{game.rec1 && <span className="team-record">{game.rec1}</span>}</div>
+            <div className="team-meta">{owner1 && <span className="owner-badge"><span className="owner-dot" style={{ background: getCustomColor(owner1, customizations) }}></span>{owner1.name}</span>}{game.rec1 && <span className="team-record">{game.rec1}</span>}</div>
           </div>
           {(isLive || isFinal) && <span className={`team-score ${team2Winning ? 'loser' : ''}`}>{game.sc1}</span>}
         </div>
         <div className="team-row">
           <div className="team-seed">{game.s2}</div>
           <div className="team-color" style={{ background: game.t2 === 'TBD' ? '#444' : color2 }}></div>
+          {game.t2 !== 'TBD' && getTeamLogo(game.t2) && <img className="team-logo" src={getTeamLogo(game.t2)} alt="" />}
           <div className="team-info">
             <div className={`team-name ${team1Winning ? 'loser' : ''} ${game.t2 === 'TBD' ? 'tbd' : ''}`}>{game.t2 === 'TBD' ? 'Play-In Winner' : game.t2}</div>
-            <div className="team-meta">{game.t2 !== 'TBD' && owner2 && <span className="owner-badge"><span className="owner-dot" style={{ background: owner2.color }}></span>{owner2.name}</span>}{game.rec2 && <span className="team-record">{game.rec2}</span>}</div>
+            <div className="team-meta">{game.t2 !== 'TBD' && owner2 && <span className="owner-badge"><span className="owner-dot" style={{ background: getCustomColor(owner2, customizations) }}></span>{owner2.name}</span>}{game.rec2 && <span className="team-record">{game.rec2}</span>}</div>
           </div>
           {(isLive || isFinal) && <span className={`team-score ${team1Winning ? 'loser' : ''}`}>{game.sc2}</span>}
         </div>
@@ -133,7 +140,7 @@ function GameCard({ game, onClick }) {
   );
 }
 
-function GameModal({ game, onClose }) {
+function GameModal({ game, onClose, customizations }) {
   const [activeTab, setActiveTab] = useState('boxscore');
   const [gameDetails, setGameDetails] = useState(null);
   const [preGameStats, setPreGameStats] = useState({});
@@ -294,7 +301,7 @@ function GameModal({ game, onClose }) {
                 <div className="m-logo" style={{ background: color1 }}>{game.s1}</div>
                 <div className="m-seed">#{game.s1} Seed</div>
                 <div className="m-name">{game.t1}</div>
-                <div className="m-owner"><div className="owner-dot" style={{ background: owner1?.color }}></div>{owner1?.name || 'Unowned'}</div>
+                <div className="m-owner"><div className="owner-dot" style={{ background: owner1 ? getCustomColor(owner1, customizations) : '#555' }}></div>{owner1?.name || 'Unowned'}</div>
                 {(isLive || isFinal) && <div className={`m-score ${game.sc1 < game.sc2 ? 'losing' : ''}`}>{game.sc1}</div>}
               </div>
               <div className="m-vs">VS</div>
@@ -302,7 +309,7 @@ function GameModal({ game, onClose }) {
                 <div className="m-logo" style={{ background: color2 }}>{game.s2}</div>
                 <div className="m-seed">#{game.s2} Seed</div>
                 <div className="m-name">{game.t2}</div>
-                <div className="m-owner"><div className="owner-dot" style={{ background: owner2?.color }}></div>{owner2?.name || 'Unowned'}</div>
+                <div className="m-owner"><div className="owner-dot" style={{ background: owner2 ? getCustomColor(owner2, customizations) : '#555' }}></div>{owner2?.name || 'Unowned'}</div>
                 {(isLive || isFinal) && <div className={`m-score ${game.sc2 < game.sc1 ? 'losing' : ''}`}>{game.sc2}</div>}
               </div>
             </div>
@@ -339,7 +346,7 @@ function GameModal({ game, onClose }) {
   );
 }
 
-function RegionsView({ onGameClick, liveGames, playInWinners }) {
+function RegionsView({ onGameClick, liveGames, playInWinners, customizations }) {
   const [activeRegion, setActiveRegion] = useState('east');
   const regionNames = Object.keys(staticRegions);
   const hasLiveInRegion = (regionName) => staticRegions[regionName]?.games?.some(game => {
@@ -349,7 +356,7 @@ function RegionsView({ onGameClick, liveGames, playInWinners }) {
 
   return (
     <div>
-      <PlayInGames liveGames={liveGames} playInWinners={playInWinners} />
+      <PlayInGames liveGames={liveGames} playInWinners={playInWinners} customizations={customizations} />
       <div className="region-tabs">
         {regionNames.map(name => (
           <button key={name} className={`region-tab ${activeRegion === name ? 'active' : ''}`} onClick={() => setActiveRegion(name)}>
@@ -359,13 +366,13 @@ function RegionsView({ onGameClick, liveGames, playInWinners }) {
       </div>
       {staticRegions[activeRegion]?.games?.map((staticGame, idx) => {
         const game = mergeWithLiveData(staticGame, liveGames, playInWinners);
-        return <GameCard key={idx} game={game} onClick={() => onGameClick(game, activeRegion)} />;
+        return <GameCard key={idx} game={game} onClick={() => onGameClick(game, activeRegion)} customizations={customizations} />;
       })}
     </div>
   );
 }
 
-function BracketView({ onGameClick, liveGames, playInWinners }) {
+function BracketView({ onGameClick, liveGames, playInWinners, customizations }) {
   const rounds = [
     { name: 'Round of 64', short: 'R64', round: 1 },
     { name: 'Round of 32', short: 'R32', round: 2 },
@@ -406,15 +413,17 @@ function BracketView({ onGameClick, liveGames, playInWinners }) {
                       <div className="bracket-team">
                         <span className="b-seed">{game.s1}</span>
                         <div className="b-color" style={{ background: color1 }}></div>
+                        {getTeamLogo(game.t1) && <img className="team-logo bracket-logo" src={getTeamLogo(game.t1)} alt="" />}
                         <span className={`b-name ${isFinal && game.sc1 < game.sc2 ? 'loser' : ''}`}>{game.t1}</span>
-                        {owner1 && <div className="b-owner" style={{ background: owner1.color }}></div>}
+                        {owner1 && <div className="b-owner" style={{ background: getCustomColor(owner1, customizations) }}></div>}
                         {(isLive || isFinal) && <span className={`b-score ${isFinal && game.sc1 < game.sc2 ? 'loser' : ''}`}>{game.sc1}</span>}
                       </div>
                       <div className="bracket-team">
                         <span className="b-seed">{game.s2 || '?'}</span>
                         <div className="b-color" style={{ background: game.t2 === 'TBD' ? '#444' : color2 }}></div>
+                        {game.t2 !== 'TBD' && getTeamLogo(game.t2) && <img className="team-logo bracket-logo" src={getTeamLogo(game.t2)} alt="" />}
                         <span className={`b-name ${isFinal && game.sc2 < game.sc1 ? 'loser' : ''} ${game.t2 === 'TBD' ? 'tbd' : ''}`}>{game.t2 === 'TBD' ? 'TBD' : game.t2}</span>
-                        {game.t2 !== 'TBD' && owner2 && <div className="b-owner" style={{ background: owner2.color }}></div>}
+                        {game.t2 !== 'TBD' && owner2 && <div className="b-owner" style={{ background: getCustomColor(owner2, customizations) }}></div>}
                         {(isLive || isFinal) && <span className={`b-score ${isFinal && game.sc2 < game.sc1 ? 'loser' : ''}`}>{game.sc2}</span>}
                       </div>
                       {isLive && <div className="game-status-bar live"><span className="mini-live-dot"></span>{game.time}</div>}
@@ -529,7 +538,7 @@ function calculateBadges(liveGames, playInWinners) {
   return playerBadges;
 }
 
-function Leaderboard({ liveGames, playInWinners }) {
+function Leaderboard({ liveGames, playInWinners, customizations }) {
   const leaderboardData = calculateStandings(liveGames, playInWinners);
   return (
     <div className="leaderboard">
@@ -537,7 +546,7 @@ function Leaderboard({ liveGames, playInWinners }) {
       {leaderboardData.map((player, index) => (
         <div key={player.id} className={`leaderboard-card ${index === 0 ? 'leader' : ''}`}>
           <div className="lb-rank">{index + 1}</div>
-          <div className="lb-avatar" style={{ background: player.color }}>{player.initials}</div>
+          <div className="lb-avatar" style={{ background: getCustomColor(player, customizations) }}>{getCustomInitials(player, customizations)}</div>
           <div className="lb-info"><div className="lb-name">{player.name}</div><div className="lb-teams">{player.teamsAlive} teams alive</div></div>
           <div className="lb-stats"><div className="lb-points">{player.points}</div><div className="lb-max">Max: {player.maxPossible}</div></div>
         </div>
@@ -555,7 +564,7 @@ function Leaderboard({ liveGames, playInWinners }) {
   );
 }
 
-function Achievements({ liveGames, playInWinners }) {
+function Achievements({ liveGames, playInWinners, customizations }) {
   const playerBadges = calculateBadges(liveGames, playInWinners);
   const mostShame = owners.reduce((max, o) => (playerBadges[o.id]?.shame?.length || 0) > (playerBadges[max.id]?.shame?.length || 0) ? o : max, owners[0]);
   const allBadges = { glory: [...badges.glory, { id: 'bucket_getter', name: 'Bucket Getter', icon: '🪣', desc: 'Own the tournament\'s leading scorer' }], shame: badges.shame };
@@ -568,7 +577,7 @@ function Achievements({ liveGames, playInWinners }) {
         return (
           <div key={owner.id} className="player-card">
             <div className="player-header">
-              <div className="player-avatar" style={{ background: owner.color }}>{owner.initials}</div>
+              <div className="player-avatar" style={{ background: getCustomColor(owner, customizations) }}>{getCustomInitials(owner, customizations)}</div>
               <div className="player-info"><div className="player-name">{owner.name}</div><div className="player-stats">{owner.teams.length} teams</div></div>
               <div className="badge-counts"><div className="badge-count positive">🏅 {pb.glory.length}</div><div className="badge-count negative">💩 {pb.shame.length}</div></div>
             </div>
@@ -592,7 +601,7 @@ function Achievements({ liveGames, playInWinners }) {
 }
 
 // Portfolio Component
-function Portfolio({ liveGames, playInWinners }) {
+function Portfolio({ liveGames, playInWinners, customizations }) {
   const [history, setHistory] = useState([]);
   const standings = calculateStandings(liveGames, playInWinners);
   
@@ -655,12 +664,12 @@ function Portfolio({ liveGames, playInWinners }) {
           return (
             <div key={player.id} className={`portfolio-card ${idx === 0 ? 'leader' : ''}`}>
               <div className="portfolio-header">
-                <span className="portfolio-name" style={{ color: player.color }}>{player.name.toUpperCase()}</span>
+                <span className="portfolio-name" style={{ color: getCustomColor(player, customizations) }}>{player.name.toUpperCase()}</span>
                 {change !== null && <span className={`portfolio-change ${change >= 0 ? 'up' : 'down'}`}>{change >= 0 ? '↑' : '↓'} {Math.abs(change)}%</span>}
               </div>
               <div className="portfolio-points">{player.points}</div>
               <div className="portfolio-meta">{player.teamsAlive} alive · {player.teamsEliminated} eliminated</div>
-              <div className="portfolio-bar"><div className="portfolio-bar-fill" style={{ width: `${healthPct}%`, background: player.color }}></div></div>
+              <div className="portfolio-bar"><div className="portfolio-bar-fill" style={{ width: `${healthPct}%`, background: getCustomColor(player, customizations) }}></div></div>
             </div>
           );
         })}
@@ -668,12 +677,12 @@ function Portfolio({ liveGames, playInWinners }) {
       <div className="portfolio-sections">
         <div className="portfolio-section">
           <div className="section-title">Hot Teams</div>
-          {hotTeams.map((item, idx) => (<div key={idx} className="hot-team-row"><span className="hot-rank">{idx + 1}</span><span className="hot-name">{item.team}</span><span className="hot-owner" style={{ background: item.owner.color }}></span><span className="hot-points">+{item.points.toFixed(1)} pts</span></div>))}
+          {hotTeams.map((item, idx) => (<div key={idx} className="hot-team-row"><span className="hot-rank">{idx + 1}</span><span className="hot-name">{item.team}</span><span className="hot-owner" style={{ background: getCustomColor(item.owner, customizations) }}></span><span className="hot-points">+{item.points.toFixed(1)} pts</span></div>))}
           {hotTeams.length === 0 && <div className="empty-state">No completed games yet</div>}
         </div>
         <div className="portfolio-section">
           <div className="section-title">Recent Eliminations</div>
-          {standings.flatMap(s => s.eliminatedTeams.map(t => ({ ...t, owner: s }))).slice(0, 4).map((item, idx) => (<div key={idx} className="elim-row"><span className="elim-icon">☠</span><span className="elim-name">{item.team}</span><span className="elim-owner" style={{ background: item.owner.color }}></span><span className="elim-round">R{item.round}</span></div>))}
+          {standings.flatMap(s => s.eliminatedTeams.map(t => ({ ...t, owner: s }))).slice(0, 4).map((item, idx) => (<div key={idx} className="elim-row"><span className="elim-icon">☠</span><span className="elim-name">{item.team}</span><span className="elim-owner" style={{ background: getCustomColor(item.owner, customizations) }}></span><span className="elim-round">R{item.round}</span></div>))}
           {totalEliminated === 0 && <div className="empty-state">No eliminations yet</div>}
         </div>
       </div>
@@ -686,7 +695,7 @@ function Portfolio({ liveGames, playInWinners }) {
 }
 
 // Graveyard Component
-function Graveyard({ liveGames, playInWinners }) {
+function Graveyard({ liveGames, playInWinners, customizations }) {
   const [filter, setFilter] = useState('all');
   const standings = calculateStandings(liveGames, playInWinners);
   const epitaphs = ["Gone too soon.", "Rest in pieces.", "They fought valiantly... not really.", "Another one bites the dust.", "F in the chat.", "Press F to pay respects.", "Should've picked someone else.", "Bracket busted.", "So much potential, so little results.", "They tried their best. It wasn't enough."];
@@ -703,12 +712,12 @@ function Graveyard({ liveGames, playInWinners }) {
       <div className="page-title"><h2>Graveyard</h2><p>{allEliminated.length} teams eliminated · {68 - allEliminated.length} remaining</p></div>
       <div className="filter-pills">
         <button className={`filter-pill ${filter === 'all' ? 'active' : ''}`} onClick={() => setFilter('all')}>All</button>
-        {owners.map(o => (<button key={o.id} className={`filter-pill ${filter === o.id ? 'active' : ''}`} style={{ '--accent': o.color }} onClick={() => setFilter(o.id)}>{o.name} ({ownerCounts[o.id]})</button>))}
+        {owners.map(o => (<button key={o.id} className={`filter-pill ${filter === o.id ? 'active' : ''}`} style={{ '--accent': getCustomColor(o, customizations) }} onClick={() => setFilter(o.id)}>{o.name} ({ownerCounts[o.id]})</button>))}
       </div>
       <div className="tombstone-grid">
         {filtered.map((item, idx) => (
           <div key={idx} className="tombstone">
-            <div className="tombstone-owner" style={{ background: item.owner.color }}></div>
+            <div className="tombstone-owner" style={{ background: getCustomColor(item.owner, customizations) }}></div>
             <div className="tombstone-seed">#{item.seed} Seed</div>
             <div className="tombstone-team">{item.team}</div>
             <div className="tombstone-epitaph">"{item.epitaph}"</div>
@@ -728,7 +737,7 @@ function Graveyard({ liveGames, playInWinners }) {
 }
 
 // Projection Tool Component
-function ProjectionTool({ liveGames, playInWinners }) {
+function ProjectionTool({ liveGames, playInWinners, customizations }) {
   const [overrides, setOverrides] = useState({});
   
   const completedGames = [];
@@ -796,9 +805,9 @@ function ProjectionTool({ liveGames, playInWinners }) {
             return (
               <div key={idx} className="projection-game">
                 <div className="projection-matchup">
-                  <span className="proj-team" style={{ background: `${owner1?.color}22`, color: owner1?.color }}>#{game.s1} {game.t1}</span>
+                  <span className="proj-team" style={{ background: `${owner1 ? getCustomColor(owner1, customizations) : '#555'}22`, color: owner1 ? getCustomColor(owner1, customizations) : '#555' }}>#{game.s1} {game.t1}</span>
                   <span className="proj-vs">vs</span>
-                  <span className="proj-team" style={{ background: `${owner2?.color}22`, color: owner2?.color }}>#{game.s2} {game.t2}</span>
+                  <span className="proj-team" style={{ background: `${owner2 ? getCustomColor(owner2, customizations) : '#555'}22`, color: owner2 ? getCustomColor(owner2, customizations) : '#555' }}>#{game.s2} {game.t2}</span>
                 </div>
                 <div className="projection-toggle">
                   <button className={`toggle-btn ${currentWinner === game.t1 ? 'active' : ''}`} onClick={() => toggleOverride(game, game.t1)}>{game.t1} {currentWinner === game.t1 && '✓'}</button>
@@ -814,7 +823,7 @@ function ProjectionTool({ liveGames, playInWinners }) {
           {projectedStandings.map((player, idx) => {
             const actual = actualStandings.find(a => a.id === player.id);
             const diff = player.points - actual.points;
-            return (<div key={player.id} className="impact-row"><span className="impact-rank">{idx + 1}</span><span className="impact-name" style={{ color: player.color }}>{player.name}</span><span className="impact-actual">{actual.points}</span><span className="impact-arrow">→</span><span className={`impact-projected ${diff > 0 ? 'up' : diff < 0 ? 'down' : ''}`}>{player.points}</span></div>);
+            return (<div key={player.id} className="impact-row"><span className="impact-rank">{idx + 1}</span><span className="impact-name" style={{ color: getCustomColor(player, customizations) }}>{player.name}</span><span className="impact-actual">{actual.points}</span><span className="impact-arrow">→</span><span className={`impact-projected ${diff > 0 ? 'up' : diff < 0 ? 'down' : ''}`}>{player.points}</span></div>);
           })}
           {overrideCount > 0 && (
             <div className="insight-box">
@@ -957,10 +966,10 @@ function App() {
   const hasLiveGames = Object.values(staticRegions).some(region => region?.games?.some(game => { const merged = mergeWithLiveData(game, liveGames, playInWinners); return merged.status === 'live' || merged.status === 'halftime'; }));
 
   const renderCoolStuffContent = () => {
-    if (coolStuffSubView === 'achievements') return <><button className="back-btn" onClick={() => setCoolStuffSubView(null)}>← Back</button><Achievements liveGames={liveGames} playInWinners={playInWinners} /></>;
-    if (coolStuffSubView === 'portfolio') return <><button className="back-btn" onClick={() => setCoolStuffSubView(null)}>← Back</button><Portfolio liveGames={liveGames} playInWinners={playInWinners} /></>;
-    if (coolStuffSubView === 'projection') return <><button className="back-btn" onClick={() => setCoolStuffSubView(null)}>← Back</button><ProjectionTool liveGames={liveGames} playInWinners={playInWinners} /></>;
-    if (coolStuffSubView === 'graveyard') return <><button className="back-btn" onClick={() => setCoolStuffSubView(null)}>← Back</button><Graveyard liveGames={liveGames} playInWinners={playInWinners} /></>;
+    if (coolStuffSubView === 'achievements') return <><button className="back-btn" onClick={() => setCoolStuffSubView(null)}>← Back</button><Achievements liveGames={liveGames} playInWinners={playInWinners} customizations={customizations} /></>;
+    if (coolStuffSubView === 'portfolio') return <><button className="back-btn" onClick={() => setCoolStuffSubView(null)}>← Back</button><Portfolio liveGames={liveGames} playInWinners={playInWinners} customizations={customizations} /></>;
+    if (coolStuffSubView === 'projection') return <><button className="back-btn" onClick={() => setCoolStuffSubView(null)}>← Back</button><ProjectionTool liveGames={liveGames} playInWinners={playInWinners} customizations={customizations} /></>;
+    if (coolStuffSubView === 'graveyard') return <><button className="back-btn" onClick={() => setCoolStuffSubView(null)}>← Back</button><Graveyard liveGames={liveGames} playInWinners={playInWinners} customizations={customizations} /></>;
     return <OtherCoolStuff liveGames={liveGames} playInWinners={playInWinners} setSubView={setCoolStuffSubView} />;
   };
 
@@ -981,13 +990,13 @@ function App() {
       </nav>
       <LiveIndicator lastUpdate={lastUpdate} isLoading={isLoading} error={error} />
       <main>
-        {currentTab === 'regions' && <RegionsView onGameClick={handleGameClick} liveGames={liveGames} playInWinners={playInWinners} />}
-        {currentTab === 'bracket' && <BracketView onGameClick={handleGameClick} liveGames={liveGames} playInWinners={playInWinners} />}
-        {currentTab === 'standings' && <Leaderboard liveGames={liveGames} playInWinners={playInWinners} />}
+        {currentTab === 'regions' && <RegionsView onGameClick={handleGameClick} liveGames={liveGames} playInWinners={playInWinners} customizations={customizations} />}
+        {currentTab === 'bracket' && <BracketView onGameClick={handleGameClick} liveGames={liveGames} playInWinners={playInWinners} customizations={customizations} />}
+        {currentTab === 'standings' && <Leaderboard liveGames={liveGames} playInWinners={playInWinners} customizations={customizations} />}
         {currentTab === 'coolstuff' && renderCoolStuffContent()}
       </main>
-      <div className="legend">{owners.map(owner => (<div key={owner.id} className="legend-item"><div className="legend-dot" style={{ background: owner.color }}></div>{owner.name}</div>))}</div>
-      {selectedGame && <GameModal game={selectedGame} onClose={() => setSelectedGame(null)} />}
+      <div className="legend">{owners.map(owner => (<div key={owner.id} className="legend-item"><div className="legend-dot" style={{ background: getUserColor(owner) }}></div>{owner.name}</div>))}</div>
+      {selectedGame && <GameModal game={selectedGame} onClose={() => setSelectedGame(null)} customizations={customizations} />}
       {showSettings && <div className="modal-bg" onClick={() => setShowSettings(false)}><div className="modal" onClick={e => e.stopPropagation()}><div className="modal-handle"></div><div className="modal-head"><span className="modal-title">Settings</span><button className="modal-close" onClick={() => setShowSettings(false)}>×</button></div><div className="modal-body"><Settings currentUser={currentUser} setCurrentUser={setCurrentUser} customizations={customizations} setCustomizations={setCustomizations} /></div></div></div>}
     </div>
   );

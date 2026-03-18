@@ -60,6 +60,8 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 .game-teams { display: flex; flex-direction: column; gap: 8px; }
 .team-row { display: flex; align-items: center; gap: 10px; }
 .team-seed { width: 20px; font-size: 12px; color: var(--text2); text-align: center; font-weight: 600; }
+.team-logo { width: 28px; height: 28px; border-radius: 4px; margin-right: 8px; object-fit: contain; flex-shrink: 0; filter: drop-shadow(0 0 3px rgba(255,255,255,0.6)) drop-shadow(0 0 6px rgba(255,255,255,0.3)); }
+.bracket-logo { width: 20px; height: 20px; margin-right: 4px; }
 .team-color { width: 4px; height: 32px; border-radius: 2px; }
 .team-info { flex: 1; }
 .team-name { font-size: 15px; font-weight: 600; }
@@ -296,7 +298,7 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 .settings-section { background: var(--card); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
 .settings-section-title { font-size: 14px; font-weight: 600; margin-bottom: 12px; }
 .user-selector { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
-.user-option { display: flex; align-items: center; gap: 10px; padding: 12px; background: var(--border); border: 2px solid transparent; border-radius: 12px; cursor: pointer; }
+.user-option { display: flex; align-items: center; gap: 10px; padding: 12px; background: var(--border); border: 2px solid transparent; border-radius: 12px; cursor: pointer; color: var(--text); }
 .user-option.selected { border-color: var(--cyan); background: rgba(34, 211, 238, 0.1); }
 .user-option-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; color: white; }
 .user-option-name { font-size: 14px; font-weight: 500; color: white; }
