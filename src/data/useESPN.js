@@ -132,12 +132,12 @@ export function useLiveScores() {
         cachedWinners = JSON.parse(localStorage.getItem('jerseyBetPlayInWinners')) || {};
       } catch { }
       
-      // Only fetch past 4 days for live updates (reduces API calls)
+      // Fetch past 28 days to cover the entire tournament window
       const today = new Date();
       const freshGames = {};
       const freshWinners = {};
-      
-      for (let i = 0; i < 4; i++) {
+
+      for (let i = 0; i < 28; i++) {
         const date = new Date(today);
         date.setDate(date.getDate() - i);
         const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '');

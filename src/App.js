@@ -339,13 +339,14 @@ function GameModal({ game, onClose, customizations }) {
               {game.ml && <div className="m-bet-item"><div className="m-bet-label">Moneyline</div><div className="m-bet-val">{game.ml}</div></div>}
             </div>
           </div>}
-          {streaming && (
+          {streaming && game.network && (
             <div className="watch-box">
               <div className="sec-title">Where to Watch</div>
               <div className="watch-links">
-                <a href={streaming.primary} className="watch-link pri" target="_blank" rel="noopener noreferrer"><span className="watch-link-name">{game.network}</span><span className="watch-link-type">Live TV</span></a>
+                <a href={streaming.primary} className="watch-link pri" target="_blank" rel="noopener noreferrer"><span className="watch-link-name">{streaming.primaryName}</span><span className="watch-link-type">Live TV</span></a>
                 <a href={streaming.espn} className="watch-link" target="_blank" rel="noopener noreferrer"><span className="watch-link-name">ESPN</span><span className="watch-link-type">Streaming</span></a>
               </div>
+              <div style={{ color: 'var(--muted)', fontSize: '0.75rem', marginTop: '0.5rem' }}>Airing on {game.network}</div>
             </div>
           )}
         </div>
@@ -528,8 +529,8 @@ function calculateStandings(liveGames, playInWinners) {
     });
 
     const resolved = buildResolvedGames(liveGames, playInWinners);
-    // Check all games including later rounds and Final Four
-    [...Object.values(resolved), ...finalFourGames.map(fg => resolved[fg.id] || mergeWithLiveData(fg, liveGames, playInWinners, resolved))].forEach(game => {
+    // Check all games including later rounds and Final Four (resolved already contains FF games)
+    Object.values(resolved).forEach(game => {
         if (game && game.status === 'final') {
           const winner = game.sc1 > game.sc2 ? game.t1 : game.t2;
           const loser = game.sc1 > game.sc2 ? game.t2 : game.t1;
@@ -559,14 +560,9 @@ function calculateBadges(liveGames, playInWinners) {
   const playerBadges = {};
   owners.forEach(o => { playerBadges[o.id] = { glory: [], shame: [] }; });
   
-  const completedGames = [];
-  Object.values(staticRegions).forEach(region => {
-    region.games.forEach(staticGame => {
-      const game = mergeWithLiveData(staticGame, liveGames, playInWinners);
-      if (game.status === 'final') completedGames.push(game);
-    });
-  });
-  
+  const resolved = buildResolvedGames(liveGames, playInWinners);
+  const completedGames = Object.values(resolved).filter(g => g.status === 'final');
+
   if (completedGames.length === 0) return playerBadges;
   
   const ownerStats = {};
@@ -622,13 +618,11 @@ function buildEnhancedStandings(liveGames, playInWinners) {
   const allFinalGames = [];
   const teamSeeds = {};
 
-  Object.values(staticRegions).forEach(region => {
-    region.games.forEach(sg => {
-      const game = mergeWithLiveData(sg, liveGames, playInWinners);
-      teamSeeds[game.t1] = game.s1;
-      teamSeeds[game.t2] = game.s2;
-      if (game.status === 'final') allFinalGames.push(game);
-    });
+  const resolved = buildResolvedGames(liveGames, playInWinners);
+  Object.values(resolved).forEach(game => {
+    if (game.s1) teamSeeds[game.t1] = game.s1;
+    if (game.s2) teamSeeds[game.t2] = game.s2;
+    if (game.status === 'final') allFinalGames.push(game);
   });
 
   // Quick stats
@@ -857,7 +851,8 @@ function Portfolio({ liveGames, playInWinners, customizations }) {
   }, []);
   
   useEffect(() => {
-    const totalGames = Object.values(staticRegions).reduce((sum, r) => sum + r.games.filter(g => mergeWithLiveData(g, liveGames, playInWinners).status === 'final').length, 0);
+    const resolvedMap = buildResolvedGames(liveGames, playInWinners);
+    const totalGames = Object.values(resolvedMap).filter(g => g.status === 'final').length;
     if (totalGames > 0) {
       const currentSnapshot = { timestamp: Date.now(), games: totalGames, standings: standings.map(s => ({ id: s.id, points: s.points, teamsAlive: s.teamsAlive })) };
       const lastEntry = history[history.length - 1];
@@ -877,21 +872,19 @@ function Portfolio({ liveGames, playInWinners, customizations }) {
   };
   
   const getHotTeams = () => {
+    const resolvedMap = buildResolvedGames(liveGames, playInWinners);
     const recentWins = [];
-    Object.values(staticRegions).forEach(region => {
-      region.games.forEach(staticGame => {
-        const game = mergeWithLiveData(staticGame, liveGames, playInWinners);
-        if (game.status === 'final') {
-          const winner = game.sc1 > game.sc2 ? game.t1 : game.t2;
-          const winnerSeed = game.sc1 > game.sc2 ? game.s1 : game.s2;
-          const owner = getOwner(winner);
-          if (owner) {
-            const roundPoints = scoringSystem.rounds[game.round || 1] || 1;
-            const multiplier = scoringSystem.getSeedMultiplier(winnerSeed);
-            recentWins.push({ team: winner, owner, points: roundPoints * multiplier, round: game.round });
-          }
+    Object.values(resolvedMap).forEach(game => {
+      if (game.status === 'final') {
+        const winner = game.sc1 > game.sc2 ? game.t1 : game.t2;
+        const winnerSeed = game.sc1 > game.sc2 ? game.s1 : game.s2;
+        const owner = getOwner(winner);
+        if (owner) {
+          const roundPoints = scoringSystem.rounds[game.round || 1] || 1;
+          const multiplier = scoringSystem.getSeedMultiplier(winnerSeed);
+          recentWins.push({ team: winner, owner, points: roundPoints * multiplier, round: game.round });
         }
-      });
+      }
     });
     return recentWins.sort((a, b) => b.points - a.points).slice(0, 4);
   };
@@ -1105,15 +1098,13 @@ function HeadToHead({ liveGames, playInWinners, customizations }) {
   const b = standings.find(s => s.id === ownerB) || standings[1];
 
   // Find all completed games and determine team seeds
+  const resolved = buildResolvedGames(liveGames, playInWinners);
   const allGames = [];
   const teamSeeds = {};
-  Object.values(staticRegions).forEach(region => {
-    region.games.forEach(sg => {
-      const game = mergeWithLiveData(sg, liveGames, playInWinners);
-      teamSeeds[game.t1] = game.s1;
-      teamSeeds[game.t2] = game.s2;
-      if (game.status === 'final') allGames.push(game);
-    });
+  Object.values(resolved).forEach(game => {
+    if (game.s1) teamSeeds[game.t1] = game.s1;
+    if (game.s2) teamSeeds[game.t2] = game.s2;
+    if (game.status === 'final') allGames.push(game);
   });
 
   // Find direct matchups
@@ -1254,12 +1245,17 @@ function BracketHistory({ liveGames, playInWinners, customizations }) {
 
   // Auto-snapshot: check if any round is fully complete
   useEffect(() => {
+    const resolved = buildResolvedGames(liveGames, playInWinners);
     const allMergedGames = [];
     Object.entries(staticRegions).forEach(([regionKey, region]) => {
       region.games.forEach(sg => {
-        const game = mergeWithLiveData(sg, liveGames, playInWinners);
+        const game = resolved[sg.id] || mergeWithLiveData(sg, liveGames, playInWinners, resolved);
         allMergedGames.push({ ...game, regionKey });
       });
+    });
+    finalFourGames.forEach(fg => {
+      const game = resolved[fg.id] || mergeWithLiveData(fg, liveGames, playInWinners, resolved);
+      allMergedGames.push({ ...game, regionKey: 'finalfour' });
     });
 
     for (let round = 1; round <= 6; round++) {
@@ -1284,12 +1280,17 @@ function BracketHistory({ liveGames, playInWinners, customizations }) {
 
   const displayStandings = snapshot ? snapshot.standings : currentStandings;
   const displayGames = snapshot ? snapshot.games : (() => {
+    const resolved = buildResolvedGames(liveGames, playInWinners);
     const games = [];
     Object.entries(staticRegions).forEach(([regionKey, region]) => {
       region.games.forEach(sg => {
-        const game = mergeWithLiveData(sg, liveGames, playInWinners);
+        const game = resolved[sg.id] || mergeWithLiveData(sg, liveGames, playInWinners, resolved);
         if (game.status === 'final') games.push({ ...game, regionKey });
       });
+    });
+    finalFourGames.forEach(fg => {
+      const game = resolved[fg.id] || mergeWithLiveData(fg, liveGames, playInWinners, resolved);
+      if (game.status === 'final') games.push({ ...game, regionKey: 'finalfour' });
     });
     return games;
   })();
@@ -1497,7 +1498,8 @@ function App() {
   const getUserInitials = (user) => customizations[user.id]?.initials || user.initials;
   
   const handleGameClick = (game, region) => setSelectedGame({ ...game, region });
-  const hasLiveGames = Object.values(staticRegions).some(region => region?.games?.some(game => { const merged = mergeWithLiveData(game, liveGames, playInWinners); return merged.status === 'live' || merged.status === 'halftime'; }));
+  const resolvedAll = buildResolvedGames(liveGames, playInWinners);
+  const hasLiveGames = Object.values(resolvedAll).some(game => game.status === 'live' || game.status === 'halftime');
 
   const renderCoolStuffContent = () => {
     if (coolStuffSubView === 'achievements') return <><button className="back-btn" onClick={() => setCoolStuffSubView(null)}>← Back</button><Achievements liveGames={liveGames} playInWinners={playInWinners} customizations={customizations} /></>;

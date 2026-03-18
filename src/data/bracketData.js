@@ -172,13 +172,13 @@ export const finalFourGames = [
 ];
 
 export const networkStreaming = {
-  'CBS': ['Paramount+', 'YouTube TV'],
-  'TBS': ['Max', 'Sling', 'YouTube TV'],
-  'TNT': ['Max', 'Sling', 'YouTube TV'],
-  'TruTV': ['Max', 'Sling', 'YouTube TV']
+  'CBS': { primary: 'https://www.paramountplus.com', primaryName: 'Paramount+', espn: 'https://www.espn.com/watch' },
+  'TBS': { primary: 'https://www.max.com', primaryName: 'Max', espn: 'https://www.espn.com/watch' },
+  'TNT': { primary: 'https://www.max.com', primaryName: 'Max', espn: 'https://www.espn.com/watch' },
+  'TruTV': { primary: 'https://www.max.com', primaryName: 'Max', espn: 'https://www.espn.com/watch' }
 };
 
-export const getStreaming = (network) => networkStreaming[network] || [];
+export const getStreaming = (network) => networkStreaming[network] || null;
 
 // SCORING SYSTEM
 export const scoringSystem = {
