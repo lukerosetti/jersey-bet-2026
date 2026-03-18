@@ -290,7 +290,7 @@ function GameModal({ game, onClose, customizations }) {
       <div className="modal" onClick={e => e.stopPropagation()}>
         <div className="modal-handle"></div>
         <div className="modal-head">
-          <span className="modal-title">{game.region} Region</span>
+          <span className="modal-title">{game.region?.charAt(0).toUpperCase() + game.region?.slice(1)} Region</span>
           <button className="modal-close" onClick={onClose}>×</button>
         </div>
         <div className="modal-body">
@@ -298,7 +298,7 @@ function GameModal({ game, onClose, customizations }) {
             <div className="m-badge">{isUpcoming ? 'Season Stats' : isLive ? 'Live' : 'Final'}</div>
             <div className="m-teams">
               <div className="m-team">
-                <div className="m-logo" style={{ background: color1 }}>{game.s1}</div>
+                <div className="m-logo">{getTeamLogo(game.t1) ? <img src={getTeamLogo(game.t1)} alt={game.t1} className="m-logo-img" /> : game.s1}</div>
                 <div className="m-seed">#{game.s1} Seed</div>
                 <div className="m-name">{game.t1}</div>
                 <div className="m-owner"><div className="owner-dot" style={{ background: owner1 ? getCustomColor(owner1, customizations) : '#555' }}></div>{owner1?.name || 'Unowned'}</div>
@@ -306,7 +306,7 @@ function GameModal({ game, onClose, customizations }) {
               </div>
               <div className="m-vs">VS</div>
               <div className="m-team">
-                <div className="m-logo" style={{ background: color2 }}>{game.s2}</div>
+                <div className="m-logo">{getTeamLogo(game.t2) ? <img src={getTeamLogo(game.t2)} alt={game.t2} className="m-logo-img" /> : game.s2}</div>
                 <div className="m-seed">#{game.s2} Seed</div>
                 <div className="m-name">{game.t2}</div>
                 <div className="m-owner"><div className="owner-dot" style={{ background: owner2 ? getCustomColor(owner2, customizations) : '#555' }}></div>{owner2?.name || 'Unowned'}</div>

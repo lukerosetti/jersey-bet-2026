@@ -99,7 +99,8 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 .m-badge { display: inline-block; background: var(--border); padding: 4px 12px; border-radius: 12px; font-size: 11px; color: var(--text2); margin-bottom: 16px; }
 .m-teams { display: flex; justify-content: center; align-items: flex-start; gap: 20px; }
 .m-team { text-align: center; flex: 1; }
-.m-logo { width: 60px; height: 60px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; color: white; margin: 0 auto 8px; }
+.m-logo { width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; color: white; margin: 0 auto 8px; }
+.m-logo-img { width: 100%; height: 100%; object-fit: contain; }
 .m-seed { font-size: 11px; color: var(--text2); }
 .m-name { font-size: 16px; font-weight: 600; margin: 4px 0; }
 .m-owner { display: flex; align-items: center; justify-content: center; gap: 4px; font-size: 12px; color: var(--text2); }
