@@ -1,6 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { owners, regions as staticRegions, playInGames, getOwner, getTeamColor, getTeamLogo, getStreaming, scoringSystem, badges } from './data/bracketData';
-import { useLiveScores, mergeWithLiveData, fetchGameDetails, fetchTeamRoster } from './data/useESPN';
+import { owners, regions as staticRegions, playInGames, finalFourGames, getOwner, getTeamColor, getTeamLogo, getStreaming, scoringSystem, badges } from './data/bracketData';
+import { useLiveScores, mergeWithLiveData, resolveAllGames, fetchGameDetails, fetchTeamRoster } from './data/useESPN';
+
+// Build resolved games map for all rounds (call once, pass to mergeWithLiveData as 4th arg)
+function buildResolvedGames(liveGames, playInWinners) {
+  const allGames = [];
+  Object.values(staticRegions).forEach(r => allGames.push(...r.games));
+  allGames.push(...finalFourGames);
+  return resolveAllGames(allGames, liveGames, playInWinners);
+}
 
 const getCustomColor = (owner, customizations) => customizations?.[owner.id]?.color || owner.color;
 const getCustomInitials = (owner, customizations) => customizations?.[owner.id]?.initials || owner.initials;
@@ -376,18 +384,24 @@ function BracketView({ onGameClick, liveGames, playInWinners, customizations }) 
   const rounds = [
     { name: 'Round of 64', short: 'R64', round: 1 },
     { name: 'Round of 32', short: 'R32', round: 2 },
-    { name: 'Sweet 16', short: 'S16', round: 3 },
-    { name: 'Elite 8', short: 'E8', round: 4 },
-    { name: 'Final Four', short: 'F4', round: 5 },
+    { name: 'Sweet 16', short: 'Sweet 16', round: 3 },
+    { name: 'Elite Eight', short: 'Elite 8', round: 4 },
+    { name: 'Final Four', short: 'Final Four', round: 5 },
     { name: 'Championship', short: 'Champ', round: 6 }
   ];
 
+  const resolved = buildResolvedGames(liveGames, playInWinners);
   const allGames = [];
   Object.entries(staticRegions).forEach(([regionName, region]) => {
     region.games.forEach(staticGame => {
-      const game = mergeWithLiveData(staticGame, liveGames, playInWinners);
+      const game = resolved[staticGame.id] || mergeWithLiveData(staticGame, liveGames, playInWinners, resolved);
       allGames.push({ ...game, region: regionName });
     });
+  });
+  // Add Final Four and Championship
+  finalFourGames.forEach(fg => {
+    const game = resolved[fg.id] || mergeWithLiveData(fg, liveGames, playInWinners, resolved);
+    allGames.push({ ...game, region: 'finalfour' });
   });
 
   const gamesByRound = rounds.map(r => ({ ...r, games: allGames.filter(g => g.round === r.round) }));
@@ -475,10 +489,10 @@ function calculateStandings(liveGames, playInWinners) {
       }
     });
 
-    Object.values(staticRegions).forEach(region => {
-      region.games.forEach(staticGame => {
-        const game = mergeWithLiveData(staticGame, liveGames, playInWinners);
-        if (game.status === 'final') {
+    const resolved = buildResolvedGames(liveGames, playInWinners);
+    // Check all games including later rounds and Final Four
+    [...Object.values(resolved), ...finalFourGames.map(fg => resolved[fg.id] || mergeWithLiveData(fg, liveGames, playInWinners, resolved))].forEach(game => {
+        if (game && game.status === 'final') {
           const winner = game.sc1 > game.sc2 ? game.t1 : game.t2;
           const loser = game.sc1 > game.sc2 ? game.t2 : game.t1;
           const loserSeed = game.sc1 > game.sc2 ? game.s2 : game.s1;
@@ -497,7 +511,6 @@ function calculateStandings(liveGames, playInWinners) {
             eliminatedTeams.push({ team: loser, seed: loserSeed, killedBy: winner, score: `${loserScore}-${winnerScore}`, round: game.round || 1 });
           }
         }
-      });
     });
     return { ...owner, points: Math.round(points * 100) / 100, teamsAlive, teamsEliminated, eliminatedTeams, maxPossible: Math.round((teamsAlive * 12) * 10) / 10 };
   }).sort((a, b) => b.points - a.points || b.teamsAlive - a.teamsAlive);

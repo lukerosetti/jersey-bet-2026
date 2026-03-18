@@ -80,7 +80,17 @@ export const regions = {
       { id: 'e5', round: 1, s1: 6, t1: 'Louisville', s2: 11, t2: 'South Florida', status: 'upcoming', tip: 'Thu 1:30 PM', network: 'TNT', spread: 'LOU -7.5', total: '144.5', ml: '-320', prob1: 74, rec1: '23-10', rec2: '21-13' },
       { id: 'e6', round: 1, s1: 3, t1: 'Michigan St', s2: 14, t2: 'North Dakota St', status: 'upcoming', tip: 'Thu 4:05 PM', network: 'TNT', spread: 'MSU -16.5', total: '138.5', ml: '-1600', prob1: 93, rec1: '25-7', rec2: '25-9' },
       { id: 'e7', round: 1, s1: 7, t1: 'UCLA', s2: 10, t2: 'UCF', status: 'upcoming', tip: 'Fri 7:25 PM', network: 'TBS', spread: 'UCLA -6.5', total: '148.5', ml: '-280', prob1: 72, rec1: '23-10', rec2: '22-11' },
-      { id: 'e8', round: 1, s1: 2, t1: 'UConn', s2: 15, t2: 'Furman', status: 'upcoming', tip: 'Fri 10:00 PM', network: 'TBS', spread: 'UCONN -18.5', total: '144.5', ml: '-2800', prob1: 95, rec1: '26-7', rec2: '24-10' }
+      { id: 'e8', round: 1, s1: 2, t1: 'UConn', s2: 15, t2: 'Furman', status: 'upcoming', tip: 'Fri 10:00 PM', network: 'TBS', spread: 'UCONN -18.5', total: '144.5', ml: '-2800', prob1: 95, rec1: '26-7', rec2: '24-10' },
+      // Round of 32
+      { id: 'e_r2_1', round: 2, t1: 'TBD', t2: 'TBD', t1From: 'e1', t2From: 'e2', status: 'upcoming' },
+      { id: 'e_r2_2', round: 2, t1: 'TBD', t2: 'TBD', t1From: 'e3', t2From: 'e4', status: 'upcoming' },
+      { id: 'e_r2_3', round: 2, t1: 'TBD', t2: 'TBD', t1From: 'e5', t2From: 'e6', status: 'upcoming' },
+      { id: 'e_r2_4', round: 2, t1: 'TBD', t2: 'TBD', t1From: 'e7', t2From: 'e8', status: 'upcoming' },
+      // Sweet 16
+      { id: 'e_s16_1', round: 3, t1: 'TBD', t2: 'TBD', t1From: 'e_r2_1', t2From: 'e_r2_2', status: 'upcoming' },
+      { id: 'e_s16_2', round: 3, t1: 'TBD', t2: 'TBD', t1From: 'e_r2_3', t2From: 'e_r2_4', status: 'upcoming' },
+      // Elite 8
+      { id: 'e_e8', round: 4, t1: 'TBD', t2: 'TBD', t1From: 'e_s16_1', t2From: 'e_s16_2', status: 'upcoming' }
     ]
   },
   west: {
@@ -93,7 +103,17 @@ export const regions = {
       { id: 'w5', round: 1, s1: 6, t1: 'BYU', s2: 11, t2: 'TBD', t2PlayIn: 'pi2', status: 'upcoming', tip: 'Thu 7:25 PM', network: 'TBS', spread: 'BYU -3.5', total: '144.5', ml: '-165', prob1: 61, rec1: '24-9', rec2: '20-14' },
       { id: 'w6', round: 1, s1: 3, t1: 'Gonzaga', s2: 14, t2: 'Kennesaw St', status: 'upcoming', tip: 'Thu 10:00 PM', network: 'TBS', spread: 'GONZ -18.5', total: '158.5', ml: '-2500', prob1: 94, rec1: '28-5', rec2: '23-11' },
       { id: 'w7', round: 1, s1: 7, t1: 'Miami FL', s2: 10, t2: 'Missouri', status: 'upcoming', tip: 'Fri 10:10 PM', network: 'TruTV', spread: 'MIA -1.5', total: '146.5', ml: '-125', prob1: 54, rec1: '22-11', rec2: '21-12' },
-      { id: 'w8', round: 1, s1: 2, t1: 'Purdue', s2: 15, t2: 'Queens', status: 'upcoming', tip: 'Fri 7:35 PM', network: 'TruTV', spread: 'PUR -22.5', total: '148.5', ml: '-4500', prob1: 97, rec1: '29-5', rec2: '21-13' }
+      { id: 'w8', round: 1, s1: 2, t1: 'Purdue', s2: 15, t2: 'Queens', status: 'upcoming', tip: 'Fri 7:35 PM', network: 'TruTV', spread: 'PUR -22.5', total: '148.5', ml: '-4500', prob1: 97, rec1: '29-5', rec2: '21-13' },
+      // Round of 32
+      { id: 'w_r2_1', round: 2, t1: 'TBD', t2: 'TBD', t1From: 'w1', t2From: 'w2', status: 'upcoming' },
+      { id: 'w_r2_2', round: 2, t1: 'TBD', t2: 'TBD', t1From: 'w3', t2From: 'w4', status: 'upcoming' },
+      { id: 'w_r2_3', round: 2, t1: 'TBD', t2: 'TBD', t1From: 'w5', t2From: 'w6', status: 'upcoming' },
+      { id: 'w_r2_4', round: 2, t1: 'TBD', t2: 'TBD', t1From: 'w7', t2From: 'w8', status: 'upcoming' },
+      // Sweet 16
+      { id: 'w_s16_1', round: 3, t1: 'TBD', t2: 'TBD', t1From: 'w_r2_1', t2From: 'w_r2_2', status: 'upcoming' },
+      { id: 'w_s16_2', round: 3, t1: 'TBD', t2: 'TBD', t1From: 'w_r2_3', t2From: 'w_r2_4', status: 'upcoming' },
+      // Elite 8
+      { id: 'w_e8', round: 4, t1: 'TBD', t2: 'TBD', t1From: 'w_s16_1', t2From: 'w_s16_2', status: 'upcoming' }
     ]
   },
   south: {
@@ -106,7 +126,17 @@ export const regions = {
       { id: 's5', round: 1, s1: 6, t1: 'North Carolina', s2: 11, t2: 'VCU', status: 'upcoming', tip: 'Thu 6:50 PM', network: 'TNT', spread: 'UNC -6.5', total: '148.5', ml: '-280', prob1: 72, rec1: '23-10', rec2: '22-12' },
       { id: 's6', round: 1, s1: 3, t1: 'Illinois', s2: 14, t2: 'Penn', status: 'upcoming', tip: 'Thu 9:25 PM', network: 'TNT', spread: 'ILL -16.5', total: '146.5', ml: '-1800', prob1: 93, rec1: '27-6', rec2: '21-9' },
       { id: 's7', round: 1, s1: 7, t1: 'Saint Marys', s2: 10, t2: 'Texas A&M', status: 'upcoming', tip: 'Thu 7:35 PM', network: 'TruTV', spread: 'SMC -2.5', total: '132.5', ml: '-140', prob1: 57, rec1: '24-9', rec2: '22-11' },
-      { id: 's8', round: 1, s1: 2, t1: 'Houston', s2: 15, t2: 'Idaho', status: 'upcoming', tip: 'Thu 10:10 PM', network: 'TruTV', spread: 'HOU -24.5', total: '134.5', ml: '-5500', prob1: 97, rec1: '29-4', rec2: '19-14' }
+      { id: 's8', round: 1, s1: 2, t1: 'Houston', s2: 15, t2: 'Idaho', status: 'upcoming', tip: 'Thu 10:10 PM', network: 'TruTV', spread: 'HOU -24.5', total: '134.5', ml: '-5500', prob1: 97, rec1: '29-4', rec2: '19-14' },
+      // Round of 32
+      { id: 's_r2_1', round: 2, t1: 'TBD', t2: 'TBD', t1From: 's1', t2From: 's2', status: 'upcoming' },
+      { id: 's_r2_2', round: 2, t1: 'TBD', t2: 'TBD', t1From: 's3', t2From: 's4', status: 'upcoming' },
+      { id: 's_r2_3', round: 2, t1: 'TBD', t2: 'TBD', t1From: 's5', t2From: 's6', status: 'upcoming' },
+      { id: 's_r2_4', round: 2, t1: 'TBD', t2: 'TBD', t1From: 's7', t2From: 's8', status: 'upcoming' },
+      // Sweet 16
+      { id: 's_s16_1', round: 3, t1: 'TBD', t2: 'TBD', t1From: 's_r2_1', t2From: 's_r2_2', status: 'upcoming' },
+      { id: 's_s16_2', round: 3, t1: 'TBD', t2: 'TBD', t1From: 's_r2_3', t2From: 's_r2_4', status: 'upcoming' },
+      // Elite 8
+      { id: 's_e8', round: 4, t1: 'TBD', t2: 'TBD', t1From: 's_s16_1', t2From: 's_s16_2', status: 'upcoming' }
     ]
   },
   midwest: {
@@ -119,10 +149,27 @@ export const regions = {
       { id: 'm5', round: 1, s1: 6, t1: 'Tennessee', s2: 11, t2: 'TBD', t2PlayIn: 'pi4', status: 'upcoming', tip: 'Fri 4:25 PM', network: 'TBS', spread: 'TENN -5.5', total: '132.5', ml: '-240', prob1: 69, rec1: '24-9', rec2: '21-12' },
       { id: 'm6', round: 1, s1: 3, t1: 'Virginia', s2: 14, t2: 'Wright St', status: 'upcoming', tip: 'Fri 1:50 PM', network: 'TBS', spread: 'UVA -15.5', total: '128.5', ml: '-1400', prob1: 92, rec1: '27-6', rec2: '22-12' },
       { id: 'm7', round: 1, s1: 7, t1: 'Kentucky', s2: 10, t2: 'Santa Clara', status: 'upcoming', tip: 'Fri 12:15 PM', network: 'CBS', spread: 'UK -7.5', total: '148.5', ml: '-320', prob1: 74, rec1: '23-10', rec2: '24-9' },
-      { id: 'm8', round: 1, s1: 2, t1: 'Iowa State', s2: 15, t2: 'Tennessee St', status: 'upcoming', tip: 'Fri 2:50 PM', network: 'CBS', spread: 'ISU -20.5', total: '136.5', ml: '-3200', prob1: 96, rec1: '28-5', rec2: '20-13' }
+      { id: 'm8', round: 1, s1: 2, t1: 'Iowa State', s2: 15, t2: 'Tennessee St', status: 'upcoming', tip: 'Fri 2:50 PM', network: 'CBS', spread: 'ISU -20.5', total: '136.5', ml: '-3200', prob1: 96, rec1: '28-5', rec2: '20-13' },
+      // Round of 32
+      { id: 'm_r2_1', round: 2, t1: 'TBD', t2: 'TBD', t1From: 'm1', t2From: 'm2', status: 'upcoming' },
+      { id: 'm_r2_2', round: 2, t1: 'TBD', t2: 'TBD', t1From: 'm3', t2From: 'm4', status: 'upcoming' },
+      { id: 'm_r2_3', round: 2, t1: 'TBD', t2: 'TBD', t1From: 'm5', t2From: 'm6', status: 'upcoming' },
+      { id: 'm_r2_4', round: 2, t1: 'TBD', t2: 'TBD', t1From: 'm7', t2From: 'm8', status: 'upcoming' },
+      // Sweet 16
+      { id: 'm_s16_1', round: 3, t1: 'TBD', t2: 'TBD', t1From: 'm_r2_1', t2From: 'm_r2_2', status: 'upcoming' },
+      { id: 'm_s16_2', round: 3, t1: 'TBD', t2: 'TBD', t1From: 'm_r2_3', t2From: 'm_r2_4', status: 'upcoming' },
+      // Elite 8
+      { id: 'm_e8', round: 4, t1: 'TBD', t2: 'TBD', t1From: 'm_s16_1', t2From: 'm_s16_2', status: 'upcoming' }
     ]
   }
 };
+
+// Final Four & Championship (cross-region)
+export const finalFourGames = [
+  { id: 'ff1', round: 5, t1: 'TBD', t2: 'TBD', t1From: 'e_e8', t2From: 'w_e8', status: 'upcoming', label: 'East vs West' },
+  { id: 'ff2', round: 5, t1: 'TBD', t2: 'TBD', t1From: 's_e8', t2From: 'm_e8', status: 'upcoming', label: 'South vs Midwest' },
+  { id: 'champ', round: 6, t1: 'TBD', t2: 'TBD', t1From: 'ff1', t2From: 'ff2', status: 'upcoming', label: 'Championship' }
+];
 
 export const networkStreaming = {
   'CBS': ['Paramount+', 'YouTube TV'],
@@ -136,7 +183,7 @@ export const getStreaming = (network) => networkStreaming[network] || [];
 // SCORING SYSTEM
 export const scoringSystem = {
   rounds: { 1: 1, 2: 2, 3: 2, 4: 2, 5: 2, 6: 3 },
-  roundNames: { 0: 'Play-In', 1: 'R64', 2: 'R32', 3: 'S16', 4: 'E8', 5: 'F4', 6: 'Champ' },
+  roundNames: { 0: 'Play-In', 1: 'R64', 2: 'R32', 3: 'Sweet 16', 4: 'Elite 8', 5: 'Final Four', 6: 'Champ' },
   getSeedMultiplier: (seed) => {
     if (seed >= 14) return 2.0;
     if (seed >= 9) return 1.75;

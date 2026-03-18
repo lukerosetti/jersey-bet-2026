@@ -383,33 +383,63 @@ export async function fetchTeamRoster(teamName) {
 }
 
 // Merge static data with live scores
-export function mergeWithLiveData(staticGame, liveGames, playInWinners) {
+export function mergeWithLiveData(staticGame, liveGames, playInWinners, resolvedGames) {
   let game = { ...staticGame };
-  
+
+  // Resolve play-in winners
   if (game.t2 === 'TBD' && game.t2PlayIn) {
     const winner = playInWinners[game.t2PlayIn];
     if (winner) game.t2 = winner;
   }
-  
   if (game.t1 === 'TBD' && game.t1PlayIn) {
     const winner = playInWinners[game.t1PlayIn];
     if (winner) game.t1 = winner;
   }
-  
-  const gameKey = [game.t1, game.t2].sort().join('_');
-  const liveData = liveGames[gameKey];
-  
-  if (!liveData) return game;
-  
-  const t1IsFirst = liveData.team1 === game.t1;
-  
-  return {
-    ...game,
-    espnId: liveData.id,
-    status: liveData.status,
-    sc1: t1IsFirst ? liveData.score1 : liveData.score2,
-    sc2: t1IsFirst ? liveData.score2 : liveData.score1,
-    time: liveData.clock,
-    half: liveData.period,
-  };
+
+  // Resolve later-round TBD teams from earlier-round winners
+  if (resolvedGames && game.t1From && game.t1 === 'TBD') {
+    const feederGame = resolvedGames[game.t1From];
+    if (feederGame && feederGame.status === 'final' && feederGame.sc1 != null) {
+      game.t1 = feederGame.sc1 > feederGame.sc2 ? feederGame.t1 : feederGame.t2;
+    }
+  }
+  if (resolvedGames && game.t2From && game.t2 === 'TBD') {
+    const feederGame = resolvedGames[game.t2From];
+    if (feederGame && feederGame.status === 'final' && feederGame.sc1 != null) {
+      game.t2 = feederGame.sc1 > feederGame.sc2 ? feederGame.t1 : feederGame.t2;
+    }
+  }
+
+  // Match with live ESPN data
+  if (game.t1 !== 'TBD' && game.t2 !== 'TBD') {
+    const gameKey = [game.t1, game.t2].sort().join('_');
+    const liveData = liveGames[gameKey];
+
+    if (liveData) {
+      const t1IsFirst = liveData.team1 === game.t1;
+      return {
+        ...game,
+        espnId: liveData.id,
+        status: liveData.status,
+        sc1: t1IsFirst ? liveData.score1 : liveData.score2,
+        sc2: t1IsFirst ? liveData.score2 : liveData.score1,
+        time: liveData.clock,
+        half: liveData.period,
+      };
+    }
+  }
+
+  return game;
+}
+
+// Resolve all games in round order so later rounds can reference earlier winners
+export function resolveAllGames(allStaticGames, liveGames, playInWinners) {
+  const resolved = {};
+  // Sort by round so R1 resolves before R2, etc.
+  const sorted = [...allStaticGames].sort((a, b) => (a.round || 1) - (b.round || 1));
+  sorted.forEach(sg => {
+    const merged = mergeWithLiveData(sg, liveGames, playInWinners, resolved);
+    resolved[merged.id] = merged;
+  });
+  return resolved;
 }
