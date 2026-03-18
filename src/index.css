@@ -219,20 +219,73 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 .champ-name { font-size: 24px; font-weight: 700; color: var(--bg); }
 .champ-info { font-size: 12px; color: rgba(0, 0, 0, 0.6); margin-top: 4px; }
 
-/* Leaderboard */
-.leaderboard { padding-top: 8px; }
-.leaderboard-title { font-size: 20px; font-weight: 700; margin-bottom: 16px; }
-.leaderboard-card { display: flex; align-items: center; gap: 12px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-bottom: 10px; }
-.leaderboard-card.leader { border-color: var(--cyan); background: linear-gradient(135deg, var(--card), rgba(34, 211, 238, 0.1)); }
-.lb-rank { font-size: 18px; font-weight: 700; color: var(--text2); width: 24px; text-align: center; }
-.leaderboard-card.leader .lb-rank { color: var(--cyan); }
-.lb-avatar { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; color: white; }
-.lb-info { flex: 1; }
+/* Standings Page */
+.standings-page { padding-top: 4px; }
+
+/* Quick Stats Bar */
+.quick-stats-bar { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 16px; scrollbar-width: none; }
+.quick-stats-bar::-webkit-scrollbar { display: none; }
+.quick-stat-chip { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; min-width: 120px; text-align: center; flex-shrink: 0; }
+.quick-stat-icon { font-size: 18px; display: block; margin-bottom: 4px; }
+.quick-stat-value { font-size: 16px; font-weight: 700; color: var(--cyan); white-space: nowrap; }
+.quick-stat-label { font-size: 10px; color: var(--text2); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; }
+
+/* Player Cards */
+.standings-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-bottom: 10px; cursor: pointer; transition: border-color 0.2s; }
+.standings-card:hover { border-color: rgba(148, 163, 184, 0.4); }
+.standings-card.leader { border-color: var(--cyan); background: linear-gradient(135deg, var(--card), rgba(34, 211, 238, 0.08)); }
+.standings-main-row { display: flex; align-items: center; gap: 10px; }
+.rank-badge { font-size: 18px; font-weight: 700; color: var(--text2); width: 28px; text-align: center; flex-shrink: 0; }
+.rank-badge.gold { font-size: 22px; }
+.rank-badge.silver { font-size: 20px; }
+.rank-badge.bronze { font-size: 20px; }
+.lb-avatar { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; color: white; flex-shrink: 0; }
+.standings-info { flex: 1; min-width: 0; }
 .lb-name { font-size: 16px; font-weight: 600; }
-.lb-teams { font-size: 12px; color: var(--text2); }
-.lb-stats { text-align: right; }
+.standings-record { font-size: 11px; color: var(--text2); }
+.standings-points-col { text-align: right; min-width: 60px; }
 .lb-points { font-size: 22px; font-weight: 700; color: var(--cyan); }
-.lb-max { font-size: 11px; color: var(--text2); }
+.points-progress { height: 4px; background: var(--border); border-radius: 2px; margin-top: 4px; overflow: hidden; }
+.points-progress-fill { height: 100%; border-radius: 2px; transition: width 0.3s; }
+.expand-arrow { color: var(--text2); font-size: 10px; margin-left: 4px; flex-shrink: 0; }
+
+/* Team Health Bar */
+.team-health-bar { display: flex; height: 4px; border-radius: 2px; overflow: hidden; margin: 10px 0 6px; }
+.health-alive { background: #22c55e; transition: width 0.3s; }
+.health-eliminated { background: #ef4444; transition: width 0.3s; }
+
+/* Recent Results & Sub Row */
+.standings-sub-row { display: flex; justify-content: space-between; align-items: center; }
+.standings-alive-label { font-size: 11px; color: var(--text2); }
+.recent-dots { display: flex; gap: 4px; }
+.recent-dot { width: 8px; height: 8px; border-radius: 50%; }
+.recent-dot.win { background: #22c55e; }
+.recent-dot.loss { background: #ef4444; }
+.recent-dot.pending { background: var(--border); }
+
+/* Expandable Team Portfolio */
+.team-portfolio { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
+.team-portfolio.open { max-height: 1200px; }
+.portfolio-header-row { display: grid; grid-template-columns: 1fr 40px 40px 60px; gap: 8px; padding: 10px 0 6px; font-size: 10px; color: var(--text2); text-transform: uppercase; border-top: 1px solid var(--border); margin-top: 8px; }
+.portfolio-team-row { display: grid; grid-template-columns: 1fr 40px 40px 60px; gap: 8px; align-items: center; padding: 6px 0; font-size: 13px; }
+.portfolio-team-row.eliminated { opacity: 0.5; }
+.portfolio-team-name { display: flex; align-items: center; gap: 6px; min-width: 0; overflow: hidden; }
+.portfolio-team-logo { width: 18px; height: 18px; flex-shrink: 0; }
+.portfolio-team-name span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.portfolio-team-seed { font-size: 11px; color: var(--text2); text-align: center; }
+.portfolio-team-pts { font-size: 13px; font-weight: 600; color: var(--cyan); text-align: center; }
+.portfolio-team-status { font-size: 10px; font-weight: 600; text-align: center; padding: 2px 6px; border-radius: 4px; }
+.portfolio-team-status.alive { color: #22c55e; background: rgba(34, 197, 94, 0.1); }
+.portfolio-team-status.elim { color: #ef4444; background: rgba(239, 68, 68, 0.1); }
+
+/* Momentum Section */
+.standings-section { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-bottom: 10px; }
+.momentum-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
+.momentum-name { flex: 1; font-size: 14px; }
+.momentum-arrow { font-size: 12px; font-weight: 600; }
+.momentum-arrow.up { color: #22c55e; }
+.momentum-arrow.down { color: #ef4444; }
+.momentum-arrow.neutral { color: var(--text2); }
 
 .scoring-box { background: var(--card); border-radius: 12px; padding: 16px; margin-top: 20px; }
 .scoring-title { font-size: 14px; font-weight: 600; margin-bottom: 12px; }

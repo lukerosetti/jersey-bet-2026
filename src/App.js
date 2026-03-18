@@ -566,19 +566,186 @@ function calculateBadges(liveGames, playInWinners) {
   return playerBadges;
 }
 
+function buildEnhancedStandings(liveGames, playInWinners) {
+  const standings = calculateStandings(liveGames, playInWinners);
+  const allFinalGames = [];
+  const teamSeeds = {};
+
+  Object.values(staticRegions).forEach(region => {
+    region.games.forEach(sg => {
+      const game = mergeWithLiveData(sg, liveGames, playInWinners);
+      teamSeeds[game.t1] = game.s1;
+      teamSeeds[game.t2] = game.s2;
+      if (game.status === 'final') allFinalGames.push(game);
+    });
+  });
+
+  // Quick stats
+  const totalGames = allFinalGames.length;
+  let totalUpsets = 0, biggestUpset = null, closestGame = null;
+  allFinalGames.forEach(g => {
+    const winnerSeed = g.sc1 > g.sc2 ? g.s1 : g.s2;
+    const loserSeed = g.sc1 > g.sc2 ? g.s2 : g.s1;
+    const margin = Math.abs(g.sc1 - g.sc2);
+    if (winnerSeed > loserSeed && (winnerSeed - loserSeed) >= 5) {
+      totalUpsets++;
+      if (!biggestUpset || (winnerSeed - loserSeed) > (biggestUpset.seedDiff)) {
+        biggestUpset = { winner: g.sc1 > g.sc2 ? g.t1 : g.t2, loser: g.sc1 > g.sc2 ? g.t2 : g.t1, winnerSeed, loserSeed, seedDiff: winnerSeed - loserSeed };
+      }
+    }
+    if (!closestGame || margin < closestGame.margin) {
+      closestGame = { t1: g.t1, t2: g.t2, sc1: g.sc1, sc2: g.sc2, margin };
+    }
+  });
+
+  const enhanced = standings.map(player => {
+    const teamPoints = {};
+    const roundPoints = {};
+    let wins = 0, losses = 0;
+    const recentResults = [];
+
+    player.teams.forEach(t => { teamPoints[t] = 0; });
+
+    allFinalGames.forEach(g => {
+      const winner = g.sc1 > g.sc2 ? g.t1 : g.t2;
+      const loser = g.sc1 > g.sc2 ? g.t2 : g.t1;
+      const winnerSeed = g.sc1 > g.sc2 ? g.s1 : g.s2;
+      const margin = Math.abs(g.sc1 - g.sc2);
+      const round = g.round || 1;
+
+      if (player.teams.includes(winner)) {
+        const pts = (scoringSystem.rounds[round] || 1) * scoringSystem.getSeedMultiplier(winnerSeed);
+        teamPoints[winner] = (teamPoints[winner] || 0) + pts;
+        roundPoints[round] = (roundPoints[round] || 0) + pts;
+        wins++;
+        recentResults.push({ team: winner, won: true, opponent: loser, margin, round });
+      }
+      if (player.teams.includes(loser)) {
+        losses++;
+        recentResults.push({ team: loser, won: false, opponent: winner, margin, round });
+      }
+    });
+
+    // Upset count for this player
+    let upsetCount = 0;
+    allFinalGames.forEach(g => {
+      const winner = g.sc1 > g.sc2 ? g.t1 : g.t2;
+      const winnerSeed = g.sc1 > g.sc2 ? g.s1 : g.s2;
+      const loserSeed = g.sc1 > g.sc2 ? g.s2 : g.s1;
+      if (player.teams.includes(winner) && winnerSeed > loserSeed && (winnerSeed - loserSeed) >= 5) upsetCount++;
+    });
+
+    // Build team details
+    const teamDetails = player.teams.map(team => {
+      const elim = player.eliminatedTeams?.find(e => e.team === team);
+      return {
+        name: team, seed: teamSeeds[team] || '?', points: Math.round((teamPoints[team] || 0) * 100) / 100,
+        alive: !elim, eliminatedRound: elim ? (scoringSystem.roundNames[elim.round] || 'R64') : null, killedBy: elim?.killedBy || null
+      };
+    }).sort((a, b) => {
+      if (a.alive && !b.alive) return -1;
+      if (!a.alive && b.alive) return 1;
+      if (a.alive) return (a.seed || 99) - (b.seed || 99);
+      return 0;
+    });
+
+    const recent5 = recentResults.slice(-5);
+    const recentWins = recent5.filter(r => r.won).length;
+    const recentLosses = recent5.filter(r => !r.won).length;
+    const momentum = recent5.length === 0 ? 'neutral' : recentWins > recentLosses ? 'up' : recentWins < recentLosses ? 'down' : 'neutral';
+
+    return { ...player, teamPoints, roundPoints, wins, losses, recentResults: recent5, upsetCount, teamDetails, momentum };
+  });
+
+  return { standings: enhanced, quickStats: { totalGames, totalUpsets, biggestUpset, closestGame } };
+}
+
 function Leaderboard({ liveGames, playInWinners, customizations }) {
-  const leaderboardData = calculateStandings(liveGames, playInWinners);
+  const [expandedPlayer, setExpandedPlayer] = useState(null);
+  const { standings, quickStats } = buildEnhancedStandings(liveGames, playInWinners);
+  const rankEmoji = ['', '\uD83C\uDFC6', '\uD83E\uDD48', '\uD83E\uDD49'];
+
   return (
-    <div className="leaderboard">
-      <h2 className="leaderboard-title">Standings</h2>
-      {leaderboardData.map((player, index) => (
-        <div key={player.id} className={`leaderboard-card ${index === 0 ? 'leader' : ''}`}>
-          <div className="lb-rank">{index + 1}</div>
-          <div className="lb-avatar" style={{ background: getCustomColor(player, customizations) }}>{getCustomInitials(player, customizations)}</div>
-          <div className="lb-info"><div className="lb-name">{player.name}</div><div className="lb-teams">{player.teamsAlive} teams alive</div></div>
-          <div className="lb-stats"><div className="lb-points">{player.points}</div><div className="lb-max">Max: {player.maxPossible}</div></div>
+    <div className="standings-page">
+      <div className="page-title"><h2>Standings</h2><p>{quickStats.totalGames} games completed</p></div>
+
+      {/* Quick Stats Bar */}
+      <div className="quick-stats-bar">
+        <div className="quick-stat-chip"><span className="quick-stat-icon">{'\uD83D\uDD25'}</span><div className="quick-stat-value">{quickStats.totalUpsets}</div><div className="quick-stat-label">Upsets</div></div>
+        <div className="quick-stat-chip"><span className="quick-stat-icon">{'\uD83D\uDCA5'}</span><div className="quick-stat-value">{quickStats.biggestUpset ? `#${quickStats.biggestUpset.winnerSeed} > #${quickStats.biggestUpset.loserSeed}` : '--'}</div><div className="quick-stat-label">{quickStats.biggestUpset ? quickStats.biggestUpset.winner : 'Biggest Upset'}</div></div>
+        <div className="quick-stat-chip"><span className="quick-stat-icon">{'\u26A1'}</span><div className="quick-stat-value">{quickStats.closestGame ? `${quickStats.closestGame.sc1}-${quickStats.closestGame.sc2}` : '--'}</div><div className="quick-stat-label">{quickStats.closestGame ? `${quickStats.closestGame.t1} vs ${quickStats.closestGame.t2}` : 'Closest Game'}</div></div>
+      </div>
+
+      {/* Player Cards */}
+      {standings.map((player, index) => {
+        const isExpanded = expandedPlayer === player.id;
+        const progressPct = player.maxPossible > 0 ? Math.min((player.points / (player.points + player.maxPossible)) * 100, 100) : 0;
+        const alivePct = (player.teamsAlive / player.teams.length) * 100;
+        return (
+          <div key={player.id} className={`standings-card ${index === 0 ? 'leader' : ''} ${isExpanded ? 'expanded' : ''}`} onClick={() => setExpandedPlayer(isExpanded ? null : player.id)}>
+            <div className="standings-main-row">
+              <div className={`rank-badge ${index < 3 ? ['gold','silver','bronze'][index] : ''}`}>{index < 3 ? rankEmoji[index + 1] : index + 1}</div>
+              <div className="lb-avatar" style={{ background: getCustomColor(player, customizations) }}>{getCustomInitials(player, customizations)}</div>
+              <div className="standings-info">
+                <div className="lb-name">{player.name}</div>
+                <div className="standings-record">{player.wins}W - {player.losses}L{player.upsetCount > 0 ? ` · ${player.upsetCount} upsets` : ''}</div>
+              </div>
+              <div className="standings-points-col">
+                <div className="lb-points">{player.points}</div>
+                <div className="points-progress"><div className="points-progress-fill" style={{ width: `${progressPct}%`, background: getCustomColor(player, customizations) }}></div></div>
+              </div>
+              <div className="expand-arrow">{isExpanded ? '\u25B2' : '\u25BC'}</div>
+            </div>
+            <div className="team-health-bar">
+              <div className="health-alive" style={{ width: `${alivePct}%` }}></div>
+              <div className="health-eliminated" style={{ width: `${100 - alivePct}%` }}></div>
+            </div>
+            <div className="standings-sub-row">
+              <div className="standings-alive-label">{player.teamsAlive} alive · {player.teamsEliminated} eliminated</div>
+              <div className="recent-dots">
+                {player.recentResults.map((r, i) => (
+                  <div key={i} className={`recent-dot ${r.won ? 'win' : 'loss'}`} title={`${r.team} ${r.won ? 'W' : 'L'} vs ${r.opponent} (${r.margin}pt)`}></div>
+                ))}
+                {Array.from({ length: Math.max(0, 5 - player.recentResults.length) }).map((_, i) => (
+                  <div key={`p${i}`} className="recent-dot pending"></div>
+                ))}
+              </div>
+            </div>
+
+            {/* Expandable Team Portfolio */}
+            <div className={`team-portfolio ${isExpanded ? 'open' : ''}`} onClick={e => e.stopPropagation()}>
+              <div className="portfolio-header-row"><span>Team</span><span>Seed</span><span>Pts</span><span>Status</span></div>
+              {player.teamDetails.map((team, ti) => (
+                <div key={ti} className={`portfolio-team-row ${team.alive ? '' : 'eliminated'}`}>
+                  <div className="portfolio-team-name">
+                    {getTeamLogo(team.name) && <img src={getTeamLogo(team.name)} alt="" className="portfolio-team-logo" />}
+                    <span>{team.name}</span>
+                  </div>
+                  <span className="portfolio-team-seed">#{team.seed}</span>
+                  <span className="portfolio-team-pts">{team.points}</span>
+                  <span className={`portfolio-team-status ${team.alive ? 'alive' : 'elim'}`}>{team.alive ? 'ALIVE' : team.eliminatedRound}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+
+      {/* Momentum Section */}
+      {quickStats.totalGames > 0 && (
+        <div className="standings-section">
+          <div className="section-title">Momentum</div>
+          {standings.map(p => (
+            <div key={p.id} className="momentum-row">
+              <div className="lb-avatar" style={{ background: getCustomColor(p, customizations), width: 28, height: 28, fontSize: 10 }}>{getCustomInitials(p, customizations)}</div>
+              <span className="momentum-name">{p.name}</span>
+              <span className={`momentum-arrow ${p.momentum}`}>{p.momentum === 'up' ? '\u25B2 Hot' : p.momentum === 'down' ? '\u25BC Cold' : '\u2014 Even'}</span>
+            </div>
+          ))}
         </div>
-      ))}
+      )}
+
+      {/* Scoring Reference */}
       <div className="scoring-box">
         <h3 className="scoring-title">Scoring System</h3>
         <div className="scoring-grid">
