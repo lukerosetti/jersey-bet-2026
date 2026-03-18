@@ -506,6 +506,8 @@ function calculateStandings(liveGames, playInWinners) {
     }
   });
 
+  const resolved = buildResolvedGames(liveGames, playInWinners);
+
   return owners.map(owner => {
     let points = 0;
     let teamsAlive = owner.teams.length;
@@ -527,8 +529,6 @@ function calculateStandings(liveGames, playInWinners) {
         eliminatedTeams.push({ team, seed: piGame?.forSeed || 16, killedBy: winner, score: `${loserScore}-${winnerScore}`, round: 0 });
       }
     });
-
-    const resolved = buildResolvedGames(liveGames, playInWinners);
     // Check all games including later rounds and Final Four (resolved already contains FF games)
     Object.values(resolved).forEach(game => {
         if (game && game.status === 'final') {
