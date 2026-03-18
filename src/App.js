@@ -441,12 +441,40 @@ function BracketView({ onGameClick, liveGames, playInWinners, customizations }) 
 
 // Calculate owner standings
 function calculateStandings(liveGames, playInWinners) {
+  // Determine play-in losers from live game data
+  const playInLosers = new Set();
+  playInGames.forEach(pi => {
+    const gameKey = [pi.t1, pi.t2].sort().join('_');
+    const liveData = liveGames[gameKey];
+    if (liveData && liveData.status === 'final') {
+      const winner = liveData.score1 > liveData.score2 ? liveData.team1 : liveData.team2;
+      const loser = liveData.score1 > liveData.score2 ? liveData.team2 : liveData.team1;
+      playInLosers.add(loser);
+    }
+  });
+
   return owners.map(owner => {
     let points = 0;
     let teamsAlive = owner.teams.length;
     let teamsEliminated = 0;
     const eliminatedTeams = [];
-    
+
+    // Check play-in eliminations
+    owner.teams.forEach(team => {
+      if (playInLosers.has(team)) {
+        teamsAlive--;
+        teamsEliminated++;
+        // Find the play-in game to get details
+        const piGame = playInGames.find(pi => pi.t1 === team || pi.t2 === team);
+        const gameKey = piGame ? [piGame.t1, piGame.t2].sort().join('_') : null;
+        const liveData = gameKey ? liveGames[gameKey] : null;
+        const winner = liveData ? (liveData.score1 > liveData.score2 ? liveData.team1 : liveData.team2) : 'TBD';
+        const winnerScore = liveData ? Math.max(liveData.score1, liveData.score2) : 0;
+        const loserScore = liveData ? Math.min(liveData.score1, liveData.score2) : 0;
+        eliminatedTeams.push({ team, seed: piGame?.forSeed || 16, killedBy: winner, score: `${loserScore}-${winnerScore}`, round: 0 });
+      }
+    });
+
     Object.values(staticRegions).forEach(region => {
       region.games.forEach(staticGame => {
         const game = mergeWithLiveData(staticGame, liveGames, playInWinners);
@@ -456,14 +484,14 @@ function calculateStandings(liveGames, playInWinners) {
           const loserSeed = game.sc1 > game.sc2 ? game.s2 : game.s1;
           const winnerScore = Math.max(game.sc1, game.sc2);
           const loserScore = Math.min(game.sc1, game.sc2);
-          
+
           if (owner.teams.includes(winner)) {
             const winnerSeed = game.sc1 > game.sc2 ? game.s1 : game.s2;
             const roundPoints = scoringSystem.rounds[game.round || 1] || 1;
             const multiplier = scoringSystem.getSeedMultiplier(winnerSeed);
             points += roundPoints * multiplier;
           }
-          if (owner.teams.includes(loser)) {
+          if (owner.teams.includes(loser) && !playInLosers.has(loser)) {
             teamsAlive--;
             teamsEliminated++;
             eliminatedTeams.push({ team: loser, seed: loserSeed, killedBy: winner, score: `${loserScore}-${winnerScore}`, round: game.round || 1 });

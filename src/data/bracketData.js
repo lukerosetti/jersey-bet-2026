@@ -136,7 +136,7 @@ export const getStreaming = (network) => networkStreaming[network] || [];
 // SCORING SYSTEM
 export const scoringSystem = {
   rounds: { 1: 1, 2: 2, 3: 2, 4: 2, 5: 2, 6: 3 },
-  roundNames: { 1: 'R64', 2: 'R32', 3: 'S16', 4: 'E8', 5: 'F4', 6: 'Champ' },
+  roundNames: { 0: 'Play-In', 1: 'R64', 2: 'R32', 3: 'S16', 4: 'E8', 5: 'F4', 6: 'Champ' },
   getSeedMultiplier: (seed) => {
     if (seed >= 14) return 2.0;
     if (seed >= 9) return 1.75;
