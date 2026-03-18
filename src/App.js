@@ -551,7 +551,33 @@ function calculateStandings(liveGames, playInWinners) {
           }
         }
     });
-    return { ...owner, points: Math.round(points * 100) / 100, teamsAlive, teamsEliminated, eliminatedTeams, maxPossible: Math.round((teamsAlive * 12) * 10) / 10 };
+    // Calculate actual maxPossible per alive team based on seed and furthest round reached
+    let maxPossible = points;
+    owner.teams.forEach(team => {
+      const isEliminated = eliminatedTeams.some(e => e.team === team) || playInLosers.has(team);
+      if (isEliminated) return;
+      // Find what round this team has reached (highest round where they won)
+      let currentRound = 0;
+      Object.values(resolved).forEach(g => {
+        if (g.status === 'final' && g.sc1 != null && g.sc1 !== g.sc2) {
+          const winner = g.sc1 > g.sc2 ? g.t1 : g.t2;
+          if (winner === team) currentRound = Math.max(currentRound, g.round || 1);
+        }
+      });
+      // Find this team's seed from any game they appear in
+      let seed = null;
+      Object.values(resolved).forEach(g => {
+        if (g.t1 === team && g.s1) seed = g.s1;
+        if (g.t2 === team && g.s2) seed = g.s2;
+      });
+      const multiplier = scoringSystem.getSeedMultiplier(seed);
+      // Add remaining round points this team could earn
+      for (let r = currentRound + 1; r <= 6; r++) {
+        maxPossible += (scoringSystem.rounds[r] || 1) * multiplier;
+      }
+    });
+    maxPossible = Math.round(maxPossible * 100) / 100;
+    return { ...owner, points: Math.round(points * 100) / 100, teamsAlive, teamsEliminated, eliminatedTeams, maxPossible };
   }).sort((a, b) => b.points - a.points || b.teamsAlive - a.teamsAlive);
 }
 

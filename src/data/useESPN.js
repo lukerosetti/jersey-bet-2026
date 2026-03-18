@@ -90,14 +90,21 @@ export const normalizeTeamName = (espnName) => {
   if (teamNameMap[espnName]) return teamNameMap[espnName];
   
   const lowerName = espnName.toLowerCase();
-  for (const [espn, local] of Object.entries(teamNameMap)) {
-    if (lowerName.includes(local.toLowerCase())) return local;
-  }
-  
+
+  // Special cases first (substring-overlapping names)
   if (lowerName.includes('prairie view')) return 'Prairie View AM';
   if (lowerName.includes('nc state') || lowerName.includes('north carolina state')) return 'NC State';
   if (lowerName.includes('umbc')) return 'UMBC';
   if (lowerName.includes('miami') && lowerName.includes('oh')) return 'Miami OH';
+  if (lowerName.includes('iowa state') || lowerName.includes('iowa st')) return 'Iowa State';
+  if (lowerName.includes('michigan state') || lowerName.includes('michigan st')) return 'Michigan St';
+  if (lowerName.includes('north dakota')) return 'North Dakota St';
+
+  // Fuzzy fallback: sort by longest local name first to prevent substring false matches
+  const sortedEntries = Object.entries(teamNameMap).sort((a, b) => b[1].length - a[1].length);
+  for (const [espn, local] of sortedEntries) {
+    if (lowerName.includes(local.toLowerCase())) return local;
+  }
   
   return espnName.replace(/\s+(Wildcats|Bulldogs|Tigers|Bears|Eagles|Hawks|Cardinals|Blue Devils|Tar Heels|Jayhawks|Hoosiers|Spartans|Wolverines|Buckeyes|Boilermakers|Fighting Illini|Hawkeyes|Badgers|Gophers|Cornhuskers|Cyclones|Cowboys|Red Raiders|Longhorns|Aggies|Razorbacks|Volunteers|Crimson Tide|Commodores|Rebels|Gamecocks|Cavaliers|Hokies|Demon Deacons|Wolfpack|Orange|Panthers|Hurricanes|Seminoles|Yellow Jackets|Rams|Owls|Gaels|Dons|Broncos|Toreros|Waves|Lions|Zags|Retrievers|RedHawks|Mountain Hawks|Bison|Huskies)$/i, '').trim();
 };
