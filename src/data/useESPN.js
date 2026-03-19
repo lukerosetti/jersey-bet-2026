@@ -280,30 +280,38 @@ export async function fetchGameDetails(gameId) {
     const formattedPlayers = {};
     players.forEach(teamPlayers => {
       const teamName = normalizeTeamName(teamPlayers.team?.displayName || '');
-      formattedPlayers[teamName] = teamPlayers.statistics?.[0]?.athletes?.map(athlete => ({
-        id: athlete.athlete?.id,
-        name: athlete.athlete?.shortName || athlete.athlete?.displayName,
-        position: athlete.athlete?.position?.abbreviation || '',
-        jersey: athlete.athlete?.jersey || '',
-        stats: {
-          minutes: athlete.stats?.[0] || '0',
-          fgm: athlete.stats?.[1] || '0',
-          fga: athlete.stats?.[2] || '0',
-          fg3m: athlete.stats?.[3] || '0',
-          fg3a: athlete.stats?.[4] || '0',
-          ftm: athlete.stats?.[5] || '0',
-          fta: athlete.stats?.[6] || '0',
-          oreb: athlete.stats?.[7] || '0',
-          dreb: athlete.stats?.[8] || '0',
-          reb: athlete.stats?.[9] || '0',
-          ast: athlete.stats?.[10] || '0',
-          stl: athlete.stats?.[11] || '0',
-          blk: athlete.stats?.[12] || '0',
-          to: athlete.stats?.[13] || '0',
-          pf: athlete.stats?.[14] || '0',
-          pts: athlete.stats?.[15] || '0'
-        }
-      })) || [];
+      // ESPN stat labels order: MIN, PTS, FG, 3PT, FT, REB, AST, TO, STL, BLK, OREB, DREB, PF
+      // Build a label-to-index map from the actual API response for resilience
+      const labels = teamPlayers.statistics?.[0]?.labels || [];
+      const labelMap = {};
+      labels.forEach((label, idx) => { labelMap[label] = idx; });
+
+      formattedPlayers[teamName] = teamPlayers.statistics?.[0]?.athletes?.map(athlete => {
+        const s = athlete.stats || [];
+        // Use label map if available, otherwise use known ESPN default order
+        const getVal = (label, fallbackIdx) => s[labelMap[label] ?? fallbackIdx] || '0';
+        return {
+          id: athlete.athlete?.id,
+          name: athlete.athlete?.shortName || athlete.athlete?.displayName,
+          position: athlete.athlete?.position?.abbreviation || '',
+          jersey: athlete.athlete?.jersey || '',
+          stats: {
+            minutes: getVal('MIN', 0),
+            pts: getVal('PTS', 1),
+            fg: getVal('FG', 2),
+            threePoint: getVal('3PT', 3),
+            ft: getVal('FT', 4),
+            reb: getVal('REB', 5),
+            ast: getVal('AST', 6),
+            to: getVal('TO', 7),
+            stl: getVal('STL', 8),
+            blk: getVal('BLK', 9),
+            oreb: getVal('OREB', 10),
+            dreb: getVal('DREB', 11),
+            pf: getVal('PF', 12)
+          }
+        };
+      }) || [];
     });
     
     // Format team stats
