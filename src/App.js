@@ -325,10 +325,81 @@ function GameModal({ game, onClose, customizations, liveGames }) {
             <button className={`stats-tab ${activeTab === 'boxscore' ? 'active' : ''}`} onClick={() => setActiveTab('boxscore')}>{isUpcoming ? 'Season Stats' : 'Box Score'}</button>
             <button className={`stats-tab ${activeTab === 'teamstats' ? 'active' : ''}`} onClick={() => setActiveTab('teamstats')}>Team Stats</button>
             <button className={`stats-tab ${activeTab === 'playbyplay' ? 'active' : ''}`} onClick={() => setActiveTab('playbyplay')}>Play-by-Play</button>
+            {(currentIsLive || currentIsFinal) && <button className={`stats-tab ${activeTab === 'winprob' ? 'active' : ''}`} onClick={() => setActiveTab('winprob')}>Win Prob</button>}
           </div>
           {activeTab === 'boxscore' && renderBoxScore()}
           {activeTab === 'teamstats' && renderTeamStats()}
           {activeTab === 'playbyplay' && renderPlayByPlay()}
+          {activeTab === 'winprob' && (() => {
+            if (loading || !gameDetails) return <div className="stats-loading">Loading win probability...</div>;
+            const wp = gameDetails.winProbability || [];
+            if (wp.length === 0) return <div className="stats-empty">Win probability data not yet available</div>;
+
+            // Determine which team is t1/t2 relative to home/away
+            const t1IsHome = gameDetails.homeTeam === game.t1;
+            // Convert homeWinPercentage to t1 win percentage
+            const t1WinProb = wp.map(p => t1IsHome ? p : 1 - p);
+            const currentProb = t1WinProb[t1WinProb.length - 1];
+            const t1Pct = Math.round(currentProb * 100);
+            const t2Pct = 100 - t1Pct;
+
+            // SVG chart dimensions
+            const W = 340, H = 140, PAD = 2;
+            const chartW = W - PAD * 2, chartH = H - PAD * 2;
+            const points = t1WinProb.map((p, i) => {
+              const x = PAD + (i / (t1WinProb.length - 1)) * chartW;
+              const y = PAD + (1 - p) * chartH;
+              return `${x},${y}`;
+            }).join(' ');
+
+            // Build the filled area (above 50% for t1, below for t2)
+            const areaAbove = t1WinProb.map((p, i) => {
+              const x = PAD + (i / (t1WinProb.length - 1)) * chartW;
+              const y = PAD + (1 - Math.max(p, 0.5)) * chartH;
+              return `${x},${y}`;
+            }).join(' ');
+            const areaBelow = t1WinProb.map((p, i) => {
+              const x = PAD + (i / (t1WinProb.length - 1)) * chartW;
+              const y = PAD + (1 - Math.min(p, 0.5)) * chartH;
+              return `${x},${y}`;
+            }).join(' ');
+
+            const midY = PAD + 0.5 * chartH;
+
+            return (
+              <div style={{ padding: '12px 0' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, padding: '0 4px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: getTeamColor(game.t1) }}></div>
+                    <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>{game.t1}</span>
+                    <span style={{ fontWeight: 700, fontSize: '1.1rem', color: t1Pct >= 50 ? 'var(--green)' : 'var(--muted)' }}>{t1Pct}%</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontWeight: 700, fontSize: '1.1rem', color: t2Pct >= 50 ? 'var(--green)' : 'var(--muted)' }}>{t2Pct}%</span>
+                    <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>{game.t2}</span>
+                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: getTeamColor(game.t2) }}></div>
+                  </div>
+                </div>
+                <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 'auto', background: 'var(--card)', borderRadius: 8, border: '1px solid var(--border)' }}>
+                  {/* Filled areas */}
+                  <polygon points={`${PAD},${midY} ${areaAbove} ${PAD + chartW},${midY}`} fill={getTeamColor(game.t1)} opacity="0.15" />
+                  <polygon points={`${PAD},${midY} ${areaBelow} ${PAD + chartW},${midY}`} fill={getTeamColor(game.t2)} opacity="0.15" />
+                  {/* 50% line */}
+                  <line x1={PAD} y1={midY} x2={PAD + chartW} y2={midY} stroke="var(--border)" strokeWidth="1" strokeDasharray="4,4" />
+                  {/* Halftime line */}
+                  <line x1={W / 2} y1={PAD} x2={W / 2} y2={PAD + chartH} stroke="var(--border)" strokeWidth="1" strokeDasharray="2,4" />
+                  <text x={W / 2 + 4} y={PAD + 10} fill="var(--muted)" fontSize="8">HALF</text>
+                  {/* Win probability line */}
+                  <polyline points={points} fill="none" stroke="var(--cyan)" strokeWidth="2" strokeLinejoin="round" />
+                  {/* Current position dot */}
+                  <circle cx={PAD + chartW} cy={PAD + (1 - currentProb) * chartH} r="4" fill="var(--cyan)" />
+                  {/* Team labels */}
+                  <text x={PAD + 4} y={PAD + 10} fill={getTeamColor(game.t1)} fontSize="8" fontWeight="600">{game.t1}</text>
+                  <text x={PAD + 4} y={PAD + chartH - 4} fill={getTeamColor(game.t2)} fontSize="8" fontWeight="600">{game.t2}</text>
+                </svg>
+              </div>
+            );
+          })()}
           {(game.spread || game.total || game.ml) && <div className="bet-box">
             <div className="bet-head">Game Lines</div>
             <div className="bet-grid">

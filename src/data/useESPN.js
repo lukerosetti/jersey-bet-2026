@@ -341,11 +341,28 @@ export async function fetchGameDetails(gameId) {
       scoreHome: play.homeScore,
       scoreAway: play.awayScore
     }));
-    
+
+    // Extract win probability data
+    const winProbability = data.winprobability || [];
+    // Determine home/away teams from header
+    const competitors = data.header?.competitions?.[0]?.competitors || [];
+    const homeTeam = competitors.find(c => c.homeAway === 'home');
+    const awayTeam = competitors.find(c => c.homeAway === 'away');
+    const homeTeamName = normalizeTeamName(homeTeam?.team?.displayName || '');
+    const awayTeamName = normalizeTeamName(awayTeam?.team?.displayName || '');
+
+    // Sample win probability to ~60 points for smooth chart rendering
+    const wpSampled = winProbability.length > 60
+      ? winProbability.filter((_, i) => i % Math.ceil(winProbability.length / 60) === 0 || i === winProbability.length - 1)
+      : winProbability;
+
     return {
       players: formattedPlayers,
       teamStats: formattedTeamStats,
-      plays: formattedPlays
+      plays: formattedPlays,
+      winProbability: wpSampled.map(wp => wp.homeWinPercentage),
+      homeTeam: homeTeamName,
+      awayTeam: awayTeamName
     };
   } catch (err) {
     console.error('Error fetching game details:', err);
