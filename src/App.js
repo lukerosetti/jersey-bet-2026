@@ -129,10 +129,24 @@ function LiveGamesTicker({ resolvedGames, liveGames, playInWinners, onGameClick,
 
 function LiveIndicator({ lastUpdate, isLoading, error }) {
   const formatTime = (date) => date ? date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '--:--';
+  const [countdown, setCountdown] = useState(30);
+
+  useEffect(() => {
+    if (!lastUpdate) return;
+    const tick = () => {
+      const elapsed = Math.floor((Date.now() - lastUpdate.getTime()) / 1000);
+      setCountdown(Math.max(0, 30 - elapsed));
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [lastUpdate]);
+
   return (
     <div className="live-indicator">
       <div className={`indicator-dot ${error ? 'error' : isLoading ? 'loading' : 'active'}`}></div>
       <span>{error ? 'Unable to load scores' : isLoading ? 'Updating...' : `Live scores · Updated ${formatTime(lastUpdate)}`}</span>
+      {!error && !isLoading && lastUpdate && <span className="next-update">· {countdown}s</span>}
     </div>
   );
 }
@@ -606,19 +620,19 @@ function RegionsView({ onGameClick, liveGames, playInWinners, customizations, re
     });
   };
 
-  // Determine latest round for a region that has resolved (non-TBD) games
+  // Determine the current active round: stay on a round until ALL its games are final, then advance
   const getLatestRound = (regionName) => {
     if (regionName === 'finalfour') return 5;
     const games = staticRegions[regionName]?.games || [];
-    for (let round = 4; round >= 1; round--) {
+    for (let round = 1; round <= 4; round++) {
       const roundGames = games.filter(g => g.round === round);
-      const hasResolvedGame = roundGames.some(g => {
+      const allFinal = roundGames.every(g => {
         const merged = resolved[g.id] || mergeWithLiveData(g, liveGames, playInWinners, resolved);
-        return merged.t1 !== 'TBD' && merged.t2 !== 'TBD';
+        return merged.status === 'final';
       });
-      if (hasResolvedGame) return round;
+      if (!allFinal) return round; // This round isn't done yet — show it
     }
-    return 1;
+    return 4; // All rounds complete — show Elite 8
   };
 
   const latestRound = getLatestRound(activeRegion);
@@ -1936,6 +1950,7 @@ function Settings({ currentUser, setCurrentUser, customizations, setCustomizatio
 function TeamSearch({ resolvedMap, customizations, onGameClick, onClose }) {
   const [query, setQuery] = useState('');
   const [expandedTeam, setExpandedTeam] = useState(null);
+  const [ownerFilter, setOwnerFilter] = useState(null);
   const inputRef = useRef(null);
 
   useEffect(() => { if (inputRef.current) inputRef.current.focus(); }, []);
@@ -1948,7 +1963,6 @@ function TeamSearch({ resolvedMap, customizations, onGameClick, onClose }) {
   // Build team database from bracket data
   const allTeams = useMemo(() => {
     const teamMap = {};
-    // Collect all teams from regions
     Object.values(staticRegions).forEach(region => {
       region.games.forEach(g => {
         if (g.t1 && g.t1 !== 'TBD') {
@@ -1959,7 +1973,6 @@ function TeamSearch({ resolvedMap, customizations, onGameClick, onClose }) {
         }
       });
     });
-    // Also add play-in teams
     playInGames.forEach(pi => {
       if (!teamMap[pi.t1]) teamMap[pi.t1] = { name: pi.t1, seed: pi.forSeed, region: pi.forRegion };
       if (!teamMap[pi.t2]) teamMap[pi.t2] = { name: pi.t2, seed: pi.forSeed, region: pi.forRegion };
@@ -1970,25 +1983,50 @@ function TeamSearch({ resolvedMap, customizations, onGameClick, onClose }) {
   // Get standings data for points/status
   const standings = useMemo(() => calculateStandings(null, null, resolvedMap), [resolvedMap]);
 
-  // Filter teams by query
-  const results = useMemo(() => {
-    if (!query.trim()) return allTeams.sort((a, b) => a.seed - b.seed);
-    const q = query.toLowerCase();
-    return allTeams.filter(t => t.name.toLowerCase().includes(q)).sort((a, b) => {
-      const aStarts = a.name.toLowerCase().startsWith(q) ? 0 : 1;
-      const bStarts = b.name.toLowerCase().startsWith(q) ? 0 : 1;
-      return aStarts - bStarts || a.seed - b.seed;
+  // Pre-build a team stats lookup map (O(1) per team instead of O(N*M))
+  const teamStatsMap = useMemo(() => {
+    const map = {};
+    standings.forEach(s => {
+      s.teamData?.forEach(td => { map[td.team] = { ...td, owner: s }; });
     });
-  }, [query, allTeams]);
+    return map;
+  }, [standings]);
 
-  // Get team stats from standings
-  const getTeamStats = (teamName) => {
-    for (const s of standings) {
-      const td = s.teamData?.find(t => t.team === teamName);
-      if (td) return { ...td, owner: s };
+  // Filter teams by query AND owner
+  const results = useMemo(() => {
+    let filtered = allTeams;
+    const q = query.trim().toLowerCase();
+
+    // Check if query matches an owner name
+    const matchedOwner = q ? owners.find(o => o.name.toLowerCase().includes(q)) : null;
+
+    if (q) {
+      // Search by team name OR owner name
+      filtered = allTeams.filter(t => {
+        if (t.name.toLowerCase().includes(q)) return true;
+        const owner = getOwner(t.name);
+        if (owner && owner.name.toLowerCase().includes(q)) return true;
+        return false;
+      });
     }
-    return null;
-  };
+
+    // Apply owner chip filter
+    if (ownerFilter) {
+      filtered = filtered.filter(t => {
+        const owner = getOwner(t.name);
+        return owner && owner.id === ownerFilter;
+      });
+    }
+
+    return filtered.sort((a, b) => {
+      if (q) {
+        const aStarts = a.name.toLowerCase().startsWith(q) ? 0 : 1;
+        const bStarts = b.name.toLowerCase().startsWith(q) ? 0 : 1;
+        if (aStarts !== bStarts) return aStarts - bStarts;
+      }
+      return a.seed - b.seed;
+    });
+  }, [query, allTeams, ownerFilter]);
 
   // Find all games for a team
   const getTeamGames = (teamName) => {
@@ -2008,21 +2046,35 @@ function TeamSearch({ resolvedMap, customizations, onGameClick, onClose }) {
 
   const roundNames = { 0: 'Play-In', 1: 'R64', 2: 'R32', 3: 'S16', 4: 'E8', 5: 'F4', 6: 'NCG' };
 
+  const displayLimit = 12;
+  const totalResults = results.length;
+
   return (
     <div className="search-overlay" onClick={onClose}>
       <div className="search-container" onClick={e => e.stopPropagation()}>
         <div className="search-header">
           <div className="search-input-wrap">
             <span className="search-icon">🔍</span>
-            <input ref={inputRef} className="search-input" type="text" placeholder="Search teams..." value={query} onChange={e => setQuery(e.target.value)} />
+            <input ref={inputRef} className="search-input" type="text" placeholder="Search teams or owners..." value={query} onChange={e => setQuery(e.target.value)} />
             {query && <button className="search-clear" onClick={() => setQuery('')}>×</button>}
           </div>
           <button className="search-close" onClick={onClose}>✕</button>
         </div>
+        <div className="search-owner-chips">
+          {owners.map(o => (
+            <button key={o.id} className={`search-chip ${ownerFilter === o.id ? 'active' : ''}`}
+              style={{ '--chip-color': getCustomColor(o, customizations) }}
+              onClick={() => setOwnerFilter(ownerFilter === o.id ? null : o.id)}>
+              <span className="search-chip-dot" style={{ background: getCustomColor(o, customizations) }}></span>
+              {o.name}
+            </button>
+          ))}
+        </div>
+        {totalResults > 0 && <div className="search-result-count">{totalResults > displayLimit ? `Showing ${displayLimit} of ${totalResults}` : `${totalResults} team${totalResults !== 1 ? 's' : ''}`}</div>}
         <div className="search-results">
-          {results.length === 0 && <div className="search-empty">No teams found</div>}
-          {results.slice(0, 12).map(team => {
-            const stats = getTeamStats(team.name);
+          {results.length === 0 && <div className="search-empty">{query || ownerFilter ? 'No teams found' : 'Search for a team or select an owner'}</div>}
+          {results.slice(0, displayLimit).map(team => {
+            const stats = teamStatsMap[team.name];
             const owner = getOwner(team.name);
             const isExpanded = expandedTeam === team.name;
             const completedGames = getTeamGames(team.name);
@@ -2040,7 +2092,7 @@ function TeamSearch({ resolvedMap, customizations, onGameClick, onClose }) {
                       {owner.name}
                     </span>
                   )}
-                  <span className="search-pts">{stats?.points ? `+${stats.points.toFixed(1)}` : '0.0'}</span>
+                  <span className={`search-pts ${stats?.points > 0 ? 'has-pts' : ''}`}>{stats?.points ? `+${stats.points.toFixed(1)}` : '0.0'}</span>
                   <span className={`search-arrow ${isExpanded ? 'up' : ''}`}>▼</span>
                 </div>
                 {isExpanded && (
@@ -2136,6 +2188,7 @@ function App() {
 
   return (
     <div className="app">
+      <div className="glass-header-bar" />
       <header className="header">
         <div><div className="header-sub">March Madness 2026</div><h1>Jersey Bet</h1></div>
         <div className="header-right">
