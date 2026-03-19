@@ -643,3 +643,50 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 .ticker-card.upcoming::before { background: linear-gradient(90deg, var(--cyan), #67e8f9); animation: none; opacity: 0.5; }
 .ticker-card.upcoming .ticker-status { color: var(--cyan); }
 .ticker-card.upcoming:hover { border-color: var(--cyan); }
+
+/* Team Search */
+.search-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; display: flex; justify-content: center; padding-top: 60px; backdrop-filter: blur(4px); }
+.search-container { width: 100%; max-width: 480px; max-height: calc(100vh - 80px); display: flex; flex-direction: column; margin: 0 16px; }
+.search-header { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.search-input-wrap { flex: 1; display: flex; align-items: center; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 0 14px; gap: 10px; }
+.search-input-wrap:focus-within { border-color: var(--cyan); }
+.search-icon { font-size: 16px; flex-shrink: 0; }
+.search-input { flex: 1; background: transparent; border: none; outline: none; color: var(--text); font-size: 16px; padding: 14px 0; font-family: inherit; }
+.search-input::placeholder { color: var(--text2); }
+.search-clear { background: none; border: none; color: var(--text2); font-size: 20px; cursor: pointer; padding: 0 2px; }
+.search-close { background: var(--card); border: 1px solid var(--border); color: var(--text2); width: 44px; height: 44px; border-radius: 12px; font-size: 16px; cursor: pointer; flex-shrink: 0; transition: all 0.2s; }
+.search-close:hover { border-color: var(--cyan); color: var(--text); }
+.search-results { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; padding-bottom: 20px; }
+.search-empty { text-align: center; color: var(--text2); padding: 24px; font-size: 14px; }
+.search-result { background: var(--card); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; transition: all 0.2s; }
+.search-result.expanded { border-color: rgba(255,255,255,0.15); }
+.search-result-row { display: flex; align-items: center; gap: 8px; padding: 12px 14px; cursor: pointer; transition: background 0.15s; }
+.search-result-row:hover { background: rgba(255,255,255,0.04); }
+.search-status { font-size: 10px; flex-shrink: 0; }
+.search-status.eliminated { opacity: 0.6; }
+.search-seed { font-size: 11px; color: var(--text2); font-weight: 600; flex-shrink: 0; min-width: 24px; }
+.search-team-name { font-weight: 600; font-size: 14px; flex: 1; }
+.search-owner { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text2); flex-shrink: 0; }
+.search-owner-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.search-pts { font-size: 12px; font-weight: 600; color: var(--green); flex-shrink: 0; min-width: 32px; text-align: right; }
+.search-arrow { font-size: 8px; color: var(--text2); transition: transform 0.2s; flex-shrink: 0; }
+.search-arrow.up { transform: rotate(180deg); }
+
+/* Search Detail */
+.search-detail { border-top: 1px solid var(--border); padding: 10px 14px 12px; }
+.search-detail-header { display: flex; gap: 12px; font-size: 11px; color: var(--text2); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+.search-killed { color: var(--red); }
+.search-games { display: flex; flex-direction: column; gap: 4px; }
+.search-game-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; cursor: pointer; transition: background 0.15s; }
+.search-game-row:hover { background: rgba(255,255,255,0.06); }
+.search-game-row.win { border-left: 3px solid var(--green); }
+.search-game-row.loss { border-left: 3px solid var(--red); }
+.search-game-row.upcoming { border-left: 3px solid var(--text2); opacity: 0.7; }
+.search-game-row.live { border-left: 3px solid var(--cyan); }
+.search-game-round { font-size: 10px; font-weight: 700; color: var(--text2); min-width: 32px; text-transform: uppercase; }
+.search-game-teams { flex: 1; display: flex; flex-direction: column; gap: 2px; font-size: 12px; }
+.search-game-teams .bold { font-weight: 700; }
+.search-game-result { font-size: 11px; font-weight: 700; min-width: 28px; text-align: center; }
+.search-game-result.w { color: var(--green); }
+.search-game-result.l { color: var(--red); }
+.search-game-result.upcoming { color: var(--text2); font-weight: 400; font-size: 10px; }

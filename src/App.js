@@ -777,7 +777,7 @@ function calculateStandings(liveGames, playInWinners, resolvedMap) {
   const playInLosers = new Set();
   playInGames.forEach(pi => {
     const gameKey = [pi.t1, pi.t2].sort().join('_');
-    const liveData = liveGames[gameKey];
+    const liveData = liveGames ? liveGames[gameKey] : null;
     if (liveData && liveData.status === 'final') {
       const winner = liveData.score1 > liveData.score2 ? liveData.team1 : liveData.team2;
       const loser = liveData.score1 > liveData.score2 ? liveData.team2 : liveData.team1;
@@ -802,7 +802,7 @@ function calculateStandings(liveGames, playInWinners, resolvedMap) {
         teamsEliminated++;
         const piGame = playInGames.find(pi => pi.t1 === team || pi.t2 === team);
         const gameKey = piGame ? [piGame.t1, piGame.t2].sort().join('_') : null;
-        const liveData = gameKey ? liveGames[gameKey] : null;
+        const liveData = gameKey && liveGames ? liveGames[gameKey] : null;
         const winner = liveData ? (liveData.score1 > liveData.score2 ? liveData.team1 : liveData.team2) : 'TBD';
         const winnerScore = liveData ? Math.max(liveData.score1, liveData.score2) : 0;
         const loserScore = liveData ? Math.min(liveData.score1, liveData.score2) : 0;
@@ -1933,11 +1933,175 @@ function Settings({ currentUser, setCurrentUser, customizations, setCustomizatio
   );
 }
 
+function TeamSearch({ resolvedMap, customizations, onGameClick, onClose }) {
+  const [query, setQuery] = useState('');
+  const [expandedTeam, setExpandedTeam] = useState(null);
+  const inputRef = useRef(null);
+
+  useEffect(() => { if (inputRef.current) inputRef.current.focus(); }, []);
+  useEffect(() => {
+    const handler = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [onClose]);
+
+  // Build team database from bracket data
+  const allTeams = useMemo(() => {
+    const teamMap = {};
+    // Collect all teams from regions
+    Object.values(staticRegions).forEach(region => {
+      region.games.forEach(g => {
+        if (g.t1 && g.t1 !== 'TBD') {
+          if (!teamMap[g.t1]) teamMap[g.t1] = { name: g.t1, seed: g.s1, region: region.name };
+        }
+        if (g.t2 && g.t2 !== 'TBD') {
+          if (!teamMap[g.t2]) teamMap[g.t2] = { name: g.t2, seed: g.s2, region: region.name };
+        }
+      });
+    });
+    // Also add play-in teams
+    playInGames.forEach(pi => {
+      if (!teamMap[pi.t1]) teamMap[pi.t1] = { name: pi.t1, seed: pi.forSeed, region: pi.forRegion };
+      if (!teamMap[pi.t2]) teamMap[pi.t2] = { name: pi.t2, seed: pi.forSeed, region: pi.forRegion };
+    });
+    return Object.values(teamMap);
+  }, []);
+
+  // Get standings data for points/status
+  const standings = useMemo(() => calculateStandings(null, null, resolvedMap), [resolvedMap]);
+
+  // Filter teams by query
+  const results = useMemo(() => {
+    if (!query.trim()) return allTeams.sort((a, b) => a.seed - b.seed);
+    const q = query.toLowerCase();
+    return allTeams.filter(t => t.name.toLowerCase().includes(q)).sort((a, b) => {
+      const aStarts = a.name.toLowerCase().startsWith(q) ? 0 : 1;
+      const bStarts = b.name.toLowerCase().startsWith(q) ? 0 : 1;
+      return aStarts - bStarts || a.seed - b.seed;
+    });
+  }, [query, allTeams]);
+
+  // Get team stats from standings
+  const getTeamStats = (teamName) => {
+    for (const s of standings) {
+      const td = s.teamData?.find(t => t.team === teamName);
+      if (td) return { ...td, owner: s };
+    }
+    return null;
+  };
+
+  // Find all games for a team
+  const getTeamGames = (teamName) => {
+    if (!resolvedMap) return [];
+    return Object.values(resolvedMap)
+      .filter(g => (g.t1 === teamName || g.t2 === teamName) && g.status !== 'upcoming')
+      .sort((a, b) => (a.round || 0) - (b.round || 0));
+  };
+
+  // Find upcoming games for a team
+  const getUpcomingGames = (teamName) => {
+    if (!resolvedMap) return [];
+    return Object.values(resolvedMap)
+      .filter(g => (g.t1 === teamName || g.t2 === teamName) && g.status === 'upcoming' && g.t1 !== 'TBD' && g.t2 !== 'TBD')
+      .sort((a, b) => (a.round || 0) - (b.round || 0));
+  };
+
+  const roundNames = { 0: 'Play-In', 1: 'R64', 2: 'R32', 3: 'S16', 4: 'E8', 5: 'F4', 6: 'NCG' };
+
+  return (
+    <div className="search-overlay" onClick={onClose}>
+      <div className="search-container" onClick={e => e.stopPropagation()}>
+        <div className="search-header">
+          <div className="search-input-wrap">
+            <span className="search-icon">🔍</span>
+            <input ref={inputRef} className="search-input" type="text" placeholder="Search teams..." value={query} onChange={e => setQuery(e.target.value)} />
+            {query && <button className="search-clear" onClick={() => setQuery('')}>×</button>}
+          </div>
+          <button className="search-close" onClick={onClose}>✕</button>
+        </div>
+        <div className="search-results">
+          {results.length === 0 && <div className="search-empty">No teams found</div>}
+          {results.slice(0, 12).map(team => {
+            const stats = getTeamStats(team.name);
+            const owner = getOwner(team.name);
+            const isExpanded = expandedTeam === team.name;
+            const completedGames = getTeamGames(team.name);
+            const upcomingGames = getUpcomingGames(team.name);
+
+            return (
+              <div key={team.name} className={`search-result ${isExpanded ? 'expanded' : ''}`}>
+                <div className="search-result-row" onClick={() => setExpandedTeam(isExpanded ? null : team.name)}>
+                  <span className={`search-status ${stats?.status || 'alive'}`}>{stats?.status === 'eliminated' ? '☠' : '🟢'}</span>
+                  <span className="search-seed">({team.seed})</span>
+                  <span className="search-team-name">{team.name}</span>
+                  {owner && (
+                    <span className="search-owner">
+                      <span className="search-owner-dot" style={{ background: getCustomColor(owner, customizations) }}></span>
+                      {owner.name}
+                    </span>
+                  )}
+                  <span className="search-pts">{stats?.points ? `+${stats.points.toFixed(1)}` : '0.0'}</span>
+                  <span className={`search-arrow ${isExpanded ? 'up' : ''}`}>▼</span>
+                </div>
+                {isExpanded && (
+                  <div className="search-detail">
+                    <div className="search-detail-header">
+                      <span>{team.region} Region</span>
+                      <span>{stats?.wins || 0}W</span>
+                      {stats?.status === 'eliminated' && stats?.killedBy && <span className="search-killed">Lost to {stats.killedBy}</span>}
+                    </div>
+                    {completedGames.length > 0 && (
+                      <div className="search-games">
+                        {completedGames.map((g, i) => {
+                          const won = (g.sc1 > g.sc2 && g.t1 === team.name) || (g.sc2 > g.sc1 && g.t2 === team.name);
+                          const isLive = g.status === 'live' || g.status === 'halftime';
+                          return (
+                            <div key={i} className={`search-game-row ${won ? 'win' : 'loss'} ${isLive ? 'live' : ''}`} onClick={() => { if (onGameClick) onGameClick(g, g.regionKey || team.region); }}>
+                              <span className="search-game-round">{roundNames[g.round] || `R${g.round}`}</span>
+                              <div className="search-game-teams">
+                                <span className={g.t1 === team.name ? 'bold' : ''}>({g.s1}) {g.t1} {g.sc1 != null ? g.sc1 : ''}</span>
+                                <span className={g.t2 === team.name ? 'bold' : ''}>({g.s2}) {g.t2} {g.sc2 != null ? g.sc2 : ''}</span>
+                              </div>
+                              <span className={`search-game-result ${won ? 'w' : 'l'}`}>{isLive ? (g.time || 'LIVE') : (won ? 'W' : 'L')}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                    {upcomingGames.length > 0 && (
+                      <div className="search-games">
+                        {upcomingGames.map((g, i) => (
+                          <div key={`u${i}`} className="search-game-row upcoming" onClick={() => { if (onGameClick) onGameClick(g, g.regionKey || team.region); }}>
+                            <span className="search-game-round">{roundNames[g.round] || `R${g.round}`}</span>
+                            <div className="search-game-teams">
+                              <span className={g.t1 === team.name ? 'bold' : ''}>({g.s1}) {g.t1}</span>
+                              <span className={g.t2 === team.name ? 'bold' : ''}>({g.s2}) {g.t2}</span>
+                            </div>
+                            <span className="search-game-result upcoming">{g.tip || 'TBD'}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {completedGames.length === 0 && upcomingGames.length === 0 && (
+                      <div className="search-empty">No games yet</div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function App() {
   const [currentTab, setCurrentTab] = useState('regions');
   const [currentUser, setCurrentUser] = useState(owners[0]);
   const [selectedGame, setSelectedGame] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
   const [coolStuffSubView, setCoolStuffSubView] = useState(null);
   const [customizations, setCustomizations] = useState(() => {
     try {
@@ -1947,11 +2111,11 @@ function App() {
   const { liveGames, playInWinners, lastUpdate, isLoading, error } = useLiveScores();
 
   useEffect(() => {
-    if (selectedGame || showSettings) {
+    if (selectedGame || showSettings || showSearch) {
       document.body.style.overflow = 'hidden';
       return () => { document.body.style.overflow = ''; };
     }
-  }, [selectedGame, showSettings]);
+  }, [selectedGame, showSettings, showSearch]);
 
   const getUserColor = (user) => customizations[user.id]?.color || user.color;
   const getUserInitials = (user) => customizations[user.id]?.initials || user.initials;
@@ -1975,6 +2139,7 @@ function App() {
       <header className="header">
         <div><div className="header-sub">March Madness 2026</div><h1>Jersey Bet</h1></div>
         <div className="header-right">
+          <button className="settings-btn" onClick={() => setShowSearch(true)}>🔍</button>
           <button className="settings-btn" onClick={() => setShowSettings(true)}>⚙</button>
           <div className="user-avatar" style={{ background: getUserColor(currentUser) }}>{getUserInitials(currentUser)}</div>
         </div>
@@ -1996,6 +2161,7 @@ function App() {
       <div className="legend">{owners.map(owner => (<div key={owner.id} className="legend-item"><div className="legend-dot" style={{ background: getUserColor(owner) }}></div>{owner.name}</div>))}</div>
       {selectedGame && <GameModal game={selectedGame} onClose={() => setSelectedGame(null)} customizations={customizations} liveGames={liveGames} />}
       {showSettings && <div className="modal-bg" onClick={() => setShowSettings(false)}><div className="modal" onClick={e => e.stopPropagation()}><div className="modal-handle"></div><div className="modal-head"><span className="modal-title">Settings</span><button className="modal-close" onClick={() => setShowSettings(false)}>×</button></div><div className="modal-body"><Settings currentUser={currentUser} setCurrentUser={setCurrentUser} customizations={customizations} setCustomizations={setCustomizations} /></div></div></div>}
+      {showSearch && <TeamSearch resolvedMap={resolvedAll} customizations={customizations} onGameClick={(g, r) => { setShowSearch(false); handleGameClick(g, r); }} onClose={() => setShowSearch(false)} />}
     </div>
   );
 }
