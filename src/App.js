@@ -192,6 +192,8 @@ function GameCard({ game, onClick, customizations }) {
   const color2 = getTeamColor(game.t2);
   const team1Winning = (isLive || isFinal) && game.sc1 > game.sc2;
   const team2Winning = (isLive || isFinal) && game.sc2 > game.sc1;
+  const team1Eliminated = isFinal && team2Winning;
+  const team2Eliminated = isFinal && team1Winning;
   const isTBD = game.t1 === 'TBD' || game.t2 === 'TBD';
 
   // Score flash tracking
@@ -217,22 +219,22 @@ function GameCard({ game, onClick, customizations }) {
       </div>
       {game.city && <div className="game-location">{game.city}{game.state ? `, ${game.state}` : ''}</div>}
       <div className="game-teams">
-        <div className="team-row">
+        <div className={`team-row ${team1Eliminated ? 'eliminated' : ''}`}>
           <div className="team-seed">{game.s1}</div>
           <div className="team-color" style={{ background: color1 }}></div>
           {getTeamLogo(game.t1) && <img className="team-logo" src={getTeamLogo(game.t1)} alt="" />}
           <div className="team-info">
-            <div className={`team-name ${team2Winning ? 'loser' : ''}`}>{game.t1}</div>
+            <div className={`team-name ${team1Eliminated ? 'eliminated' : team2Winning ? 'loser' : ''}`}>{game.t1}</div>
             <div className="team-meta">{owner1 && <span className="owner-badge"><span className="owner-dot" style={{ background: getCustomColor(owner1, customizations) }}></span>{owner1.name}</span>}{game.rec1 && <span className="team-record">{game.rec1}</span>}</div>
           </div>
           {(isLive || isFinal) && <span className={`team-score ${team2Winning ? 'loser' : ''} ${flash1 ? 'score-flash' : ''}`}>{game.sc1}</span>}
         </div>
-        <div className="team-row">
+        <div className={`team-row ${team2Eliminated ? 'eliminated' : ''}`}>
           <div className="team-seed">{game.s2}</div>
           <div className="team-color" style={{ background: game.t2 === 'TBD' ? '#444' : color2 }}></div>
           {game.t2 !== 'TBD' && getTeamLogo(game.t2) && <img className="team-logo" src={getTeamLogo(game.t2)} alt="" />}
           <div className="team-info">
-            <div className={`team-name ${team1Winning ? 'loser' : ''} ${game.t2 === 'TBD' ? 'tbd' : ''}`}>{game.t2 === 'TBD' ? 'Play-In Winner' : game.t2}</div>
+            <div className={`team-name ${team2Eliminated ? 'eliminated' : team1Winning ? 'loser' : ''} ${game.t2 === 'TBD' ? 'tbd' : ''}`}>{game.t2 === 'TBD' ? 'Play-In Winner' : game.t2}</div>
             <div className="team-meta">{game.t2 !== 'TBD' && owner2 && <span className="owner-badge"><span className="owner-dot" style={{ background: getCustomColor(owner2, customizations) }}></span>{owner2.name}</span>}{game.rec2 && <span className="team-record">{game.rec2}</span>}</div>
           </div>
           {(isLive || isFinal) && <span className={`team-score ${team1Winning ? 'loser' : ''} ${flash2 ? 'score-flash' : ''}`}>{game.sc2}</span>}

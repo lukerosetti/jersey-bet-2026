@@ -67,6 +67,9 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 .team-info { flex: 1; }
 .team-name { font-size: 15px; font-weight: 600; }
 .team-name.loser { opacity: 0.5; }
+.team-name.eliminated { opacity: 0.4; text-decoration: line-through; text-decoration-color: var(--red); text-decoration-thickness: 1.5px; }
+.team-row.eliminated { opacity: 0.55; }
+.team-row.eliminated .team-logo { filter: grayscale(0.6) opacity(0.7); }
 .team-name.tbd { color: var(--text2); font-style: italic; }
 .team-meta { display: flex; gap: 8px; align-items: center; margin-top: 2px; }
 .owner-badge { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text2); }
