@@ -1131,19 +1131,28 @@ function HeadToHead({ liveGames, playInWinners, customizations }) {
     if (game.status === 'final') allGames.push(game);
   });
 
-  // Find direct matchups
+  const ownerAObj = owners.find(o => o.id === ownerA);
+  const ownerBObj = owners.find(o => o.id === ownerB);
+
+  // Find completed direct matchups
   const directMatchups = allGames.filter(g => {
     const winner = g.sc1 > g.sc2 ? g.t1 : g.t2;
     const loser = g.sc1 > g.sc2 ? g.t2 : g.t1;
-    const ownerAObj = owners.find(o => o.id === ownerA);
-    const ownerBObj = owners.find(o => o.id === ownerB);
     return (ownerAObj.teams.includes(winner) && ownerBObj.teams.includes(loser)) ||
            (ownerBObj.teams.includes(winner) && ownerAObj.teams.includes(loser));
   });
 
+  // Find upcoming/live direct matchups
+  const upcomingMatchups = Object.values(resolved).filter(g => {
+    if (g.t1 === 'TBD' || g.t2 === 'TBD') return false;
+    if (g.status === 'final') return false;
+    return (ownerAObj.teams.includes(g.t1) && ownerBObj.teams.includes(g.t2)) ||
+           (ownerBObj.teams.includes(g.t1) && ownerAObj.teams.includes(g.t2));
+  });
+
   const aWins = directMatchups.filter(g => {
     const winner = g.sc1 > g.sc2 ? g.t1 : g.t2;
-    return owners.find(o => o.id === ownerA).teams.includes(winner);
+    return ownerAObj.teams.includes(winner);
   }).length;
 
   const getTeamStatus = (team, owner) => {
@@ -1223,14 +1232,74 @@ function HeadToHead({ liveGames, playInWinners, customizations }) {
         </div>
       </div>
 
+      {(() => {
+        // Group upcoming matchups by day from tip field
+        const dayOrder = ['Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun', 'Mon'];
+        const byDay = {};
+        upcomingMatchups.forEach(g => {
+          const day = g.tip ? g.tip.split(' ')[0] : 'TBD';
+          if (!byDay[day]) byDay[day] = [];
+          byDay[day].push(g);
+        });
+        const sortedDays = Object.keys(byDay).sort((x, y) => {
+          if (x === 'TBD') return 1;
+          if (y === 'TBD') return -1;
+          return dayOrder.indexOf(x) - dayOrder.indexOf(y);
+        });
+        const todayAbbr = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][new Date().getDay()];
+        const displayDay = sortedDays.includes(todayAbbr) ? todayAbbr : sortedDays[0];
+        const displayGames = displayDay ? (byDay[displayDay] || []) : [];
+        const dayLabel = displayDay === todayAbbr ? "Today's Matchups" : displayDay === 'TBD' ? 'Upcoming Matchups' : `Upcoming - ${displayDay}`;
+
+        if (upcomingMatchups.length === 0) return null;
+
+        return (
+          <div className="h2h-matchups">
+            <div className="h2h-matchups-title">{dayLabel}</div>
+            {displayGames.map((g, i) => {
+              const gIsLive = g.status === 'live' || g.status === 'halftime';
+              const aTeam = ownerAObj.teams.includes(g.t1) ? g.t1 : g.t2;
+              const bTeam = ownerBObj.teams.includes(g.t1) ? g.t1 : g.t2;
+              const aSeed = aTeam === g.t1 ? g.s1 : g.s2;
+              const bSeed = bTeam === g.t1 ? g.s1 : g.s2;
+              const aScore = aTeam === g.t1 ? g.sc1 : g.sc2;
+              const bScore = bTeam === g.t1 ? g.sc1 : g.sc2;
+              return (
+                <div key={i} className="matchup-card">
+                  <div className="matchup-round">
+                    {scoringSystem.roundNames[g.round || 1]}{g.region ? ` - ${g.region.charAt(0).toUpperCase() + g.region.slice(1)}` : ''}
+                    <span style={{ float: 'right', color: 'var(--muted)', fontSize: '0.75rem' }}>
+                      {gIsLive ? <span className="live-badge" style={{ fontSize: '0.65rem', padding: '1px 6px' }}>LIVE</span> : g.tip ? g.tip.split(' ').slice(1).join(' ') : ''}{g.network ? ` · ${g.network}` : ''}
+                    </span>
+                  </div>
+                  <div className="matchup-teams">
+                    <div className="matchup-team">
+                      <span className="owner-dot" style={{ background: getCustomColor(ownerAObj, customizations), width: 8, height: 8, display: 'inline-block', borderRadius: '50%', marginRight: 6 }}></span>
+                      {getTeamLogo(aTeam) && <img src={getTeamLogo(aTeam)} alt="" className="h2h-team-logo" />}
+                      #{aSeed} {aTeam}
+                      {gIsLive && <span className="matchup-score">{aScore}</span>}
+                    </div>
+                    <span className="matchup-vs">vs</span>
+                    <div className="matchup-team">
+                      {gIsLive && <span className="matchup-score">{bScore}</span>}
+                      #{bSeed} {bTeam}
+                      {getTeamLogo(bTeam) && <img src={getTeamLogo(bTeam)} alt="" className="h2h-team-logo" />}
+                      <span className="owner-dot" style={{ background: getCustomColor(ownerBObj, customizations), width: 8, height: 8, display: 'inline-block', borderRadius: '50%', marginLeft: 6 }}></span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+            {sortedDays.length > 1 && <div style={{ color: 'var(--muted)', fontSize: '0.75rem', textAlign: 'center', marginTop: 8 }}>+{upcomingMatchups.length - displayGames.length} more on other days</div>}
+          </div>
+        );
+      })()}
+
       {directMatchups.length > 0 && (
         <div className="h2h-matchups">
-          <div className="h2h-matchups-title">Direct Matchups</div>
+          <div className="h2h-matchups-title">Completed Matchups</div>
           {directMatchups.map((g, i) => {
             const winner = g.sc1 > g.sc2 ? g.t1 : g.t2;
-            const loser = g.sc1 > g.sc2 ? g.t2 : g.t1;
-            const wScore = Math.max(g.sc1, g.sc2);
-            const lScore = Math.min(g.sc1, g.sc2);
             return (
               <div key={i} className="matchup-card">
                 <div className="matchup-round">{scoringSystem.roundNames[g.round || 1]} - {g.region ? `${g.region.charAt(0).toUpperCase() + g.region.slice(1)} Region` : ''}</div>
@@ -1251,7 +1320,7 @@ function HeadToHead({ liveGames, playInWinners, customizations }) {
           <div className="matchup-summary">{a.name} leads {aWins}-{directMatchups.length - aWins} in direct matchups vs {b.name}</div>
         </div>
       )}
-      {directMatchups.length === 0 && (
+      {directMatchups.length === 0 && upcomingMatchups.length === 0 && (
         <div className="h2h-no-matchups">No direct matchups yet between {a.name} and {b.name}'s teams</div>
       )}
     </div>
