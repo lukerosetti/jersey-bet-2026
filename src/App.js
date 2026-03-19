@@ -346,7 +346,7 @@ function GameModal({ game, onClose, customizations, liveGames }) {
     const stats1 = gameDetails.teamStats[game.t1] || {};
     const stats2 = gameDetails.teamStats[game.t2] || {};
     const statRows = [
-      { label: 'Field Goal %', key: 'fgPct' },{ label: '3-Point %', key: 'fg3Pct' },{ label: '3PT Made', key: 'fg3Made' },{ label: 'Free Throw %', key: 'ftPct' },
+      { label: 'Field Goal %', key: 'fgPct' },{ label: '3-Point %', key: 'fg3Pct' },{ label: '3PT', key: 'fg3Made' },{ label: 'Free Throw %', key: 'ftPct' },
       { label: 'Rebounds', key: 'rebounds' },{ label: 'Assists', key: 'assists' },{ label: 'Turnovers', key: 'turnovers', inverse: true },
       { label: 'Steals', key: 'steals' },{ label: 'Blocks', key: 'blocks' }
     ];
