@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { owners, regions as staticRegions, playInGames, finalFourGames, getOwner, getTeamColor, getTeamLogo, getStreaming, scoringSystem, badges } from './data/bracketData';
 import { useLiveScores, mergeWithLiveData, resolveAllGames, fetchGameDetails, fetchTeamRoster } from './data/useESPN';
 
@@ -592,10 +592,10 @@ function GameModal({ game, onClose, customizations, liveGames }) {
   );
 }
 
-function RegionsView({ onGameClick, liveGames, playInWinners, customizations }) {
+function RegionsView({ onGameClick, liveGames, playInWinners, customizations, resolvedMap }) {
   const [activeRegion, setActiveRegion] = useState('east');
   const [selectedRound, setSelectedRound] = useState(null); // null = auto (latest round)
-  const resolved = buildResolvedGames(liveGames, playInWinners);
+  const resolved = resolvedMap || buildResolvedGames(liveGames, playInWinners);
   const regionNames = [...Object.keys(staticRegions), 'finalfour'];
 
   const hasLiveInRegion = (regionName) => {
@@ -698,7 +698,7 @@ function RegionsView({ onGameClick, liveGames, playInWinners, customizations }) 
   );
 }
 
-function BracketView({ onGameClick, liveGames, playInWinners, customizations }) {
+function BracketView({ onGameClick, liveGames, playInWinners, customizations, resolvedMap }) {
   const rounds = [
     { name: 'Round of 64', short: 'R64', round: 1 },
     { name: 'Round of 32', short: 'R32', round: 2 },
@@ -708,7 +708,7 @@ function BracketView({ onGameClick, liveGames, playInWinners, customizations }) 
     { name: 'Championship', short: 'Champ', round: 6 }
   ];
 
-  const resolved = buildResolvedGames(liveGames, playInWinners);
+  const resolved = resolvedMap || buildResolvedGames(liveGames, playInWinners);
   const allGames = [];
   Object.entries(staticRegions).forEach(([regionName, region]) => {
     region.games.forEach(staticGame => {
@@ -772,7 +772,7 @@ function BracketView({ onGameClick, liveGames, playInWinners, customizations }) 
 }
 
 // Calculate owner standings
-function calculateStandings(liveGames, playInWinners) {
+function calculateStandings(liveGames, playInWinners, resolvedMap) {
   // Determine play-in losers from live game data
   const playInLosers = new Set();
   playInGames.forEach(pi => {
@@ -785,7 +785,7 @@ function calculateStandings(liveGames, playInWinners) {
     }
   });
 
-  const resolved = buildResolvedGames(liveGames, playInWinners);
+  const resolved = resolvedMap || buildResolvedGames(liveGames, playInWinners);
 
   return owners.map(owner => {
     let points = 0;
@@ -872,11 +872,11 @@ function calculateStandings(liveGames, playInWinners) {
 }
 
 // Calculate badges dynamically
-function calculateBadges(liveGames, playInWinners) {
+function calculateBadges(liveGames, playInWinners, resolvedMap) {
   const playerBadges = {};
   owners.forEach(o => { playerBadges[o.id] = { glory: [], shame: [] }; });
-  
-  const resolved = buildResolvedGames(liveGames, playInWinners);
+
+  const resolved = resolvedMap || buildResolvedGames(liveGames, playInWinners);
   const completedGames = Object.values(resolved).filter(g => g.status === 'final');
 
   if (completedGames.length === 0) return playerBadges;
@@ -946,12 +946,11 @@ function calculateBadges(liveGames, playInWinners) {
   return playerBadges;
 }
 
-function buildEnhancedStandings(liveGames, playInWinners) {
-  const standings = calculateStandings(liveGames, playInWinners);
+function buildEnhancedStandings(liveGames, playInWinners, resolvedMap) {
+  const resolved = resolvedMap || buildResolvedGames(liveGames, playInWinners);
+  const standings = calculateStandings(liveGames, playInWinners, resolved);
   const allFinalGames = [];
   const teamSeeds = {};
-
-  const resolved = buildResolvedGames(liveGames, playInWinners);
   Object.values(resolved).forEach(game => {
     if (game.s1) teamSeeds[game.t1] = game.s1;
     if (game.s2) teamSeeds[game.t2] = game.s2;
@@ -1038,9 +1037,9 @@ function buildEnhancedStandings(liveGames, playInWinners) {
   return { standings: enhanced, quickStats: { totalGames, totalUpsets, biggestUpset, closestGame } };
 }
 
-function Leaderboard({ liveGames, playInWinners, customizations }) {
+function Leaderboard({ liveGames, playInWinners, customizations, resolvedMap }) {
   const [expandedPlayer, setExpandedPlayer] = useState(null);
-  const { standings, quickStats } = buildEnhancedStandings(liveGames, playInWinners);
+  const { standings, quickStats } = buildEnhancedStandings(liveGames, playInWinners, resolvedMap);
   const rankEmoji = ['', '\uD83C\uDFC6', '\uD83E\uDD48', '\uD83E\uDD49'];
 
   return (
@@ -1137,8 +1136,8 @@ function Leaderboard({ liveGames, playInWinners, customizations }) {
   );
 }
 
-function Achievements({ liveGames, playInWinners, customizations }) {
-  const playerBadges = calculateBadges(liveGames, playInWinners);
+function Achievements({ liveGames, playInWinners, customizations, resolvedMap }) {
+  const playerBadges = calculateBadges(liveGames, playInWinners, resolvedMap);
   const [expanded, setExpanded] = useState({});
   const [selectedBadge, setSelectedBadge] = useState(null);
   const mostShame = owners.reduce((max, o) => (playerBadges[o.id]?.shame?.length || 0) > (playerBadges[max.id]?.shame?.length || 0) ? o : max, owners[0]);
@@ -1204,19 +1203,18 @@ function Achievements({ liveGames, playInWinners, customizations }) {
 }
 
 // Portfolio Component
-function Portfolio({ liveGames, playInWinners, customizations, onGameClick }) {
+function Portfolio({ liveGames, playInWinners, customizations, onGameClick, resolvedMap }) {
   const [history, setHistory] = useState([]);
   const [expandedPlayer, setExpandedPlayer] = useState(null);
-  const standings = calculateStandings(liveGames, playInWinners);
-  
+  const standings = calculateStandings(liveGames, playInWinners, resolvedMap);
+
   useEffect(() => {
     const saved = localStorage.getItem('portfolioHistory');
     if (saved) { try { setHistory(JSON.parse(saved)); } catch (e) { console.error('Error loading portfolio history:', e); } }
   }, []);
-  
+
   useEffect(() => {
-    const resolvedMap = buildResolvedGames(liveGames, playInWinners);
-    const totalGames = Object.values(resolvedMap).filter(g => g.status === 'final').length;
+    const totalGames = resolvedMap ? Object.values(resolvedMap).filter(g => g.status === 'final').length : 0;
     if (totalGames > 0) {
       const currentSnapshot = { timestamp: Date.now(), games: totalGames, standings: standings.map(s => ({ id: s.id, points: s.points, teamsAlive: s.teamsAlive })) };
       const lastEntry = history[history.length - 1];
@@ -1235,15 +1233,15 @@ function Portfolio({ liveGames, playInWinners, customizations, onGameClick }) {
     return Math.round(((owner.points - prev.points) / Math.max(prev.points, 1)) * 100);
   };
   
-  const resolvedMap = buildResolvedGames(liveGames, playInWinners);
+  const resolved = resolvedMap || buildResolvedGames(liveGames, playInWinners);
 
   const findGameForTeam = (teamName) => {
-    return Object.values(resolvedMap).find(g => g.status === 'final' && (g.t1 === teamName || g.t2 === teamName));
+    return Object.values(resolved).find(g => g.status === 'final' && (g.t1 === teamName || g.t2 === teamName));
   };
 
   const getHotTeams = () => {
     const recentWins = [];
-    Object.values(resolvedMap).forEach(game => {
+    Object.values(resolved).forEach(game => {
       if (game.status === 'final') {
         const winner = game.sc1 > game.sc2 ? game.t1 : game.t2;
         const winnerSeed = game.sc1 > game.sc2 ? game.s1 : game.s2;
@@ -1306,7 +1304,7 @@ function Portfolio({ liveGames, playInWinners, customizations, onGameClick }) {
         </div>
         <div className="portfolio-section">
           <div className="section-title">Recent Eliminations</div>
-          {standings.flatMap(s => s.eliminatedTeams.map(t => ({ ...t, owner: s }))).slice(0, 4).map((item, idx) => (<div key={idx} className="elim-row" onClick={() => { const game = findGameForTeam(item.team); if (game && onGameClick) onGameClick(game, game.region); }}><span className="elim-icon">☠</span><span className="elim-name">{item.team}</span><span className="elim-owner" style={{ background: getCustomColor(item.owner, customizations) }}></span><span className="elim-round">R{item.round}</span></div>))}
+          {standings.flatMap(s => s.eliminatedTeams.map(t => ({ ...t, owner: s }))).slice(0, 4).map((item, idx) => (<div key={idx} className="elim-row" onClick={() => { const game = findGameForTeam(item.team); if (game && onGameClick) onGameClick(game, game.region); }}><span className="elim-icon">☠</span><span className="elim-name">{item.team}</span><span className="elim-owner" style={{ background: getCustomColor(item.owner, customizations) }}></span><span className="elim-round">{item.round === 0 ? 'Play-In' : `R${item.round}`}</span></div>))}
           {totalEliminated === 0 && <div className="empty-state">No eliminations yet</div>}
         </div>
       </div>
@@ -1319,9 +1317,9 @@ function Portfolio({ liveGames, playInWinners, customizations, onGameClick }) {
 }
 
 // Graveyard Component
-function Graveyard({ liveGames, playInWinners, customizations }) {
+function Graveyard({ liveGames, playInWinners, customizations, resolvedMap }) {
   const [filter, setFilter] = useState('all');
-  const standings = calculateStandings(liveGames, playInWinners);
+  const standings = calculateStandings(liveGames, playInWinners, resolvedMap);
   const epitaphs = ["Gone too soon.", "Rest in pieces.", "They fought valiantly... not really.", "Another one bites the dust.", "F in the chat.", "Press F to pay respects.", "Should've picked someone else.", "Bracket busted.", "So much potential, so little results.", "They tried their best. It wasn't enough."];
   const getRandomEpitaph = (seed) => epitaphs[seed % epitaphs.length];
   
@@ -1361,10 +1359,10 @@ function Graveyard({ liveGames, playInWinners, customizations }) {
 }
 
 // Projection Tool Component
-function ProjectionTool({ liveGames, playInWinners, customizations }) {
+function ProjectionTool({ liveGames, playInWinners, customizations, resolvedMap }) {
   const [overrides, setOverrides] = useState({});
   
-  const resolved = buildResolvedGames(liveGames, playInWinners);
+  const resolved = resolvedMap || buildResolvedGames(liveGames, playInWinners);
   const completedGames = [];
   Object.values(staticRegions).forEach(region => {
     region.games.forEach(staticGame => {
@@ -1403,7 +1401,7 @@ function ProjectionTool({ liveGames, playInWinners, customizations }) {
     }).sort((a, b) => b.points - a.points || b.teamsAlive - a.teamsAlive);
   }, [liveGames, playInWinners, overrides, resolved]);
   
-  const actualStandings = calculateStandings(liveGames, playInWinners);
+  const actualStandings = calculateStandings(liveGames, playInWinners, resolved);
   const projectedStandings = calculateWithOverrides();
   
   const toggleOverride = (game, winner) => {
@@ -1475,15 +1473,15 @@ function ProjectionTool({ liveGames, playInWinners, customizations }) {
 }
 
 // Head-to-Head Comparison
-function HeadToHead({ liveGames, playInWinners, customizations }) {
+function HeadToHead({ liveGames, playInWinners, customizations, resolvedMap }) {
   const [ownerA, setOwnerA] = useState(owners[0].id);
   const [ownerB, setOwnerB] = useState(owners[1].id);
-  const standings = calculateStandings(liveGames, playInWinners);
+  const resolved = resolvedMap || buildResolvedGames(liveGames, playInWinners);
+  const standings = calculateStandings(liveGames, playInWinners, resolved);
   const a = standings.find(s => s.id === ownerA) || standings[0];
   const b = standings.find(s => s.id === ownerB) || standings[1];
 
   // Find all completed games and determine team seeds
-  const resolved = buildResolvedGames(liveGames, playInWinners);
   const allGames = [];
   const teamSeeds = {};
   Object.values(resolved).forEach(game => {
@@ -1689,7 +1687,7 @@ function HeadToHead({ liveGames, playInWinners, customizations }) {
 }
 
 // Bracket History
-function BracketHistory({ liveGames, playInWinners, customizations }) {
+function BracketHistory({ liveGames, playInWinners, customizations, resolvedMap }) {
   const [selectedRound, setSelectedRound] = useState('current');
   const [history, setHistory] = useState(() => {
     try { return JSON.parse(localStorage.getItem('jerseyBetBracketHistory')) || {}; } catch { return {}; }
@@ -1699,7 +1697,7 @@ function BracketHistory({ liveGames, playInWinners, customizations }) {
 
   // Auto-snapshot: check if any round is fully complete
   useEffect(() => {
-    const resolved = buildResolvedGames(liveGames, playInWinners);
+    const resolved = resolvedMap || buildResolvedGames(liveGames, playInWinners);
     const allMergedGames = [];
     Object.entries(staticRegions).forEach(([regionKey, region]) => {
       region.games.forEach(sg => {
@@ -1717,7 +1715,7 @@ function BracketHistory({ liveGames, playInWinners, customizations }) {
       if (roundGames.length > 0 && roundGames.every(g => g.status === 'final') && !history[round]) {
         const snapshot = {
           timestamp: new Date().toISOString(),
-          standings: calculateStandings(liveGames, playInWinners).map(s => ({ id: s.id, name: s.name, points: s.points, teamsAlive: s.teamsAlive, teamsEliminated: s.teamsEliminated })),
+          standings: calculateStandings(liveGames, playInWinners, resolved).map(s => ({ id: s.id, name: s.name, points: s.points, teamsAlive: s.teamsAlive, teamsEliminated: s.teamsEliminated })),
           games: allMergedGames.filter(g => (g.round || 1) <= round && g.status === 'final').map(g => ({
             t1: g.t1, t2: g.t2, s1: g.s1, s2: g.s2, sc1: g.sc1, sc2: g.sc2, round: g.round || 1, regionKey: g.regionKey
           }))
@@ -1729,12 +1727,12 @@ function BracketHistory({ liveGames, playInWinners, customizations }) {
     }
   }, [liveGames, playInWinners, history]);
 
-  const currentStandings = calculateStandings(liveGames, playInWinners);
+  const currentStandings = calculateStandings(liveGames, playInWinners, resolvedMap);
   const snapshot = selectedRound === 'current' ? null : history[selectedRound];
 
   const displayStandings = snapshot ? snapshot.standings : currentStandings;
   const displayGames = snapshot ? snapshot.games : (() => {
-    const resolved = buildResolvedGames(liveGames, playInWinners);
+    const resolved = resolvedMap || buildResolvedGames(liveGames, playInWinners);
     const games = [];
     Object.entries(staticRegions).forEach(([regionKey, region]) => {
       region.games.forEach(sg => {
@@ -1826,9 +1824,9 @@ function BracketHistory({ liveGames, playInWinners, customizations }) {
 }
 
 // Other Cool Stuff Hub
-function OtherCoolStuff({ liveGames, playInWinners, setSubView }) {
-  const standings = calculateStandings(liveGames, playInWinners);
-  const playerBadges = calculateBadges(liveGames, playInWinners);
+function OtherCoolStuff({ liveGames, playInWinners, setSubView, resolvedMap }) {
+  const standings = calculateStandings(liveGames, playInWinners, resolvedMap);
+  const playerBadges = calculateBadges(liveGames, playInWinners, resolvedMap);
   const totalBadges = owners.reduce((sum, o) => sum + (playerBadges[o.id]?.glory?.length || 0) + (playerBadges[o.id]?.shame?.length || 0), 0);
   const totalEliminated = standings.reduce((sum, s) => sum + s.teamsEliminated, 0);
 
@@ -1947,22 +1945,29 @@ function App() {
     } catch { return {}; }
   });
   const { liveGames, playInWinners, lastUpdate, isLoading, error } = useLiveScores();
-  
+
+  useEffect(() => {
+    if (selectedGame || showSettings) {
+      document.body.style.overflow = 'hidden';
+      return () => { document.body.style.overflow = ''; };
+    }
+  }, [selectedGame, showSettings]);
+
   const getUserColor = (user) => customizations[user.id]?.color || user.color;
   const getUserInitials = (user) => customizations[user.id]?.initials || user.initials;
   
   const handleGameClick = (game, region) => setSelectedGame({ ...game, region });
-  const resolvedAll = buildResolvedGames(liveGames, playInWinners);
+  const resolvedAll = useMemo(() => buildResolvedGames(liveGames, playInWinners), [liveGames, playInWinners]);
   const hasLiveGames = Object.values(resolvedAll).some(game => game.status === 'live' || game.status === 'halftime');
 
   const renderCoolStuffContent = () => {
-    if (coolStuffSubView === 'achievements') return <><button className="back-btn" onClick={() => setCoolStuffSubView(null)}>← Back</button><Achievements liveGames={liveGames} playInWinners={playInWinners} customizations={customizations} /></>;
-    if (coolStuffSubView === 'portfolio') return <><button className="back-btn" onClick={() => setCoolStuffSubView(null)}>← Back</button><Portfolio liveGames={liveGames} playInWinners={playInWinners} customizations={customizations} onGameClick={handleGameClick} /></>;
-    if (coolStuffSubView === 'projection') return <><button className="back-btn" onClick={() => setCoolStuffSubView(null)}>← Back</button><ProjectionTool liveGames={liveGames} playInWinners={playInWinners} customizations={customizations} /></>;
-    if (coolStuffSubView === 'graveyard') return <><button className="back-btn" onClick={() => setCoolStuffSubView(null)}>← Back</button><Graveyard liveGames={liveGames} playInWinners={playInWinners} customizations={customizations} /></>;
-    if (coolStuffSubView === 'h2h') return <><button className="back-btn" onClick={() => setCoolStuffSubView(null)}>← Back</button><HeadToHead liveGames={liveGames} playInWinners={playInWinners} customizations={customizations} /></>;
-    if (coolStuffSubView === 'history') return <><button className="back-btn" onClick={() => setCoolStuffSubView(null)}>← Back</button><BracketHistory liveGames={liveGames} playInWinners={playInWinners} customizations={customizations} /></>;
-    return <OtherCoolStuff liveGames={liveGames} playInWinners={playInWinners} setSubView={setCoolStuffSubView} />;
+    if (coolStuffSubView === 'achievements') return <><button className="back-btn" onClick={() => setCoolStuffSubView(null)}>← Back</button><Achievements liveGames={liveGames} playInWinners={playInWinners} customizations={customizations} resolvedMap={resolvedAll} /></>;
+    if (coolStuffSubView === 'portfolio') return <><button className="back-btn" onClick={() => setCoolStuffSubView(null)}>← Back</button><Portfolio liveGames={liveGames} playInWinners={playInWinners} customizations={customizations} onGameClick={handleGameClick} resolvedMap={resolvedAll} /></>;
+    if (coolStuffSubView === 'projection') return <><button className="back-btn" onClick={() => setCoolStuffSubView(null)}>← Back</button><ProjectionTool liveGames={liveGames} playInWinners={playInWinners} customizations={customizations} resolvedMap={resolvedAll} /></>;
+    if (coolStuffSubView === 'graveyard') return <><button className="back-btn" onClick={() => setCoolStuffSubView(null)}>← Back</button><Graveyard liveGames={liveGames} playInWinners={playInWinners} customizations={customizations} resolvedMap={resolvedAll} /></>;
+    if (coolStuffSubView === 'h2h') return <><button className="back-btn" onClick={() => setCoolStuffSubView(null)}>← Back</button><HeadToHead liveGames={liveGames} playInWinners={playInWinners} customizations={customizations} resolvedMap={resolvedAll} /></>;
+    if (coolStuffSubView === 'history') return <><button className="back-btn" onClick={() => setCoolStuffSubView(null)}>← Back</button><BracketHistory liveGames={liveGames} playInWinners={playInWinners} customizations={customizations} resolvedMap={resolvedAll} /></>;
+    return <OtherCoolStuff liveGames={liveGames} playInWinners={playInWinners} setSubView={setCoolStuffSubView} resolvedMap={resolvedAll} />;
   };
 
   return (
@@ -1983,9 +1988,9 @@ function App() {
       <LiveIndicator lastUpdate={lastUpdate} isLoading={isLoading} error={error} />
       <LiveGamesTicker resolvedGames={resolvedAll} liveGames={liveGames} playInWinners={playInWinners} onGameClick={handleGameClick} customizations={customizations} />
       <main>
-        {currentTab === 'regions' && <RegionsView onGameClick={handleGameClick} liveGames={liveGames} playInWinners={playInWinners} customizations={customizations} />}
-        {currentTab === 'bracket' && <BracketView onGameClick={handleGameClick} liveGames={liveGames} playInWinners={playInWinners} customizations={customizations} />}
-        {currentTab === 'standings' && <Leaderboard liveGames={liveGames} playInWinners={playInWinners} customizations={customizations} />}
+        {currentTab === 'regions' && <RegionsView onGameClick={handleGameClick} liveGames={liveGames} playInWinners={playInWinners} customizations={customizations} resolvedMap={resolvedAll} />}
+        {currentTab === 'bracket' && <BracketView onGameClick={handleGameClick} liveGames={liveGames} playInWinners={playInWinners} customizations={customizations} resolvedMap={resolvedAll} />}
+        {currentTab === 'standings' && <Leaderboard liveGames={liveGames} playInWinners={playInWinners} customizations={customizations} resolvedMap={resolvedAll} />}
         {currentTab === 'coolstuff' && renderCoolStuffContent()}
       </main>
       <div className="legend">{owners.map(owner => (<div key={owner.id} className="legend-item"><div className="legend-dot" style={{ background: getUserColor(owner) }}></div>{owner.name}</div>))}</div>
