@@ -453,6 +453,7 @@ function GameModal({ game, onClose, customizations, liveGames }) {
 
 function RegionsView({ onGameClick, liveGames, playInWinners, customizations }) {
   const [activeRegion, setActiveRegion] = useState('east');
+  const [selectedRound, setSelectedRound] = useState(null); // null = auto (latest round)
   const resolved = buildResolvedGames(liveGames, playInWinners);
   const regionNames = [...Object.keys(staticRegions), 'finalfour'];
 
@@ -464,8 +465,8 @@ function RegionsView({ onGameClick, liveGames, playInWinners, customizations }) 
     });
   };
 
-  // Determine current round for a region: show the latest round that has resolved (non-TBD) games
-  const getCurrentRound = (regionName) => {
+  // Determine latest round for a region that has resolved (non-TBD) games
+  const getLatestRound = (regionName) => {
     if (regionName === 'finalfour') return 5;
     const games = staticRegions[regionName]?.games || [];
     for (let round = 4; round >= 1; round--) {
@@ -479,15 +480,42 @@ function RegionsView({ onGameClick, liveGames, playInWinners, customizations }) 
     return 1;
   };
 
-  const currentRound = getCurrentRound(activeRegion);
-  const roundLabel = scoringSystem.roundNames[currentRound] || 'R64';
+  const latestRound = getLatestRound(activeRegion);
+  const displayRound = activeRegion === 'finalfour' ? 5 : (selectedRound != null ? selectedRound : latestRound);
+
+  // Get available rounds for this region (rounds that have at least one resolved or completed game)
+  const getAvailableRounds = () => {
+    if (activeRegion === 'finalfour') return [5, 6];
+    const rounds = [];
+    for (let r = 1; r <= 4; r++) {
+      const games = staticRegions[activeRegion]?.games?.filter(g => g.round === r) || [];
+      const hasGame = games.some(g => {
+        const merged = resolved[g.id] || mergeWithLiveData(g, liveGames, playInWinners, resolved);
+        return merged.t1 !== 'TBD' && merged.t2 !== 'TBD';
+      });
+      if (hasGame || r === 1) rounds.push(r);
+    }
+    return rounds;
+  };
+  const availableRounds = getAvailableRounds();
+
+  // Reset selected round when switching regions
+  const handleRegionChange = (name) => {
+    setActiveRegion(name);
+    setSelectedRound(null);
+  };
 
   // Get games for the active region/round
   const getDisplayGames = () => {
     if (activeRegion === 'finalfour') {
-      return finalFourGames.map(fg => resolved[fg.id] || mergeWithLiveData(fg, liveGames, playInWinners, resolved));
+      if (displayRound === 6) {
+        const champ = finalFourGames.filter(fg => fg.round === 6);
+        return champ.map(fg => resolved[fg.id] || mergeWithLiveData(fg, liveGames, playInWinners, resolved));
+      }
+      const ff = finalFourGames.filter(fg => fg.round === 5);
+      return ff.map(fg => resolved[fg.id] || mergeWithLiveData(fg, liveGames, playInWinners, resolved));
     }
-    const games = staticRegions[activeRegion]?.games?.filter(g => g.round === currentRound) || [];
+    const games = staticRegions[activeRegion]?.games?.filter(g => g.round === displayRound) || [];
     return games.map(g => resolved[g.id] || mergeWithLiveData(g, liveGames, playInWinners, resolved));
   };
 
@@ -502,12 +530,26 @@ function RegionsView({ onGameClick, liveGames, playInWinners, customizations }) 
       <PlayInGames liveGames={liveGames} playInWinners={playInWinners} onGameClick={onGameClick} customizations={customizations} />
       <div className="region-tabs">
         {regionNames.map(name => (
-          <button key={name} className={`region-tab ${activeRegion === name ? 'active' : ''}`} onClick={() => setActiveRegion(name)}>
+          <button key={name} className={`region-tab ${activeRegion === name ? 'active' : ''}`} onClick={() => handleRegionChange(name)}>
             {regionLabel(name)}{hasLiveInRegion(name) && <span className="live-dot"></span>}
           </button>
         ))}
       </div>
-      {activeRegion !== 'finalfour' && <div style={{ textAlign: 'center', fontSize: 12, color: 'var(--text2)', margin: '8px 0' }}>{roundLabel}</div>}
+      {activeRegion !== 'finalfour' && availableRounds.length > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 6, margin: '8px 0' }}>
+          {availableRounds.map(r => (
+            <button key={r} onClick={() => setSelectedRound(r)} style={{
+              padding: '4px 12px', borderRadius: 6, border: '1px solid', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer',
+              background: displayRound === r ? 'var(--cyan)' : 'transparent',
+              color: displayRound === r ? '#0f1923' : 'var(--muted)',
+              borderColor: displayRound === r ? 'var(--cyan)' : 'var(--border)'
+            }}>{scoringSystem.roundNames[r] || `R${r}`}</button>
+          ))}
+        </div>
+      )}
+      {(availableRounds.length <= 1 || activeRegion === 'finalfour') && (
+        <div style={{ textAlign: 'center', fontSize: 12, color: 'var(--text2)', margin: '8px 0' }}>{scoringSystem.roundNames[displayRound] || 'R64'}</div>
+      )}
       {displayGames.map((game, idx) => (
         <GameCard key={idx} game={game} onClick={() => !(game.t1 === 'TBD' && game.t2 === 'TBD') && onGameClick(game, activeRegion)} customizations={customizations} />
       ))}
