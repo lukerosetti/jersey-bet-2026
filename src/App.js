@@ -127,7 +127,7 @@ function GameCard({ game, onClick, customizations }) {
   );
 }
 
-function GameModal({ game, onClose, customizations }) {
+function GameModal({ game, onClose, customizations, liveGames }) {
   const [activeTab, setActiveTab] = useState('boxscore');
   const [gameDetails, setGameDetails] = useState(null);
   const [preGameStats, setPreGameStats] = useState({});
@@ -141,6 +141,17 @@ function GameModal({ game, onClose, customizations }) {
   const color1 = getTeamColor(game.t1);
   const color2 = getTeamColor(game.t2);
   const streaming = getStreaming(game.network);
+
+  // Get live scores so header stays current
+  const liveKey = game.t1 !== 'TBD' && game.t2 !== 'TBD' ? [game.t1, game.t2].sort().join('_') : null;
+  const liveData = liveKey && liveGames ? liveGames[liveKey] : null;
+  const currentSc1 = liveData ? (liveData.team1 === game.t1 ? liveData.score1 : liveData.score2) : game.sc1;
+  const currentSc2 = liveData ? (liveData.team1 === game.t2 ? liveData.score1 : liveData.score2) : game.sc2;
+  const currentStatus = liveData?.status || game.status;
+  const currentTime = liveData?.clock || game.time;
+  const currentHalf = liveData?.period || game.half;
+  const currentIsLive = currentStatus === 'live' || currentStatus === 'halftime';
+  const currentIsFinal = currentStatus === 'final';
 
   useEffect(() => {
     const fetchDetails = () => {
@@ -208,7 +219,7 @@ function GameModal({ game, onClose, customizations }) {
       {[game.t1, game.t2].map(teamName => {
         const players = gameDetails.players[teamName] || [];
         const teamColor = getTeamColor(teamName);
-        const teamScore = teamName === game.t1 ? game.sc1 : game.sc2;
+        const teamScore = teamName === game.t1 ? currentSc1 : currentSc2;
         return (
           <div key={teamName} className="stats-section">
             <div className="team-label"><div className="team-color-bar" style={{ background: teamColor }}></div><span className="team-label-name">{teamName}</span><span className="team-label-score">{teamScore}</span></div>
@@ -273,7 +284,7 @@ function GameModal({ game, onClose, customizations }) {
         {gameDetails.plays.slice(0, 20).map((play, idx) => (
           <div key={idx} className="pbp-item">
             <span className="pbp-time">{play.clock} {play.period === 1 ? '1H' : '2H'}</span>
-            <div className="pbp-content"><div className="pbp-text">{play.text}</div>{play.scoreValue && <div className="pbp-score">{play.awayScore} - {play.homeScore}</div>}</div>
+            <div className="pbp-content"><div className="pbp-text">{play.text}</div>{(play.scoreAway != null || play.scoreHome != null) && <div className="pbp-score">{play.scoreAway} - {play.scoreHome}</div>}</div>
           </div>
         ))}
       </div>
@@ -290,14 +301,14 @@ function GameModal({ game, onClose, customizations }) {
         </div>
         <div className="modal-body">
           <div className="m-header">
-            <div className="m-badge">{isUpcoming ? 'Season Stats' : isLive ? 'Live' : 'Final'}</div>
+            <div className="m-badge">{(!currentIsLive && !currentIsFinal) ? 'Season Stats' : currentIsLive ? 'Live' : 'Final'}</div>
             <div className="m-teams">
               <div className="m-team">
                 <div className="m-logo">{getTeamLogo(game.t1) ? <img src={getTeamLogo(game.t1)} alt={game.t1} className="m-logo-img" /> : game.s1}</div>
                 {game.s1 && <div className="m-seed">#{game.s1} Seed</div>}
                 <div className="m-name">{game.t1}</div>
                 <div className="m-owner"><div className="owner-dot" style={{ background: owner1 ? getCustomColor(owner1, customizations) : '#555' }}></div>{owner1?.name || 'Unowned'}</div>
-                {(isLive || isFinal) && <div className={`m-score ${game.sc1 < game.sc2 ? 'losing' : ''}`}>{game.sc1}</div>}
+                {(currentIsLive || currentIsFinal) && <div className={`m-score ${currentSc1 < currentSc2 ? 'losing' : ''}`}>{currentSc1}</div>}
               </div>
               <div className="m-vs">VS</div>
               <div className="m-team">
@@ -305,11 +316,11 @@ function GameModal({ game, onClose, customizations }) {
                 {game.s2 && <div className="m-seed">#{game.s2} Seed</div>}
                 <div className="m-name">{game.t2}</div>
                 <div className="m-owner"><div className="owner-dot" style={{ background: owner2 ? getCustomColor(owner2, customizations) : '#555' }}></div>{owner2?.name || 'Unowned'}</div>
-                {(isLive || isFinal) && <div className={`m-score ${game.sc2 < game.sc1 ? 'losing' : ''}`}>{game.sc2}</div>}
+                {(currentIsLive || currentIsFinal) && <div className={`m-score ${currentSc2 < currentSc1 ? 'losing' : ''}`}>{currentSc2}</div>}
               </div>
             </div>
           </div>
-          {isLive && <div className="status-bar live"><span className="live-badge">LIVE</span><span>{game.half === 1 ? '1st Half' : '2nd Half'} · {game.time}</span></div>}
+          {currentIsLive && <div className="status-bar live"><span className="live-badge">LIVE</span><span>{currentHalf === 1 ? '1st Half' : '2nd Half'} · {currentTime}</span></div>}
           <div className="stats-tabs">
             <button className={`stats-tab ${activeTab === 'boxscore' ? 'active' : ''}`} onClick={() => setActiveTab('boxscore')}>{isUpcoming ? 'Season Stats' : 'Box Score'}</button>
             <button className={`stats-tab ${activeTab === 'teamstats' ? 'active' : ''}`} onClick={() => setActiveTab('teamstats')}>Team Stats</button>
@@ -1547,7 +1558,7 @@ function App() {
         {currentTab === 'coolstuff' && renderCoolStuffContent()}
       </main>
       <div className="legend">{owners.map(owner => (<div key={owner.id} className="legend-item"><div className="legend-dot" style={{ background: getUserColor(owner) }}></div>{owner.name}</div>))}</div>
-      {selectedGame && <GameModal game={selectedGame} onClose={() => setSelectedGame(null)} customizations={customizations} />}
+      {selectedGame && <GameModal game={selectedGame} onClose={() => setSelectedGame(null)} customizations={customizations} liveGames={liveGames} />}
       {showSettings && <div className="modal-bg" onClick={() => setShowSettings(false)}><div className="modal" onClick={e => e.stopPropagation()}><div className="modal-handle"></div><div className="modal-head"><span className="modal-title">Settings</span><button className="modal-close" onClick={() => setShowSettings(false)}>×</button></div><div className="modal-body"><Settings currentUser={currentUser} setCurrentUser={setCurrentUser} customizations={customizations} setCustomizations={setCustomizations} /></div></div></div>}
     </div>
   );
