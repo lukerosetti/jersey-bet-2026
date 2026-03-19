@@ -143,15 +143,23 @@ function GameModal({ game, onClose, customizations }) {
   const streaming = getStreaming(game.network);
 
   useEffect(() => {
-    if (game.espnId && (isLive || isFinal)) {
-      setLoading(true);
-      fetchGameDetails(game.espnId).then(data => { setGameDetails(data); setLoading(false); }).catch(() => setLoading(false));
-    } else if (isUpcoming) {
-      setLoading(true);
-      Promise.all([fetchTeamRoster(game.t1), fetchTeamRoster(game.t2)]).then(([team1Data, team2Data]) => {
-        setPreGameStats({ [game.t1]: team1Data, [game.t2]: team2Data });
-        setLoading(false);
-      }).catch(() => setLoading(false));
+    const fetchDetails = () => {
+      if (game.espnId && (isLive || isFinal)) {
+        if (!gameDetails) setLoading(true);
+        fetchGameDetails(game.espnId).then(data => { setGameDetails(data); setLoading(false); }).catch(() => setLoading(false));
+      } else if (isUpcoming && game.t1 !== 'TBD' && game.t2 !== 'TBD') {
+        setLoading(true);
+        Promise.all([fetchTeamRoster(game.t1), fetchTeamRoster(game.t2)]).then(([team1Data, team2Data]) => {
+          setPreGameStats({ [game.t1]: team1Data, [game.t2]: team2Data });
+          setLoading(false);
+        }).catch(() => setLoading(false));
+      }
+    };
+    fetchDetails();
+    // Auto-refresh every 15s for live games
+    if (isLive && game.espnId) {
+      const interval = setInterval(fetchDetails, 15000);
+      return () => clearInterval(interval);
     }
   }, [game.espnId, game.t1, game.t2, isLive, isFinal, isUpcoming]);
 
