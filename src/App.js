@@ -23,54 +23,33 @@ function LiveIndicator({ lastUpdate, isLoading, error }) {
   );
 }
 
-function PlayInGames({ liveGames, playInWinners, customizations }) {
+function PlayInGames({ liveGames, playInWinners, onGameClick, customizations }) {
   const renderPlayInGame = (pi) => {
     const gameKey = [pi.t1, pi.t2].sort().join('_');
     const liveData = liveGames[gameKey];
     const winner = playInWinners[pi.id];
     const isLive = liveData?.status === 'live' || liveData?.status === 'halftime';
     const isFinal = liveData?.status === 'final' || winner;
-    const owner1 = getOwner(pi.t1);
-    const owner2 = getOwner(pi.t2);
-    const color1 = getTeamColor(pi.t1);
-    const color2 = getTeamColor(pi.t2);
     const score1 = liveData?.team1 === pi.t1 ? liveData.score1 : liveData?.score2;
     const score2 = liveData?.team1 === pi.t2 ? liveData.score1 : liveData?.score2;
-    const team1Won = isFinal && (winner === pi.t1 || score1 > score2);
-    const team2Won = isFinal && (winner === pi.t2 || score2 > score1);
+
+    // Build a game object compatible with GameCard and GameModal
+    const gameObj = {
+      ...pi,
+      round: 0,
+      s1: pi.forSeed,
+      s2: pi.forSeed,
+      status: isLive ? (liveData?.status === 'halftime' ? 'halftime' : 'live') : isFinal ? 'final' : 'upcoming',
+      sc1: score1 || 0,
+      sc2: score2 || 0,
+      time: liveData?.clock,
+      half: liveData?.period,
+      espnId: liveData?.id,
+      label: 'Play-In'
+    };
 
     return (
-      <div key={pi.id} className={`game-card ${isLive ? 'live' : ''}`}>
-        <div className="game-header">
-          <div className="game-status">
-            {isLive ? (<><span className="live-badge">{liveData?.status === 'halftime' ? 'Half' : 'Live'}</span><span className="game-time live">{liveData?.status === 'halftime' ? 'Halftime' : `${liveData?.period === 1 ? '1H' : '2H'} ${liveData?.clock}`}</span></>) : isFinal ? (<span className="game-time" style={{ color: 'var(--green)' }}>Final</span>) : (<span className="game-time upcoming">{pi.tip}</span>)}
-          </div>
-          <span className="game-network">{pi.network}</span>
-        </div>
-        <div className="game-teams">
-          <div className="team-row">
-            <div className="team-seed"></div>
-            <div className="team-color" style={{ background: color1 }}></div>
-            {getTeamLogo(pi.t1) && <img className="team-logo" src={getTeamLogo(pi.t1)} alt="" />}
-            <div className="team-info">
-              <div className={`team-name ${team2Won ? 'loser' : ''}`}>{pi.t1}</div>
-              <div className="team-meta">{owner1 && <span className="owner-badge"><span className="owner-dot" style={{ background: getCustomColor(owner1, customizations) }}></span>{owner1.name}</span>}</div>
-            </div>
-            {(isLive || isFinal) && <span className={`team-score ${team2Won ? 'loser' : ''}`}>{score1 || 0}</span>}
-          </div>
-          <div className="team-row">
-            <div className="team-seed"></div>
-            <div className="team-color" style={{ background: color2 }}></div>
-            {getTeamLogo(pi.t2) && <img className="team-logo" src={getTeamLogo(pi.t2)} alt="" />}
-            <div className="team-info">
-              <div className={`team-name ${team1Won ? 'loser' : ''}`}>{pi.t2}</div>
-              <div className="team-meta">{owner2 && <span className="owner-badge"><span className="owner-dot" style={{ background: getCustomColor(owner2, customizations) }}></span>{owner2.name}</span>}</div>
-            </div>
-            {(isLive || isFinal) && <span className={`team-score ${team1Won ? 'loser' : ''}`}>{score2 || 0}</span>}
-          </div>
-        </div>
-        {isFinal && winner && <div className="playin-winner">✓ {winner} advances to Round 1</div>}
-      </div>
+      <GameCard key={pi.id} game={gameObj} onClick={() => onGameClick && onGameClick(gameObj, 'playin')} customizations={customizations} />
     );
   };
 
@@ -403,7 +382,7 @@ function RegionsView({ onGameClick, liveGames, playInWinners, customizations }) 
 
   return (
     <div>
-      <PlayInGames liveGames={liveGames} playInWinners={playInWinners} customizations={customizations} />
+      <PlayInGames liveGames={liveGames} playInWinners={playInWinners} onGameClick={onGameClick} customizations={customizations} />
       <div className="region-tabs">
         {regionNames.map(name => (
           <button key={name} className={`region-tab ${activeRegion === name ? 'active' : ''}`} onClick={() => setActiveRegion(name)}>
