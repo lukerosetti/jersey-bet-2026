@@ -150,7 +150,9 @@ export function useLiveScores() {
       const freshGames = {};
       const freshWinners = {};
 
-      for (let i = 0; i < daysToFetch; i++) {
+      // Fetch past days + upcoming days to get venue data for future games
+      const daysAhead = isFirstFetch ? 21 : 3;
+      for (let i = -daysAhead; i < daysToFetch; i++) {
         const date = new Date(today);
         date.setDate(date.getDate() - i);
         const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '');
@@ -464,14 +466,16 @@ export function mergeWithLiveData(staticGame, liveGames, playInWinners, resolved
 
     if (liveData) {
       const t1IsFirst = liveData.team1 === game.t1;
+      const isUpcomingESPN = liveData.status === 'upcoming';
       return {
         ...game,
         espnId: liveData.id,
-        status: liveData.status,
-        sc1: t1IsFirst ? liveData.score1 : liveData.score2,
-        sc2: t1IsFirst ? liveData.score2 : liveData.score1,
-        time: liveData.clock,
-        half: liveData.period,
+        // Don't overwrite static status for upcoming games (preserves tip time etc)
+        status: isUpcomingESPN ? game.status : liveData.status,
+        sc1: isUpcomingESPN ? (game.sc1 || 0) : (t1IsFirst ? liveData.score1 : liveData.score2),
+        sc2: isUpcomingESPN ? (game.sc2 || 0) : (t1IsFirst ? liveData.score2 : liveData.score1),
+        time: isUpcomingESPN ? game.time : liveData.clock,
+        half: isUpcomingESPN ? game.half : liveData.period,
         venue: liveData.venue || game.venue || '',
         city: liveData.city || game.city || '',
         state: liveData.state || game.state || '',
