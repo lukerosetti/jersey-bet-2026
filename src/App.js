@@ -871,47 +871,64 @@ function calculateBadges(liveGames, playInWinners) {
   if (completedGames.length === 0) return playerBadges;
   
   const ownerStats = {};
-  owners.forEach(o => { ownerStats[o.id] = { wins: 0, losses: 0, blowoutWins: 0, blowoutLosses: 0, closeWins: 0, upsets: 0, clownPicks: 0 }; });
-  
+  owners.forEach(o => { ownerStats[o.id] = { wins: 0, losses: 0, blowoutWins: 0, blowoutLosses: 0, closeWins: 0, upsets: 0, clownPicks: 0, bestBlowoutWin: null, bestCloseWin: null, bestUpset: null, bestBlowoutLoss: null, bestClownPick: null }; });
+
+  const fmtGame = (wSeed, wName, wSc, lSeed, lName, lSc) => `(${wSeed}) ${wName} ${wSc}, (${lSeed}) ${lName} ${lSc}`;
+
   completedGames.forEach(game => {
-    const winner = game.sc1 > game.sc2 ? game.t1 : game.t2;
-    const loser = game.sc1 > game.sc2 ? game.t2 : game.t1;
-    const winnerSeed = game.sc1 > game.sc2 ? game.s1 : game.s2;
-    const loserSeed = game.sc1 > game.sc2 ? game.s2 : game.s1;
-    const margin = Math.abs(game.sc1 - game.sc2);
+    const t1Won = game.sc1 > game.sc2;
+    const winner = t1Won ? game.t1 : game.t2;
+    const loser = t1Won ? game.t2 : game.t1;
+    const winnerSeed = t1Won ? game.s1 : game.s2;
+    const loserSeed = t1Won ? game.s2 : game.s1;
+    const winSc = t1Won ? game.sc1 : game.sc2;
+    const loseSc = t1Won ? game.sc2 : game.sc1;
+    const margin = winSc - loseSc;
     const winnerOwner = getOwner(winner);
     const loserOwner = getOwner(loser);
-    
+    const gameCtx = { winner, loser, winnerSeed, loserSeed, winSc, loseSc, margin };
+
     if (winnerOwner) {
-      ownerStats[winnerOwner.id].wins++;
-      if (margin >= 20) ownerStats[winnerOwner.id].blowoutWins++;
-      if (margin <= 3) ownerStats[winnerOwner.id].closeWins++;
-      if (winnerSeed >= 12 && loserSeed <= 5) ownerStats[winnerOwner.id].upsets++;
+      const s = ownerStats[winnerOwner.id];
+      s.wins++;
+      if (margin >= 20 && (!s.bestBlowoutWin || margin > s.bestBlowoutWin.margin)) { s.blowoutWins++; s.bestBlowoutWin = gameCtx; }
+      else if (margin >= 20) { s.blowoutWins++; }
+      if (margin <= 3 && (!s.bestCloseWin || margin < s.bestCloseWin.margin)) { s.closeWins++; s.bestCloseWin = gameCtx; }
+      else if (margin <= 3) { s.closeWins++; }
+      if (winnerSeed >= 12 && loserSeed <= 5) { s.upsets++; s.bestUpset = s.bestUpset || gameCtx; }
     }
     if (loserOwner) {
-      ownerStats[loserOwner.id].losses++;
-      if (margin >= 25) ownerStats[loserOwner.id].blowoutLosses++;
-      if (loserSeed <= 4 && winnerSeed >= 13) ownerStats[loserOwner.id].clownPicks++;
+      const s = ownerStats[loserOwner.id];
+      s.losses++;
+      if (margin >= 25 && (!s.bestBlowoutLoss || margin > s.bestBlowoutLoss.margin)) { s.blowoutLosses++; s.bestBlowoutLoss = gameCtx; }
+      else if (margin >= 25) { s.blowoutLosses++; }
+      if (loserSeed <= 4 && winnerSeed >= 13) { s.clownPicks++; s.bestClownPick = s.bestClownPick || gameCtx; }
     }
   });
-  
+
   owners.forEach(owner => {
-    const stats = ownerStats[owner.id];
-    if (stats.wins >= 3) playerBadges[owner.id].glory.push('hot_start');
-    if (stats.upsets > 0) playerBadges[owner.id].glory.push('giant_slayer');
-    if (stats.blowoutWins > 0) playerBadges[owner.id].glory.push('sharp_shooter');
-    if (stats.closeWins > 0) playerBadges[owner.id].glory.push('buzzer_beater');
-    if (stats.losses >= 3) playerBadges[owner.id].shame.push('dumpster_fire');
-    if (stats.clownPicks > 0) playerBadges[owner.id].shame.push('clown_pick');
-    if (stats.blowoutLosses > 0) playerBadges[owner.id].shame.push('blowout_victim');
+    const s = ownerStats[owner.id];
+    if (s.wins >= 3) playerBadges[owner.id].glory.push({ id: 'hot_start', detail: `${s.wins} wins` });
+    if (s.upsets > 0) { const g = s.bestUpset; playerBadges[owner.id].glory.push({ id: 'giant_slayer', detail: fmtGame(g.winnerSeed, g.winner, g.winSc, g.loserSeed, g.loser, g.loseSc) }); }
+    if (s.blowoutWins > 0) { const g = s.bestBlowoutWin; playerBadges[owner.id].glory.push({ id: 'sharp_shooter', detail: fmtGame(g.winnerSeed, g.winner, g.winSc, g.loserSeed, g.loser, g.loseSc) }); }
+    if (s.closeWins > 0) { const g = s.bestCloseWin; playerBadges[owner.id].glory.push({ id: 'buzzer_beater', detail: fmtGame(g.winnerSeed, g.winner, g.winSc, g.loserSeed, g.loser, g.loseSc) }); }
+    if (s.losses >= 3) playerBadges[owner.id].shame.push({ id: 'dumpster_fire', detail: `${s.losses} losses` });
+    if (s.clownPicks > 0) { const g = s.bestClownPick; playerBadges[owner.id].shame.push({ id: 'clown_pick', detail: fmtGame(g.winnerSeed, g.winner, g.winSc, g.loserSeed, g.loser, g.loseSc) }); }
+    if (s.blowoutLosses > 0) { const g = s.bestBlowoutLoss; playerBadges[owner.id].shame.push({ id: 'blowout_victim', detail: fmtGame(g.winnerSeed, g.winner, g.winSc, g.loserSeed, g.loser, g.loseSc) }); }
   });
-  
+
   if (completedGames.length > 0) {
     const firstLoss = completedGames[0];
-    const loser = firstLoss.sc1 > firstLoss.sc2 ? firstLoss.t2 : firstLoss.t1;
+    const t1Won = firstLoss.sc1 > firstLoss.sc2;
+    const loser = t1Won ? firstLoss.t2 : firstLoss.t1;
     const loserOwner = getOwner(loser);
-    if (loserOwner && !playerBadges[loserOwner.id].shame.includes('first_blood')) {
-      playerBadges[loserOwner.id].shame.push('first_blood');
+    if (loserOwner && !playerBadges[loserOwner.id].shame.some(b => b.id === 'first_blood')) {
+      const winner = t1Won ? firstLoss.t1 : firstLoss.t2;
+      const wSeed = t1Won ? firstLoss.s1 : firstLoss.s2;
+      const lSeed = t1Won ? firstLoss.s2 : firstLoss.s1;
+      const wSc = t1Won ? firstLoss.sc1 : firstLoss.sc2;
+      const lSc = t1Won ? firstLoss.sc2 : firstLoss.sc1;
+      playerBadges[loserOwner.id].shame.push({ id: 'first_blood', detail: fmtGame(wSeed, winner, wSc, lSeed, loser, lSc) });
     }
   }
   
@@ -1111,26 +1128,56 @@ function Leaderboard({ liveGames, playInWinners, customizations }) {
 
 function Achievements({ liveGames, playInWinners, customizations }) {
   const playerBadges = calculateBadges(liveGames, playInWinners);
+  const [expanded, setExpanded] = useState({});
+  const [selectedBadge, setSelectedBadge] = useState(null);
   const mostShame = owners.reduce((max, o) => (playerBadges[o.id]?.shame?.length || 0) > (playerBadges[max.id]?.shame?.length || 0) ? o : max, owners[0]);
   const allBadges = { glory: [...badges.glory, { id: 'bucket_getter', name: 'Bucket Getter', icon: '🪣', desc: 'Own the tournament\'s leading scorer' }], shame: badges.shame };
+  const toggle = (id) => setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
+  const toggleBadgeDetail = (key) => setSelectedBadge(prev => prev === key ? null : key);
+  const getBadgeDetail = (pb, badgeId) => { const found = [...pb.glory, ...pb.shame].find(b => b.id === badgeId); return found?.detail || ''; };
 
   return (
     <div className="achievements">
       <div className="page-title"><h2>Achievements</h2><p>Glory and shame as the tournament unfolds</p></div>
       {owners.map(owner => {
         const pb = playerBadges[owner.id] || { glory: [], shame: [] };
+        const isOpen = expanded[owner.id];
+        const earnedGlory = allBadges.glory.filter(b => pb.glory.some(e => e.id === b.id));
+        const earnedShame = allBadges.shame.filter(b => pb.shame.some(e => e.id === b.id));
+        const totalEarned = earnedGlory.length + earnedShame.length;
         return (
           <div key={owner.id} className="player-card">
-            <div className="player-header">
+            <div className="player-header" onClick={() => toggle(owner.id)} style={{ cursor: 'pointer' }}>
               <div className="player-avatar" style={{ background: getCustomColor(owner, customizations) }}>{getCustomInitials(owner, customizations)}</div>
               <div className="player-info"><div className="player-name">{owner.name}</div><div className="player-stats">{owner.teams.length} teams</div></div>
-              <div className="badge-counts"><div className="badge-count positive">🏅 {pb.glory.length}</div><div className="badge-count negative">💩 {pb.shame.length}</div></div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div className="badge-counts"><div className="badge-count positive">🏅 {pb.glory.length}</div><div className="badge-count negative">💩 {pb.shame.length}</div></div>
+                <span style={{ color: 'var(--text2)', fontSize: 14, transition: 'transform 0.2s', transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
+              </div>
             </div>
-            <div className="badges-section">
-              <div className="badges-category"><div className="category-label glory">Glory <span className="category-line"></span></div><div className="badges-grid">{allBadges.glory.slice(0, 5).map(badge => { const earned = pb.glory.includes(badge.id); return (<div key={badge.id} className={`badge ${earned ? 'earned-positive' : ''}`}><div className={`badge-icon ${earned ? 'earned-positive' : 'locked'}`}>{badge.icon}</div><div className="badge-name">{badge.name}</div></div>); })}</div></div>
-              <div className="badges-category"><div className="category-label shame">Shame <span className="category-line"></span></div><div className="badges-grid">{allBadges.shame.slice(0, 4).map(badge => { const earned = pb.shame.includes(badge.id); return (<div key={badge.id} className={`badge ${earned ? 'earned-negative' : ''}`}><div className={`badge-icon ${earned ? 'earned-negative' : 'locked'}`}>{badge.icon}</div><div className="badge-name">{badge.name}</div></div>); })}</div></div>
-              {owner.id === mostShame.id && pb.shame.length > 0 && (<div className="shame-callout"><div className="shame-callout-icon">🚨</div><div className="shame-callout-text"><div className="shame-callout-title">Wall of Shame Leader</div><div className="shame-callout-desc">{owner.name} has the most shame badges</div></div></div>)}
-            </div>
+            {/* Collapsed: show earned badges inline */}
+            {!isOpen && totalEarned > 0 && (
+              <div className="earned-badges-row-wrap">
+                <div className="earned-badges-row">
+                  {earnedGlory.map(b => { const key = `${owner.id}-${b.id}`; return <span key={b.id} className={`earned-badge-chip glory ${selectedBadge === key ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); toggleBadgeDetail(key); }}>{b.icon} {b.name}</span>; })}
+                  {earnedShame.map(b => { const key = `${owner.id}-${b.id}`; return <span key={b.id} className={`earned-badge-chip shame ${selectedBadge === key ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); toggleBadgeDetail(key); }}>{b.icon} {b.name}</span>; })}
+                </div>
+                {selectedBadge?.startsWith(owner.id) && getBadgeDetail(pb, selectedBadge.split('-').slice(1).join('-')) && (
+                  <div className="badge-detail">{getBadgeDetail(pb, selectedBadge.split('-').slice(1).join('-'))}</div>
+                )}
+              </div>
+            )}
+            {!isOpen && totalEarned === 0 && (
+              <div style={{ padding: '8px 0 0', fontSize: '0.8rem', color: 'var(--text2)', opacity: 0.5 }}>No badges earned yet</div>
+            )}
+            {/* Expanded: show all badges */}
+            {isOpen && (
+              <div className="badges-section">
+                <div className="badges-category"><div className="category-label glory">Glory <span className="category-line"></span></div><div className="badges-grid">{allBadges.glory.map(badge => { const earned = pb.glory.some(e => e.id === badge.id); const key = `${owner.id}-${badge.id}`; return (<div key={badge.id} className={`badge ${earned ? 'earned-positive' : ''} ${selectedBadge === key ? 'badge-selected' : ''}`} onClick={earned ? (e) => { e.stopPropagation(); toggleBadgeDetail(key); } : undefined} style={earned ? { cursor: 'pointer' } : {}}><div className={`badge-icon ${earned ? 'earned-positive' : 'locked'}`}>{badge.icon}</div><div className="badge-name">{badge.name}</div>{earned && <div className="badge-earned-tag">Earned</div>}{selectedBadge === key && <div className="badge-detail">{getBadgeDetail(pb, badge.id)}</div>}</div>); })}</div></div>
+                <div className="badges-category"><div className="category-label shame">Shame <span className="category-line"></span></div><div className="badges-grid">{allBadges.shame.map(badge => { const earned = pb.shame.some(e => e.id === badge.id); const key = `${owner.id}-${badge.id}`; return (<div key={badge.id} className={`badge ${earned ? 'earned-negative' : ''} ${selectedBadge === key ? 'badge-selected' : ''}`} onClick={earned ? (e) => { e.stopPropagation(); toggleBadgeDetail(key); } : undefined} style={earned ? { cursor: 'pointer' } : {}}><div className={`badge-icon ${earned ? 'earned-negative' : 'locked'}`}>{badge.icon}</div><div className="badge-name">{badge.name}</div>{earned && <div className="badge-earned-tag negative">Earned</div>}{selectedBadge === key && <div className="badge-detail">{getBadgeDetail(pb, badge.id)}</div>}</div>); })}</div></div>
+                {owner.id === mostShame.id && pb.shame.length > 0 && (<div className="shame-callout"><div className="shame-callout-icon">🚨</div><div className="shame-callout-text"><div className="shame-callout-title">Wall of Shame Leader</div><div className="shame-callout-desc">{owner.name} has the most shame badges</div></div></div>)}
+              </div>
+            )}
           </div>
         );
       })}

@@ -314,7 +314,7 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 .page-title p { font-size: 13px; color: var(--text2); }
 
 .player-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px; margin-bottom: 16px; }
-.player-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.player-header { display: flex; align-items: center; gap: 12px; margin-bottom: 0; }
 .player-avatar { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; color: white; }
 .player-info { flex: 1; }
 .player-name { font-size: 16px; font-weight: 600; }
@@ -324,7 +324,7 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 .badge-count.positive { color: var(--green); }
 .badge-count.negative { color: var(--red); }
 
-.badges-section { }
+.badges-section { margin-top: 16px; }
 .badges-category { margin-bottom: 16px; }
 .category-label { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; margin-bottom: 10px; }
 .category-label.glory { color: var(--green); }
@@ -340,6 +340,19 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 .badge-name { font-size: 10px; color: var(--text2); }
 .badge.earned-positive .badge-name { color: var(--green); }
 .badge.earned-negative .badge-name { color: var(--red); }
+
+.badge-earned-tag { font-size: 9px; font-weight: 600; color: var(--green); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+.badge-earned-tag.negative { color: var(--red); }
+
+.earned-badges-row { display: flex; flex-wrap: wrap; gap: 6px; padding-top: 10px; }
+.earned-badge-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 500; padding: 4px 10px; border-radius: 20px; }
+.earned-badge-chip.glory { background: rgba(34, 197, 94, 0.15); color: var(--green); border: 1px solid rgba(34, 197, 94, 0.3); cursor: pointer; transition: all 0.2s; }
+.earned-badge-chip.shame { background: rgba(239, 68, 68, 0.15); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.3); cursor: pointer; transition: all 0.2s; }
+.earned-badge-chip.glory.active { background: rgba(34, 197, 94, 0.25); border-color: var(--green); }
+.earned-badge-chip.shame.active { background: rgba(239, 68, 68, 0.25); border-color: var(--red); }
+.earned-badges-row-wrap { padding-top: 10px; }
+.badge-detail { font-size: 11px; color: var(--text2); padding: 6px 0 2px; text-align: center; opacity: 0.85; }
+.badge.badge-selected { transform: scale(1.05); }
 
 .shame-callout { display: flex; gap: 12px; align-items: center; padding: 12px; background: rgba(239, 68, 68, 0.1); border: 1px solid var(--red); border-radius: 10px; margin-top: 12px; }
 .shame-callout-icon { font-size: 24px; }
