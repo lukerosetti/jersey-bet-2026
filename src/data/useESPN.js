@@ -213,7 +213,8 @@ export function useLiveScores() {
                 network: competition.broadcast || '',
                 venue: venue?.fullName || '',
                 city: venue?.address?.city || '',
-                state: venue?.address?.state || ''
+                state: venue?.address?.state || '',
+                startDate: event.date || competition.startDate || ''
               };
             });
           }
@@ -467,6 +468,21 @@ export function mergeWithLiveData(staticGame, liveGames, playInWinners, resolved
     if (liveData) {
       const t1IsFirst = liveData.team1 === game.t1;
       const isUpcomingESPN = liveData.status === 'upcoming';
+
+      // Format ESPN startDate into readable tip time (e.g. "Thu 7:10 PM")
+      let espnTip = game.tip;
+      if (liveData.startDate) {
+        try {
+          const d = new Date(liveData.startDate);
+          if (!isNaN(d.getTime())) {
+            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const day = days[d.getDay()];
+            const timeStr = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+            espnTip = `${day} ${timeStr}`;
+          }
+        } catch {}
+      }
+
       return {
         ...game,
         espnId: liveData.id,
@@ -476,6 +492,7 @@ export function mergeWithLiveData(staticGame, liveGames, playInWinners, resolved
         sc2: isUpcomingESPN ? (game.sc2 || 0) : (t1IsFirst ? liveData.score2 : liveData.score1),
         time: isUpcomingESPN ? game.time : liveData.clock,
         half: isUpcomingESPN ? game.half : liveData.period,
+        tip: espnTip || game.tip,
         venue: liveData.venue || game.venue || '',
         city: liveData.city || game.city || '',
         state: liveData.state || game.state || '',
