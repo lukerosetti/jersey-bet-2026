@@ -215,6 +215,7 @@ function GameCard({ game, onClick, customizations }) {
         </div>
         <span className="game-network">{game.network}</span>
       </div>
+      {game.city && <div className="game-location">{game.city}{game.state ? `, ${game.state}` : ''}</div>}
       <div className="game-teams">
         <div className="team-row">
           <div className="team-seed">{game.s1}</div>
@@ -447,6 +448,7 @@ function GameModal({ game, onClose, customizations, liveGames }) {
               </div>
             </div>
           </div>
+          {game.city && <div className="m-location">{game.venue ? `${game.venue} · ` : ''}{game.city}{game.state ? `, ${game.state}` : ''}</div>}
           {currentIsLive && <div className="status-bar live"><span className="live-badge">LIVE</span><span>{currentHalf === 1 ? '1st Half' : '2nd Half'} · {currentTime}</span></div>}
           <div className="stats-tabs">
             <button className={`stats-tab ${activeTab === 'boxscore' ? 'active' : ''}`} onClick={() => setActiveTab('boxscore')}>{isUpcoming ? 'Season Stats' : 'Box Score'}</button>
@@ -469,88 +471,98 @@ function GameModal({ game, onClose, customizations, liveGames }) {
             const t2Pct = 100 - t1Pct;
             const t1C = getTeamColor(game.t1) || '#ef4444';
             const t2C = getTeamColor(game.t2) || '#3b82f6';
-            const cyan = '#22d3ee';
 
-            // Find biggest momentum swing
-            let maxSwing = 0, swingIdx = 0;
-            for (let i = 5; i < t1WinProb.length; i++) {
-              const swing = Math.abs(t1WinProb[i] - t1WinProb[i - 5]);
-              if (swing > maxSwing) { maxSwing = swing; swingIdx = i; }
-            }
-            const swingPct = Math.round(maxSwing * 100);
-            const swingUp = t1WinProb[swingIdx] > t1WinProb[swingIdx - 5];
-            const swingTeam = swingUp ? game.t1 : game.t2;
-
-            const W = 460, H = 220;
-            const PADT = 20, PADB = 18, PADL = 44, PADR = 34;
+            const W = 460, H = 240;
+            const PADT = 28, PADB = 24, PADL = 38, PADR = 16;
             const chartW = W - PADL - PADR, chartH = H - PADT - PADB;
             const midY = PADT + 0.5 * chartH;
+            const topY = PADT;
+            const botY = PADT + chartH;
             const halfX = PADL + chartW * 0.5;
 
-            // Build color-changing line segments
-            const lineSegments = [];
-            for (let i = 0; i < t1WinProb.length - 1; i++) {
-              const x1 = PADL + (i / (t1WinProb.length - 1)) * chartW;
-              const y1 = PADT + (1 - t1WinProb[i]) * chartH;
-              const x2 = PADL + ((i + 1) / (t1WinProb.length - 1)) * chartW;
-              const y2 = PADT + (1 - t1WinProb[i + 1]) * chartH;
-              const avg = (t1WinProb[i] + t1WinProb[i + 1]) / 2;
-              const segColor = Math.abs(avg - 0.5) < 0.03 ? cyan : avg > 0.5 ? t1C : t2C;
-              lineSegments.push(<line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke={segColor} strokeWidth="3" strokeLinecap="round" filter="url(#wpGlow)" />);
+            // Build smooth monotone path using cardinal spline
+            const points = t1WinProb.map((p, i) => ({
+              x: PADL + (i / (t1WinProb.length - 1)) * chartW,
+              y: PADT + (1 - p) * chartH
+            }));
+            let pathD = `M${points[0].x},${points[0].y}`;
+            for (let i = 0; i < points.length - 1; i++) {
+              const p0 = points[Math.max(0, i - 1)];
+              const p1 = points[i];
+              const p2 = points[i + 1];
+              const p3 = points[Math.min(points.length - 1, i + 2)];
+              const cp1x = p1.x + (p2.x - p0.x) / 6;
+              const cp1y = p1.y + (p2.y - p0.y) / 6;
+              const cp2x = p2.x - (p3.x - p1.x) / 6;
+              const cp2y = p2.y - (p3.y - p1.y) / 6;
+              pathD += ` C${cp1x},${cp1y} ${cp2x},${cp2y} ${p2.x},${p2.y}`;
             }
 
-            // Fill areas
-            const fillAbove = t1WinProb.map((p, i) => `${PADL + (i / (t1WinProb.length - 1)) * chartW},${PADT + (1 - Math.max(p, 0.5)) * chartH}`).join(' ');
-            const fillBelow = t1WinProb.map((p, i) => `${PADL + (i / (t1WinProb.length - 1)) * chartW},${PADT + (1 - Math.min(p, 0.5)) * chartH}`).join(' ');
+            // Fill paths for gradient areas
+            const fillT1Path = pathD + ` L${points[points.length - 1].x},${midY} L${points[0].x},${midY} Z`;
+            const fillT2Path = pathD + ` L${points[points.length - 1].x},${midY} L${points[0].x},${midY} Z`;
 
-            const endColor = currentProb > 0.52 ? t1C : currentProb < 0.48 ? t2C : cyan;
-            const endX = PADL + chartW;
-            const endY = PADT + (1 - currentProb) * chartH;
-            const swX = PADL + (swingIdx / (t1WinProb.length - 1)) * chartW;
-            const swY = PADT + (1 - t1WinProb[swingIdx]) * chartH;
+            const endX = points[points.length - 1].x;
+            const endY = points[points.length - 1].y;
 
             return (
-              <div style={{ padding: '12px 0' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, padding: '0 4px' }}>
+              <div style={{ padding: '16px 0' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, padding: '0 4px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{ width: 12, height: 12, borderRadius: '50%', background: t1C, boxShadow: `0 0 8px ${t1C}88` }}></div>
-                    <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{game.t1}</span>
-                    {owner1 && <span className="owner-dot" style={{ background: getCustomColor(owner1, customizations), width: 8, height: 8, display: 'inline-block', borderRadius: '50%' }}></span>}
-                    <span style={{ fontWeight: 800, fontSize: '1.2rem', color: t1Pct >= 50 ? 'var(--green)' : 'var(--muted)' }}>{t1Pct}%</span>
+                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: t1C }}></div>
+                    <span style={{ fontWeight: 500, fontSize: '0.85rem', color: 'var(--text2)' }}>{game.t1}</span>
+                    <span style={{ fontWeight: 700, fontSize: '1.3rem', color: t1Pct >= 50 ? '#fff' : 'var(--text2)' }}>{t1Pct}%</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontWeight: 800, fontSize: '1.2rem', color: t2Pct >= 50 ? 'var(--green)' : 'var(--muted)' }}>{t2Pct}%</span>
-                    {owner2 && <span className="owner-dot" style={{ background: getCustomColor(owner2, customizations), width: 8, height: 8, display: 'inline-block', borderRadius: '50%' }}></span>}
-                    <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{game.t2}</span>
-                    <div style={{ width: 12, height: 12, borderRadius: '50%', background: t2C, boxShadow: `0 0 8px ${t2C}88` }}></div>
+                    <span style={{ fontWeight: 700, fontSize: '1.3rem', color: t2Pct >= 50 ? '#fff' : 'var(--text2)' }}>{t2Pct}%</span>
+                    <span style={{ fontWeight: 500, fontSize: '0.85rem', color: 'var(--text2)' }}>{game.t2}</span>
+                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: t2C }}></div>
                   </div>
                 </div>
-                <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 'auto', background: `radial-gradient(ellipse at 65% 20%, ${t1C}0F 0%, transparent 50%), radial-gradient(ellipse at 35% 80%, ${t2C}0F 0%, transparent 50%), #0a1018`, borderRadius: 10, border: '1px solid #1a2636' }}>
+                <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 'auto', background: 'linear-gradient(180deg, #162231 0%, #1a2a3c 100%)', borderRadius: 10, border: '1px solid rgba(255,255,255,0.08)' }}>
                   <defs>
-                    <linearGradient id="wpFillT1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={t1C} stopOpacity="0.18" /><stop offset="100%" stopColor={t1C} stopOpacity="0.01" /></linearGradient>
-                    <linearGradient id="wpFillT2" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stopColor={t2C} stopOpacity="0.18" /><stop offset="100%" stopColor={t2C} stopOpacity="0.01" /></linearGradient>
-                    <filter id="wpGlow"><feGaussianBlur stdDeviation="3.5" result="blur" /><feMerge><feMergeNode in="blur" /><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
-                    <filter id="wpDotGlow"><feGaussianBlur stdDeviation="5" result="blur" /><feMerge><feMergeNode in="blur" /><feMergeNode in="blur" /><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
+                    <linearGradient id="wpFillT1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={t1C} stopOpacity="0.15" /><stop offset="100%" stopColor={t1C} stopOpacity="0" /></linearGradient>
+                    <linearGradient id="wpFillT2" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stopColor={t2C} stopOpacity="0.15" /><stop offset="100%" stopColor={t2C} stopOpacity="0" /></linearGradient>
+                    <filter id="wpSubtleGlow"><feGaussianBlur stdDeviation="1.5" result="blur" /><feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
+                    <clipPath id="clipAbove"><rect x={PADL} y={PADT} width={chartW} height={chartH / 2} /></clipPath>
+                    <clipPath id="clipBelow"><rect x={PADL} y={midY} width={chartW} height={chartH / 2} /></clipPath>
                   </defs>
-                  <polygon points={`${PADL},${midY} ${fillAbove} ${PADL + chartW},${midY}`} fill="url(#wpFillT1)" />
-                  <polygon points={`${PADL},${midY} ${fillBelow} ${PADL + chartW},${midY}`} fill="url(#wpFillT2)" />
-                  <line x1={PADL} y1={midY} x2={PADL + chartW} y2={midY} stroke="#1e2d3d" strokeWidth="1" strokeDasharray="6,4" />
-                  <line x1={halfX} y1={PADT} x2={halfX} y2={PADT + chartH} stroke="#2a3a4d" strokeWidth="1" strokeDasharray="4,4" />
-                  <text x={halfX} y={PADT - 5} fill="#4a5568" fontSize="9" fontWeight="600" textAnchor="middle">HALF</text>
-                  {lineSegments}
-                  <circle cx={endX} cy={endY} r="6" fill={endColor} filter="url(#wpDotGlow)" />
-                  {swingPct >= 10 && <>
-                    <line x1={swX} y1={swY + 8} x2={swX} y2={swY + 30} stroke={cyan} strokeWidth="1" opacity="0.5" />
-                    <rect x={swX - 28} y={swY + 30} width={56} height={18} rx={4} fill="#0d1520" stroke={cyan} strokeWidth="0.5" opacity="0.9" />
-                    <text x={swX} y={swY + 43} fill={cyan} fontSize="10" fontWeight="700" textAnchor="middle">{'\u25B2'} {swingTeam.length > 8 ? swingTeam.slice(0, 8) : swingTeam} +{swingPct}%</text>
-                  </>}
-                  <text x={PADL - 6} y={PADT + 5} fill={t1C} fontSize="9" fontWeight="700" textAnchor="end">100%</text>
-                  <text x={PADL - 6} y={midY + 4} fill="#475569" fontSize="9" fontWeight="600" textAnchor="end">50%</text>
-                  <text x={PADL - 6} y={PADT + chartH + 2} fill={t2C} fontSize="9" fontWeight="700" textAnchor="end">0%</text>
-                  <text x={PADL + 4} y={PADT + chartH + 14} fill="#334155" fontSize="8" fontWeight="600">1st Half</text>
-                  <text x={halfX + 4} y={PADT + chartH + 14} fill="#334155" fontSize="8" fontWeight="600">2nd Half</text>
+                  {/* Grid lines at 0%, 50%, 100% only */}
+                  <line x1={PADL} y1={topY} x2={PADL + chartW} y2={topY} stroke="rgba(255,255,255,0.1)" strokeWidth="0.5" strokeDasharray="4,6" />
+                  <line x1={PADL} y1={midY} x2={PADL + chartW} y2={midY} stroke="rgba(255,255,255,0.12)" strokeWidth="0.5" strokeDasharray="4,6" />
+                  <line x1={PADL} y1={botY} x2={PADL + chartW} y2={botY} stroke="rgba(255,255,255,0.1)" strokeWidth="0.5" strokeDasharray="4,6" />
+                  {/* Halftime marker */}
+                  <line x1={halfX} y1={PADT} x2={halfX} y2={botY} stroke="rgba(255,255,255,0.12)" strokeWidth="0.5" strokeDasharray="4,4" />
+                  <text x={halfX} y={PADT - 8} fill="rgba(255,255,255,0.3)" fontSize="8" fontWeight="600" textAnchor="middle" letterSpacing="1.5">HALFTIME</text>
+                  {/* Gradient fills clipped above/below 50% */}
+                  <g clipPath="url(#clipAbove)"><path d={fillT1Path} fill="url(#wpFillT1)" /></g>
+                  <g clipPath="url(#clipBelow)"><path d={fillT2Path} fill="url(#wpFillT2)" /></g>
+                  {/* Color-changing smooth line */}
+                  {(() => {
+                    const segs = [];
+                    for (let i = 0; i < points.length - 1; i++) {
+                      const p0 = points[Math.max(0, i - 1)];
+                      const p1 = points[i];
+                      const p2 = points[i + 1];
+                      const p3 = points[Math.min(points.length - 1, i + 2)];
+                      const cp1x = p1.x + (p2.x - p0.x) / 6;
+                      const cp1y = p1.y + (p2.y - p0.y) / 6;
+                      const cp2x = p2.x - (p3.x - p1.x) / 6;
+                      const cp2y = p2.y - (p3.y - p1.y) / 6;
+                      const avg = (t1WinProb[i] + t1WinProb[i + 1]) / 2;
+                      const segColor = avg >= 0.5 ? t1C : t2C;
+                      segs.push(<path key={i} d={`M${p1.x},${p1.y} C${cp1x},${cp1y} ${cp2x},${cp2y} ${p2.x},${p2.y}`} stroke={segColor} strokeWidth="2" fill="none" strokeLinecap="round" filter="url(#wpSubtleGlow)" />);
+                    }
+                    return segs;
+                  })()}
+                  {/* End point - small, clean */}
+                  <circle cx={endX} cy={endY} r="3.5" fill={currentProb >= 0.5 ? t1C : t2C} stroke="#0c1520" strokeWidth="1.5" />
+                  {/* Axis labels - minimal */}
+                  <text x={PADL - 6} y={topY + 4} fill="rgba(255,255,255,0.25)" fontSize="8" fontWeight="500" textAnchor="end">100</text>
+                  <text x={PADL - 6} y={midY + 3} fill="rgba(255,255,255,0.3)" fontSize="8" fontWeight="500" textAnchor="end">50</text>
+                  <text x={PADL - 6} y={botY + 3} fill="rgba(255,255,255,0.25)" fontSize="8" fontWeight="500" textAnchor="end">0</text>
                 </svg>
-                <div style={{ textAlign: 'center', marginTop: 10, color: '#475569', fontSize: '0.7rem', letterSpacing: 1, fontWeight: 600 }}>ESPN · WIN PROBABILITY</div>
+                <div style={{ textAlign: 'center', marginTop: 10, color: 'rgba(255,255,255,0.2)', fontSize: '0.65rem', letterSpacing: 1.5, fontWeight: 500 }}>ESPN · WIN PROBABILITY</div>
               </div>
             );
           })()}

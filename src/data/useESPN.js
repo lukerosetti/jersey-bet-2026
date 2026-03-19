@@ -198,6 +198,7 @@ export function useLiveScores() {
               
               const gameKey = [team1Name, team2Name].sort().join('_');
               
+              const venue = competition.venue;
               freshGames[gameKey] = {
                 id: event.id,
                 team1: team1Name,
@@ -207,7 +208,10 @@ export function useLiveScores() {
                 status: gameStatus,
                 clock: clock || '',
                 period: period || 1,
-                network: competition.broadcast || ''
+                network: competition.broadcast || '',
+                venue: venue?.fullName || '',
+                city: venue?.address?.city || '',
+                state: venue?.address?.state || ''
               };
             });
           }
@@ -468,6 +472,9 @@ export function mergeWithLiveData(staticGame, liveGames, playInWinners, resolved
         sc2: t1IsFirst ? liveData.score2 : liveData.score1,
         time: liveData.clock,
         half: liveData.period,
+        venue: liveData.venue || game.venue || '',
+        city: liveData.city || game.city || '',
+        state: liveData.state || game.state || '',
       };
     }
   }

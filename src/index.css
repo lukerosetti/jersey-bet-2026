@@ -56,6 +56,7 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 .game-time.live { color: var(--red); font-weight: 600; }
 .game-time.upcoming { color: var(--cyan); }
 .game-network { font-size: 11px; color: var(--text2); background: var(--border); padding: 4px 8px; border-radius: 4px; }
+.game-location { font-size: 11px; color: var(--text2); opacity: 0.7; margin: 4px 0 2px; }
 
 .game-teams { display: flex; flex-direction: column; gap: 8px; }
 .team-row { display: flex; align-items: center; gap: 10px; }
@@ -114,6 +115,7 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 .m-score { font-size: 32px; font-weight: 700; margin-top: 8px; }
 .m-score.losing { opacity: 0.5; }
 .m-vs { font-size: 14px; color: var(--text2); padding-top: 30px; }
+.m-location { text-align: center; font-size: 12px; color: var(--text2); opacity: 0.7; margin: 8px 0 4px; }
 
 .status-bar { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: var(--card); border-radius: 12px; margin-bottom: 20px; border: 1px solid var(--border); }
 .status-bar.live { border-color: var(--red); background: rgba(239, 68, 68, 0.1); }
