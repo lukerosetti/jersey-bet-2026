@@ -335,68 +335,95 @@ function GameModal({ game, onClose, customizations, liveGames }) {
             const wp = gameDetails.winProbability || [];
             if (wp.length === 0) return <div className="stats-empty">Win probability data not yet available</div>;
 
-            // Determine which team is t1/t2 relative to home/away
             const t1IsHome = gameDetails.homeTeam === game.t1;
-            // Convert homeWinPercentage to t1 win percentage
             const t1WinProb = wp.map(p => t1IsHome ? p : 1 - p);
             const currentProb = t1WinProb[t1WinProb.length - 1];
             const t1Pct = Math.round(currentProb * 100);
             const t2Pct = 100 - t1Pct;
+            const t1C = getTeamColor(game.t1) || '#ef4444';
+            const t2C = getTeamColor(game.t2) || '#3b82f6';
+            const cyan = '#22d3ee';
 
-            // SVG chart dimensions
-            const W = 340, H = 140, PAD = 2;
-            const chartW = W - PAD * 2, chartH = H - PAD * 2;
-            const points = t1WinProb.map((p, i) => {
-              const x = PAD + (i / (t1WinProb.length - 1)) * chartW;
-              const y = PAD + (1 - p) * chartH;
-              return `${x},${y}`;
-            }).join(' ');
+            // Find biggest momentum swing
+            let maxSwing = 0, swingIdx = 0;
+            for (let i = 5; i < t1WinProb.length; i++) {
+              const swing = Math.abs(t1WinProb[i] - t1WinProb[i - 5]);
+              if (swing > maxSwing) { maxSwing = swing; swingIdx = i; }
+            }
+            const swingPct = Math.round(maxSwing * 100);
+            const swingUp = t1WinProb[swingIdx] > t1WinProb[swingIdx - 5];
+            const swingTeam = swingUp ? game.t1 : game.t2;
 
-            // Build the filled area (above 50% for t1, below for t2)
-            const areaAbove = t1WinProb.map((p, i) => {
-              const x = PAD + (i / (t1WinProb.length - 1)) * chartW;
-              const y = PAD + (1 - Math.max(p, 0.5)) * chartH;
-              return `${x},${y}`;
-            }).join(' ');
-            const areaBelow = t1WinProb.map((p, i) => {
-              const x = PAD + (i / (t1WinProb.length - 1)) * chartW;
-              const y = PAD + (1 - Math.min(p, 0.5)) * chartH;
-              return `${x},${y}`;
-            }).join(' ');
+            const W = 460, H = 220;
+            const PADT = 20, PADB = 18, PADL = 44, PADR = 34;
+            const chartW = W - PADL - PADR, chartH = H - PADT - PADB;
+            const midY = PADT + 0.5 * chartH;
+            const halfX = PADL + chartW * 0.5;
 
-            const midY = PAD + 0.5 * chartH;
+            // Build color-changing line segments
+            const lineSegments = [];
+            for (let i = 0; i < t1WinProb.length - 1; i++) {
+              const x1 = PADL + (i / (t1WinProb.length - 1)) * chartW;
+              const y1 = PADT + (1 - t1WinProb[i]) * chartH;
+              const x2 = PADL + ((i + 1) / (t1WinProb.length - 1)) * chartW;
+              const y2 = PADT + (1 - t1WinProb[i + 1]) * chartH;
+              const avg = (t1WinProb[i] + t1WinProb[i + 1]) / 2;
+              const segColor = Math.abs(avg - 0.5) < 0.03 ? cyan : avg > 0.5 ? t1C : t2C;
+              lineSegments.push(<line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke={segColor} strokeWidth="3" strokeLinecap="round" filter="url(#wpGlow)" />);
+            }
+
+            // Fill areas
+            const fillAbove = t1WinProb.map((p, i) => `${PADL + (i / (t1WinProb.length - 1)) * chartW},${PADT + (1 - Math.max(p, 0.5)) * chartH}`).join(' ');
+            const fillBelow = t1WinProb.map((p, i) => `${PADL + (i / (t1WinProb.length - 1)) * chartW},${PADT + (1 - Math.min(p, 0.5)) * chartH}`).join(' ');
+
+            const endColor = currentProb > 0.52 ? t1C : currentProb < 0.48 ? t2C : cyan;
+            const endX = PADL + chartW;
+            const endY = PADT + (1 - currentProb) * chartH;
+            const swX = PADL + (swingIdx / (t1WinProb.length - 1)) * chartW;
+            const swY = PADT + (1 - t1WinProb[swingIdx]) * chartH;
 
             return (
               <div style={{ padding: '12px 0' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, padding: '0 4px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, padding: '0 4px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: getTeamColor(game.t1) }}></div>
-                    <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>{game.t1}</span>
-                    <span style={{ fontWeight: 700, fontSize: '1.1rem', color: t1Pct >= 50 ? 'var(--green)' : 'var(--muted)' }}>{t1Pct}%</span>
+                    <div style={{ width: 12, height: 12, borderRadius: '50%', background: t1C, boxShadow: `0 0 8px ${t1C}88` }}></div>
+                    <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{game.t1}</span>
+                    {owner1 && <span className="owner-dot" style={{ background: getCustomColor(owner1, customizations), width: 8, height: 8, display: 'inline-block', borderRadius: '50%' }}></span>}
+                    <span style={{ fontWeight: 800, fontSize: '1.2rem', color: t1Pct >= 50 ? 'var(--green)' : 'var(--muted)' }}>{t1Pct}%</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontWeight: 700, fontSize: '1.1rem', color: t2Pct >= 50 ? 'var(--green)' : 'var(--muted)' }}>{t2Pct}%</span>
-                    <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>{game.t2}</span>
-                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: getTeamColor(game.t2) }}></div>
+                    <span style={{ fontWeight: 800, fontSize: '1.2rem', color: t2Pct >= 50 ? 'var(--green)' : 'var(--muted)' }}>{t2Pct}%</span>
+                    {owner2 && <span className="owner-dot" style={{ background: getCustomColor(owner2, customizations), width: 8, height: 8, display: 'inline-block', borderRadius: '50%' }}></span>}
+                    <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{game.t2}</span>
+                    <div style={{ width: 12, height: 12, borderRadius: '50%', background: t2C, boxShadow: `0 0 8px ${t2C}88` }}></div>
                   </div>
                 </div>
-                <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 'auto', background: 'var(--card)', borderRadius: 8, border: '1px solid var(--border)' }}>
-                  {/* Filled areas */}
-                  <polygon points={`${PAD},${midY} ${areaAbove} ${PAD + chartW},${midY}`} fill={getTeamColor(game.t1)} opacity="0.15" />
-                  <polygon points={`${PAD},${midY} ${areaBelow} ${PAD + chartW},${midY}`} fill={getTeamColor(game.t2)} opacity="0.15" />
-                  {/* 50% line */}
-                  <line x1={PAD} y1={midY} x2={PAD + chartW} y2={midY} stroke="var(--border)" strokeWidth="1" strokeDasharray="4,4" />
-                  {/* Halftime line */}
-                  <line x1={W / 2} y1={PAD} x2={W / 2} y2={PAD + chartH} stroke="var(--border)" strokeWidth="1" strokeDasharray="2,4" />
-                  <text x={W / 2 + 4} y={PAD + 10} fill="var(--muted)" fontSize="8">HALF</text>
-                  {/* Win probability line */}
-                  <polyline points={points} fill="none" stroke="var(--cyan)" strokeWidth="2" strokeLinejoin="round" />
-                  {/* Current position dot */}
-                  <circle cx={PAD + chartW} cy={PAD + (1 - currentProb) * chartH} r="4" fill="var(--cyan)" />
-                  {/* Team labels */}
-                  <text x={PAD + 4} y={PAD + 10} fill={getTeamColor(game.t1)} fontSize="8" fontWeight="600">{game.t1}</text>
-                  <text x={PAD + 4} y={PAD + chartH - 4} fill={getTeamColor(game.t2)} fontSize="8" fontWeight="600">{game.t2}</text>
+                <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 'auto', background: `radial-gradient(ellipse at 65% 20%, ${t1C}0F 0%, transparent 50%), radial-gradient(ellipse at 35% 80%, ${t2C}0F 0%, transparent 50%), #0a1018`, borderRadius: 10, border: '1px solid #1a2636' }}>
+                  <defs>
+                    <linearGradient id="wpFillT1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={t1C} stopOpacity="0.18" /><stop offset="100%" stopColor={t1C} stopOpacity="0.01" /></linearGradient>
+                    <linearGradient id="wpFillT2" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stopColor={t2C} stopOpacity="0.18" /><stop offset="100%" stopColor={t2C} stopOpacity="0.01" /></linearGradient>
+                    <filter id="wpGlow"><feGaussianBlur stdDeviation="3.5" result="blur" /><feMerge><feMergeNode in="blur" /><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
+                    <filter id="wpDotGlow"><feGaussianBlur stdDeviation="5" result="blur" /><feMerge><feMergeNode in="blur" /><feMergeNode in="blur" /><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
+                  </defs>
+                  <polygon points={`${PADL},${midY} ${fillAbove} ${PADL + chartW},${midY}`} fill="url(#wpFillT1)" />
+                  <polygon points={`${PADL},${midY} ${fillBelow} ${PADL + chartW},${midY}`} fill="url(#wpFillT2)" />
+                  <line x1={PADL} y1={midY} x2={PADL + chartW} y2={midY} stroke="#1e2d3d" strokeWidth="1" strokeDasharray="6,4" />
+                  <line x1={halfX} y1={PADT} x2={halfX} y2={PADT + chartH} stroke="#2a3a4d" strokeWidth="1" strokeDasharray="4,4" />
+                  <text x={halfX} y={PADT - 5} fill="#4a5568" fontSize="9" fontWeight="600" textAnchor="middle">HALF</text>
+                  {lineSegments}
+                  <circle cx={endX} cy={endY} r="6" fill={endColor} filter="url(#wpDotGlow)" />
+                  {swingPct >= 10 && <>
+                    <line x1={swX} y1={swY + 8} x2={swX} y2={swY + 30} stroke={cyan} strokeWidth="1" opacity="0.5" />
+                    <rect x={swX - 28} y={swY + 30} width={56} height={18} rx={4} fill="#0d1520" stroke={cyan} strokeWidth="0.5" opacity="0.9" />
+                    <text x={swX} y={swY + 43} fill={cyan} fontSize="10" fontWeight="700" textAnchor="middle">{'\u25B2'} {swingTeam.length > 8 ? swingTeam.slice(0, 8) : swingTeam} +{swingPct}%</text>
+                  </>}
+                  <text x={PADL - 6} y={PADT + 5} fill={t1C} fontSize="9" fontWeight="700" textAnchor="end">100%</text>
+                  <text x={PADL - 6} y={midY + 4} fill="#475569" fontSize="9" fontWeight="600" textAnchor="end">50%</text>
+                  <text x={PADL - 6} y={PADT + chartH + 2} fill={t2C} fontSize="9" fontWeight="700" textAnchor="end">0%</text>
+                  <text x={PADL + 4} y={PADT + chartH + 14} fill="#334155" fontSize="8" fontWeight="600">1st Half</text>
+                  <text x={halfX + 4} y={PADT + chartH + 14} fill="#334155" fontSize="8" fontWeight="600">2nd Half</text>
                 </svg>
+                <div style={{ textAlign: 'center', marginTop: 10, color: '#475569', fontSize: '0.7rem', letterSpacing: 1, fontWeight: 600 }}>ESPN · WIN PROBABILITY</div>
               </div>
             );
           })()}
