@@ -792,13 +792,14 @@ function calculateStandings(liveGames, playInWinners) {
     let teamsAlive = owner.teams.length;
     let teamsEliminated = 0;
     const eliminatedTeams = [];
+    const teamPoints = {};
+    owner.teams.forEach(t => { teamPoints[t] = { team: t, seed: null, points: 0, status: 'alive', wins: 0, killedBy: null, score: null, round: null, gameId: null }; });
 
     // Check play-in eliminations
     owner.teams.forEach(team => {
       if (playInLosers.has(team)) {
         teamsAlive--;
         teamsEliminated++;
-        // Find the play-in game to get details
         const piGame = playInGames.find(pi => pi.t1 === team || pi.t2 === team);
         const gameKey = piGame ? [piGame.t1, piGame.t2].sort().join('_') : null;
         const liveData = gameKey ? liveGames[gameKey] : null;
@@ -806,9 +807,10 @@ function calculateStandings(liveGames, playInWinners) {
         const winnerScore = liveData ? Math.max(liveData.score1, liveData.score2) : 0;
         const loserScore = liveData ? Math.min(liveData.score1, liveData.score2) : 0;
         eliminatedTeams.push({ team, seed: piGame?.forSeed || 16, killedBy: winner, score: `${loserScore}-${winnerScore}`, round: 0 });
+        if (teamPoints[team]) { teamPoints[team].status = 'eliminated'; teamPoints[team].killedBy = winner; teamPoints[team].score = `${loserScore}-${winnerScore}`; teamPoints[team].seed = piGame?.forSeed || 16; }
       }
     });
-    // Check all games including later rounds and Final Four (resolved already contains FF games)
+    // Check all games including later rounds and Final Four
     Object.values(resolved).forEach(game => {
         if (game && game.status === 'final') {
           const winner = game.sc1 > game.sc2 ? game.t1 : game.t2;
@@ -821,12 +823,15 @@ function calculateStandings(liveGames, playInWinners) {
             const winnerSeed = game.sc1 > game.sc2 ? game.s1 : game.s2;
             const roundPoints = scoringSystem.rounds[game.round || 1] || 1;
             const multiplier = scoringSystem.getSeedMultiplier(winnerSeed);
-            points += roundPoints * multiplier;
+            const earned = roundPoints * multiplier;
+            points += earned;
+            if (teamPoints[winner]) { teamPoints[winner].points += earned; teamPoints[winner].wins++; teamPoints[winner].seed = winnerSeed; }
           }
           if (owner.teams.includes(loser) && !playInLosers.has(loser)) {
             teamsAlive--;
             teamsEliminated++;
             eliminatedTeams.push({ team: loser, seed: loserSeed, killedBy: winner, score: `${loserScore}-${winnerScore}`, round: game.round || 1 });
+            if (teamPoints[loser]) { teamPoints[loser].status = 'eliminated'; teamPoints[loser].killedBy = winner; teamPoints[loser].score = `${loserScore}-${winnerScore}`; teamPoints[loser].round = game.round || 1; teamPoints[loser].seed = loserSeed; }
           }
         }
     });
@@ -856,7 +861,13 @@ function calculateStandings(liveGames, playInWinners) {
       }
     });
     maxPossible = Math.round(maxPossible * 100) / 100;
-    return { ...owner, points: Math.round(points * 100) / 100, teamsAlive, teamsEliminated, eliminatedTeams, maxPossible };
+    // Fill in seeds for teams that haven't been set yet
+    Object.values(resolved).forEach(g => {
+      if (g.t1 && teamPoints[g.t1] && !teamPoints[g.t1].seed) teamPoints[g.t1].seed = g.s1;
+      if (g.t2 && teamPoints[g.t2] && !teamPoints[g.t2].seed) teamPoints[g.t2].seed = g.s2;
+    });
+    const teamData = Object.values(teamPoints).sort((a, b) => b.points - a.points || (a.status === 'alive' ? -1 : 1));
+    return { ...owner, points: Math.round(points * 100) / 100, teamsAlive, teamsEliminated, eliminatedTeams, maxPossible, teamData };
   }).sort((a, b) => b.points - a.points || b.teamsAlive - a.teamsAlive);
 }
 
@@ -1193,8 +1204,9 @@ function Achievements({ liveGames, playInWinners, customizations }) {
 }
 
 // Portfolio Component
-function Portfolio({ liveGames, playInWinners, customizations }) {
+function Portfolio({ liveGames, playInWinners, customizations, onGameClick }) {
   const [history, setHistory] = useState([]);
+  const [expandedPlayer, setExpandedPlayer] = useState(null);
   const standings = calculateStandings(liveGames, playInWinners);
   
   useEffect(() => {
@@ -1223,8 +1235,13 @@ function Portfolio({ liveGames, playInWinners, customizations }) {
     return Math.round(((owner.points - prev.points) / Math.max(prev.points, 1)) * 100);
   };
   
+  const resolvedMap = buildResolvedGames(liveGames, playInWinners);
+
+  const findGameForTeam = (teamName) => {
+    return Object.values(resolvedMap).find(g => g.status === 'final' && (g.t1 === teamName || g.t2 === teamName));
+  };
+
   const getHotTeams = () => {
-    const resolvedMap = buildResolvedGames(liveGames, playInWinners);
     const recentWins = [];
     Object.values(resolvedMap).forEach(game => {
       if (game.status === 'final') {
@@ -1234,7 +1251,7 @@ function Portfolio({ liveGames, playInWinners, customizations }) {
         if (owner) {
           const roundPoints = scoringSystem.rounds[game.round || 1] || 1;
           const multiplier = scoringSystem.getSeedMultiplier(winnerSeed);
-          recentWins.push({ team: winner, owner, points: roundPoints * multiplier, round: game.round });
+          recentWins.push({ team: winner, owner, points: roundPoints * multiplier, round: game.round, game });
         }
       }
     });
@@ -1252,15 +1269,31 @@ function Portfolio({ liveGames, playInWinners, customizations }) {
         {standings.map((player, idx) => {
           const change = getChange(player);
           const healthPct = (player.teamsAlive / player.teams.length) * 100;
+          const isExpanded = expandedPlayer === player.id;
           return (
-            <div key={player.id} className={`portfolio-card ${idx === 0 ? 'leader' : ''}`}>
+            <div key={player.id} className={`portfolio-card ${idx === 0 ? 'leader' : ''} ${isExpanded ? 'expanded' : ''}`} onClick={() => setExpandedPlayer(isExpanded ? null : player.id)} style={{ cursor: 'pointer' }}>
               <div className="portfolio-header">
                 <span className="portfolio-name" style={{ color: getCustomColor(player, customizations) }}>{player.name.toUpperCase()}</span>
-                {change !== null && <span className={`portfolio-change ${change >= 0 ? 'up' : 'down'}`}>{change >= 0 ? '↑' : '↓'} {Math.abs(change)}%</span>}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  {change !== null && <span className={`portfolio-change ${change >= 0 ? 'up' : 'down'}`}>{change >= 0 ? '↑' : '↓'} {Math.abs(change)}%</span>}
+                  <span style={{ color: 'var(--text2)', fontSize: 12, transition: 'transform 0.2s', transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
+                </div>
               </div>
               <div className="portfolio-points">{player.points}</div>
               <div className="portfolio-meta">{player.teamsAlive} alive · {player.teamsEliminated} eliminated</div>
               <div className="portfolio-bar"><div className="portfolio-bar-fill" style={{ width: `${healthPct}%`, background: getCustomColor(player, customizations) }}></div></div>
+              {isExpanded && player.teamData && (
+                <div className="portfolio-team-list">
+                  {player.teamData.map(t => (
+                    <div key={t.team} className={`portfolio-team-row ${t.status === 'eliminated' ? 'eliminated' : ''}`} onClick={(e) => { e.stopPropagation(); const game = findGameForTeam(t.team); if (game && onGameClick) onGameClick(game, game.region); }}>
+                      <span className={`portfolio-team-status ${t.status}`}>{t.status === 'alive' ? '●' : '☠'}</span>
+                      <span className="portfolio-team-seed">{t.seed || '?'}</span>
+                      <span className="portfolio-team-name">{t.team}</span>
+                      <span className="portfolio-team-pts">{t.points > 0 ? `+${t.points.toFixed(1)}` : '0'}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           );
         })}
@@ -1268,12 +1301,12 @@ function Portfolio({ liveGames, playInWinners, customizations }) {
       <div className="portfolio-sections">
         <div className="portfolio-section">
           <div className="section-title">Hot Teams</div>
-          {hotTeams.map((item, idx) => (<div key={idx} className="hot-team-row"><span className="hot-rank">{idx + 1}</span><span className="hot-name">{item.team}</span><span className="hot-owner" style={{ background: getCustomColor(item.owner, customizations) }}></span><span className="hot-points">+{item.points.toFixed(1)} pts</span></div>))}
+          {hotTeams.map((item, idx) => (<div key={idx} className="hot-team-row" onClick={() => { if (item.game && onGameClick) onGameClick(item.game, item.game.region); }}><span className="hot-rank">{idx + 1}</span><span className="hot-name">{item.team}</span><span className="hot-owner" style={{ background: getCustomColor(item.owner, customizations) }}></span><span className="hot-points">+{item.points.toFixed(1)} pts</span></div>))}
           {hotTeams.length === 0 && <div className="empty-state">No completed games yet</div>}
         </div>
         <div className="portfolio-section">
           <div className="section-title">Recent Eliminations</div>
-          {standings.flatMap(s => s.eliminatedTeams.map(t => ({ ...t, owner: s }))).slice(0, 4).map((item, idx) => (<div key={idx} className="elim-row"><span className="elim-icon">☠</span><span className="elim-name">{item.team}</span><span className="elim-owner" style={{ background: getCustomColor(item.owner, customizations) }}></span><span className="elim-round">R{item.round}</span></div>))}
+          {standings.flatMap(s => s.eliminatedTeams.map(t => ({ ...t, owner: s }))).slice(0, 4).map((item, idx) => (<div key={idx} className="elim-row" onClick={() => { const game = findGameForTeam(item.team); if (game && onGameClick) onGameClick(game, game.region); }}><span className="elim-icon">☠</span><span className="elim-name">{item.team}</span><span className="elim-owner" style={{ background: getCustomColor(item.owner, customizations) }}></span><span className="elim-round">R{item.round}</span></div>))}
           {totalEliminated === 0 && <div className="empty-state">No eliminations yet</div>}
         </div>
       </div>
@@ -1924,7 +1957,7 @@ function App() {
 
   const renderCoolStuffContent = () => {
     if (coolStuffSubView === 'achievements') return <><button className="back-btn" onClick={() => setCoolStuffSubView(null)}>← Back</button><Achievements liveGames={liveGames} playInWinners={playInWinners} customizations={customizations} /></>;
-    if (coolStuffSubView === 'portfolio') return <><button className="back-btn" onClick={() => setCoolStuffSubView(null)}>← Back</button><Portfolio liveGames={liveGames} playInWinners={playInWinners} customizations={customizations} /></>;
+    if (coolStuffSubView === 'portfolio') return <><button className="back-btn" onClick={() => setCoolStuffSubView(null)}>← Back</button><Portfolio liveGames={liveGames} playInWinners={playInWinners} customizations={customizations} onGameClick={handleGameClick} /></>;
     if (coolStuffSubView === 'projection') return <><button className="back-btn" onClick={() => setCoolStuffSubView(null)}>← Back</button><ProjectionTool liveGames={liveGames} playInWinners={playInWinners} customizations={customizations} /></>;
     if (coolStuffSubView === 'graveyard') return <><button className="back-btn" onClick={() => setCoolStuffSubView(null)}>← Back</button><Graveyard liveGames={liveGames} playInWinners={playInWinners} customizations={customizations} /></>;
     if (coolStuffSubView === 'h2h') return <><button className="back-btn" onClick={() => setCoolStuffSubView(null)}>← Back</button><HeadToHead liveGames={liveGames} playInWinners={playInWinners} customizations={customizations} /></>;
