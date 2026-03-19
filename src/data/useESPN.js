@@ -322,6 +322,7 @@ export async function fetchGameDetails(gameId) {
       formattedTeamStats[teamName] = {
         fgPct: stats.find(s => s.name === 'fieldGoalPct')?.displayValue || '0%',
         fg3Pct: stats.find(s => s.name === 'threePointFieldGoalPct')?.displayValue || '0%',
+        fg3Made: stats.find(s => s.name === 'threePointFieldGoalsMade')?.displayValue || '0',
         ftPct: stats.find(s => s.name === 'freeThrowPct')?.displayValue || '0%',
         rebounds: stats.find(s => s.name === 'totalRebounds')?.displayValue || '0',
         assists: stats.find(s => s.name === 'assists')?.displayValue || '0',
