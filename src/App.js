@@ -13,6 +13,105 @@ function buildResolvedGames(liveGames, playInWinners) {
 const getCustomColor = (owner, customizations) => customizations?.[owner.id]?.color || owner.color;
 const getCustomInitials = (owner, customizations) => customizations?.[owner.id]?.initials || owner.initials;
 
+function LiveGamesTicker({ resolvedGames, liveGames, playInWinners, onGameClick, customizations }) {
+  // Sort by round first (cross-week safe), then by tip time within same round
+  const parseTip = (tip) => {
+    if (!tip) return Infinity;
+    const dayOrder = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+    const parts = tip.match(/^(\w+)\s+(\d+):(\d+)\s+(AM|PM)$/);
+    if (!parts) return Infinity;
+    const [, day, hr, min, ampm] = parts;
+    let hours = parseInt(hr);
+    if (ampm === 'PM' && hours !== 12) hours += 12;
+    if (ampm === 'AM' && hours === 12) hours = 0;
+    return (dayOrder[day] ?? 7) * 1440 + hours * 60 + parseInt(min);
+  };
+  const sortUpcoming = (a, b) => {
+    const roundDiff = (a.round || 0) - (b.round || 0);
+    if (roundDiff !== 0) return roundDiff;
+    return parseTip(a.tip) - parseTip(b.tip);
+  };
+
+  // Collect all live/halftime games
+  const liveList = Object.values(resolvedGames).filter(g =>
+    g.status === 'live' || g.status === 'halftime'
+  );
+  playInGames.forEach(pi => {
+    const gameKey = [pi.t1, pi.t2].sort().join('_');
+    const liveData = liveGames[gameKey];
+    if (liveData?.status === 'live' || liveData?.status === 'halftime') {
+      const score1 = liveData.team1 === pi.t1 ? liveData.score1 : liveData.score2;
+      const score2 = liveData.team1 === pi.t2 ? liveData.score1 : liveData.score2;
+      if (!liveList.find(g => g.t1 === pi.t1 && g.t2 === pi.t2)) {
+        liveList.push({
+          ...pi, round: 0, s1: pi.forSeed, s2: pi.forSeed,
+          status: liveData.status, sc1: score1 || 0, sc2: score2 || 0,
+          time: liveData.clock, half: liveData.period, espnId: liveData.id, label: 'Play-In'
+        });
+      }
+    }
+  });
+
+  // Always collect upcoming games (shown alongside live or alone)
+  const allResolved = Object.values(resolvedGames);
+  const playInUpcoming = playInGames
+    .filter(pi => !playInWinners[pi.id])
+    .map(pi => ({ ...pi, round: 0, s1: pi.forSeed, s2: pi.forSeed, status: 'upcoming', label: 'Play-In' }));
+  const upcomingList = [...allResolved, ...playInUpcoming]
+    .filter(g => g.status === 'upcoming' && g.t1 !== 'TBD' && g.t2 !== 'TBD')
+    .sort(sortUpcoming)
+    .slice(0, 5);
+
+  if (liveList.length === 0 && upcomingList.length === 0) return null;
+
+  const renderCard = (game, idx, isLive) => {
+    const color1 = getTeamColor(game.t1);
+    const color2 = getTeamColor(game.t2);
+    const roundName = scoringSystem.roundNames[game.round] || '';
+    return (
+      <div key={game.id || idx} className={`ticker-card ${!isLive ? 'upcoming' : ''}`} onClick={() => onGameClick(game, game.region)}>
+        <div className="ticker-status">
+          {isLive
+            ? (game.status === 'halftime' ? 'HT' : `${game.half === 1 ? '1H' : '2H'} ${game.time}`)
+            : (game.tip || roundName || 'TBD')
+          }
+        </div>
+        <div className="ticker-matchup">
+          <div className="ticker-team">
+            <span className="ticker-color" style={{ background: color1 }}></span>
+            <span className="ticker-seed">{game.s1}</span>
+            <span className="ticker-name">{game.t1}</span>
+            {isLive && <span className="ticker-score">{game.sc1}</span>}
+          </div>
+          <div className="ticker-team">
+            <span className="ticker-color" style={{ background: color2 }}></span>
+            <span className="ticker-seed">{game.s2}</span>
+            <span className="ticker-name">{game.t2}</span>
+            {isLive && <span className="ticker-score">{game.sc2}</span>}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="live-ticker">
+      {liveList.length > 0 && (
+        <div className="ticker-section">
+          <div className="live-ticker-label"><span className="live-badge">LIVE</span><span>{liveList.length} Game{liveList.length > 1 ? 's' : ''}</span></div>
+          <div className="live-ticker-scroll">{liveList.map((g, i) => renderCard(g, i, true))}</div>
+        </div>
+      )}
+      {upcomingList.length > 0 && (
+        <div className="ticker-section">
+          <div className="live-ticker-label"><span>Up Next</span></div>
+          <div className="live-ticker-scroll">{upcomingList.map((g, i) => renderCard(g, i, false))}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function LiveIndicator({ lastUpdate, isLoading, error }) {
   const formatTime = (date) => date ? date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '--:--';
   return (
@@ -1760,6 +1859,7 @@ function App() {
         <button className={`nav-tab ${currentTab === 'coolstuff' ? 'active' : ''}`} onClick={() => { setCurrentTab('coolstuff'); setCoolStuffSubView(null); }}>More</button>
       </nav>
       <LiveIndicator lastUpdate={lastUpdate} isLoading={isLoading} error={error} />
+      <LiveGamesTicker resolvedGames={resolvedAll} liveGames={liveGames} playInWinners={playInWinners} onGameClick={handleGameClick} customizations={customizations} />
       <main>
         {currentTab === 'regions' && <RegionsView onGameClick={handleGameClick} liveGames={liveGames} playInWinners={playInWinners} customizations={customizations} />}
         {currentTab === 'bracket' && <BracketView onGameClick={handleGameClick} liveGames={liveGames} playInWinners={playInWinners} customizations={customizations} />}
