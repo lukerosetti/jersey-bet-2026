@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { owners, regions as staticRegions, playInGames, finalFourGames, getOwner, getTeamColor, getTeamLogo, getStreaming, scoringSystem, badges } from './data/bracketData';
 import { useLiveScores, mergeWithLiveData, resolveAllGames, fetchGameDetails, fetchTeamRoster } from './data/useESPN';
 
@@ -12,6 +12,47 @@ function buildResolvedGames(liveGames, playInWinners) {
 
 const getCustomColor = (owner, customizations) => customizations?.[owner.id]?.color || owner.color;
 const getCustomInitials = (owner, customizations) => customizations?.[owner.id]?.initials || owner.initials;
+
+function TickerCard({ game, isLive, onGameClick }) {
+  const color1 = getTeamColor(game.t1);
+  const color2 = getTeamColor(game.t2);
+  const roundName = scoringSystem.roundNames[game.round] || '';
+  const prevScores = useRef({ sc1: game.sc1, sc2: game.sc2 });
+  const [flash1, setFlash1] = useState(false);
+  const [flash2, setFlash2] = useState(false);
+  const [pulse, setPulse] = useState(false);
+  useEffect(() => {
+    if (isLive && prevScores.current.sc1 !== undefined) {
+      if (game.sc1 > prevScores.current.sc1) { setFlash1(true); setPulse(true); setTimeout(() => { setFlash1(false); setPulse(false); }, 1200); }
+      if (game.sc2 > prevScores.current.sc2) { setFlash2(true); setPulse(true); setTimeout(() => { setFlash2(false); setPulse(false); }, 1200); }
+    }
+    prevScores.current = { sc1: game.sc1, sc2: game.sc2 };
+  }, [game.sc1, game.sc2, isLive]);
+  return (
+    <div className={`ticker-card ${!isLive ? 'upcoming' : ''} ${pulse ? 'card-pulse' : ''}`} onClick={() => onGameClick(game, game.region)}>
+      <div className="ticker-status">
+        {isLive
+          ? (game.status === 'halftime' ? 'HT' : `${game.half === 1 ? '1H' : '2H'} ${game.time}`)
+          : (game.tip || roundName || 'TBD')
+        }
+      </div>
+      <div className="ticker-matchup">
+        <div className="ticker-team">
+          <span className="ticker-color" style={{ background: color1 }}></span>
+          <span className="ticker-seed">{game.s1}</span>
+          <span className="ticker-name">{game.t1}</span>
+          {isLive && <span className={`ticker-score ${flash1 ? 'score-flash' : ''}`}>{game.sc1}</span>}
+        </div>
+        <div className="ticker-team">
+          <span className="ticker-color" style={{ background: color2 }}></span>
+          <span className="ticker-seed">{game.s2}</span>
+          <span className="ticker-name">{game.t2}</span>
+          {isLive && <span className={`ticker-score ${flash2 ? 'score-flash' : ''}`}>{game.sc2}</span>}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function LiveGamesTicker({ resolvedGames, liveGames, playInWinners, onGameClick, customizations }) {
   // Sort by round first (cross-week safe), then by tip time within same round
@@ -64,35 +105,9 @@ function LiveGamesTicker({ resolvedGames, liveGames, playInWinners, onGameClick,
 
   if (liveList.length === 0 && upcomingList.length === 0) return null;
 
-  const renderCard = (game, idx, isLive) => {
-    const color1 = getTeamColor(game.t1);
-    const color2 = getTeamColor(game.t2);
-    const roundName = scoringSystem.roundNames[game.round] || '';
-    return (
-      <div key={game.id || idx} className={`ticker-card ${!isLive ? 'upcoming' : ''}`} onClick={() => onGameClick(game, game.region)}>
-        <div className="ticker-status">
-          {isLive
-            ? (game.status === 'halftime' ? 'HT' : `${game.half === 1 ? '1H' : '2H'} ${game.time}`)
-            : (game.tip || roundName || 'TBD')
-          }
-        </div>
-        <div className="ticker-matchup">
-          <div className="ticker-team">
-            <span className="ticker-color" style={{ background: color1 }}></span>
-            <span className="ticker-seed">{game.s1}</span>
-            <span className="ticker-name">{game.t1}</span>
-            {isLive && <span className="ticker-score">{game.sc1}</span>}
-          </div>
-          <div className="ticker-team">
-            <span className="ticker-color" style={{ background: color2 }}></span>
-            <span className="ticker-seed">{game.s2}</span>
-            <span className="ticker-name">{game.t2}</span>
-            {isLive && <span className="ticker-score">{game.sc2}</span>}
-          </div>
-        </div>
-      </div>
-    );
-  };
+  const renderCard = (game, idx, isLive) => (
+    <TickerCard key={game.id || idx} game={game} isLive={isLive} onGameClick={onGameClick} />
+  );
 
   return (
     <div className="live-ticker">
@@ -179,8 +194,21 @@ function GameCard({ game, onClick, customizations }) {
   const team2Winning = (isLive || isFinal) && game.sc2 > game.sc1;
   const isTBD = game.t1 === 'TBD' || game.t2 === 'TBD';
 
+  // Score flash tracking
+  const prevScores = useRef({ sc1: game.sc1, sc2: game.sc2 });
+  const [flash1, setFlash1] = useState(false);
+  const [flash2, setFlash2] = useState(false);
+  const [cardPulse, setCardPulse] = useState(false);
+  useEffect(() => {
+    if (isLive && prevScores.current.sc1 !== undefined) {
+      if (game.sc1 > prevScores.current.sc1) { setFlash1(true); setCardPulse(true); setTimeout(() => { setFlash1(false); setCardPulse(false); }, 1200); }
+      if (game.sc2 > prevScores.current.sc2) { setFlash2(true); setCardPulse(true); setTimeout(() => { setFlash2(false); setCardPulse(false); }, 1200); }
+    }
+    prevScores.current = { sc1: game.sc1, sc2: game.sc2 };
+  }, [game.sc1, game.sc2, isLive]);
+
   return (
-    <div className={`game-card ${isLive ? 'live' : ''} ${isTBD ? 'tbd-game' : ''}`} onClick={isTBD ? undefined : onClick}>
+    <div className={`game-card ${isLive ? 'live' : ''} ${isTBD ? 'tbd-game' : ''} ${cardPulse ? 'card-pulse' : ''}`} onClick={isTBD ? undefined : onClick}>
       <div className="game-header">
         <div className="game-status">
           {isLive ? (<><span className="live-badge">{game.status === 'halftime' ? 'Half' : 'Live'}</span><span className="game-time live">{game.status === 'halftime' ? 'Halftime' : `${game.half === 1 ? '1H' : '2H'} ${game.time}`}</span></>) : isFinal ? (<span className="game-time" style={{ color: 'var(--green)' }}>Final</span>) : (<span className="game-time upcoming">{game.tip}</span>)}
@@ -196,7 +224,7 @@ function GameCard({ game, onClick, customizations }) {
             <div className={`team-name ${team2Winning ? 'loser' : ''}`}>{game.t1}</div>
             <div className="team-meta">{owner1 && <span className="owner-badge"><span className="owner-dot" style={{ background: getCustomColor(owner1, customizations) }}></span>{owner1.name}</span>}{game.rec1 && <span className="team-record">{game.rec1}</span>}</div>
           </div>
-          {(isLive || isFinal) && <span className={`team-score ${team2Winning ? 'loser' : ''}`}>{game.sc1}</span>}
+          {(isLive || isFinal) && <span className={`team-score ${team2Winning ? 'loser' : ''} ${flash1 ? 'score-flash' : ''}`}>{game.sc1}</span>}
         </div>
         <div className="team-row">
           <div className="team-seed">{game.s2}</div>
@@ -206,7 +234,7 @@ function GameCard({ game, onClick, customizations }) {
             <div className={`team-name ${team1Winning ? 'loser' : ''} ${game.t2 === 'TBD' ? 'tbd' : ''}`}>{game.t2 === 'TBD' ? 'Play-In Winner' : game.t2}</div>
             <div className="team-meta">{game.t2 !== 'TBD' && owner2 && <span className="owner-badge"><span className="owner-dot" style={{ background: getCustomColor(owner2, customizations) }}></span>{owner2.name}</span>}{game.rec2 && <span className="team-record">{game.rec2}</span>}</div>
           </div>
-          {(isLive || isFinal) && <span className={`team-score ${team1Winning ? 'loser' : ''}`}>{game.sc2}</span>}
+          {(isLive || isFinal) && <span className={`team-score ${team1Winning ? 'loser' : ''} ${flash2 ? 'score-flash' : ''}`}>{game.sc2}</span>}
         </div>
       </div>
       {!isTBD && (

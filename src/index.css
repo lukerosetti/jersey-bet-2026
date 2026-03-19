@@ -71,8 +71,15 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 .owner-badge { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text2); }
 .owner-dot { width: 8px; height: 8px; border-radius: 50%; }
 .team-record { font-size: 11px; color: var(--text2); }
-.team-score { font-size: 20px; font-weight: 700; min-width: 36px; text-align: right; }
+.team-score { font-size: 20px; font-weight: 700; min-width: 36px; text-align: right; display: inline-block; }
 .team-score.loser { opacity: 0.5; }
+
+/* Score flash animations */
+@keyframes scoreFlash { 0% { color: var(--cyan); text-shadow: 0 0 12px rgba(34,211,238,0.8), 0 0 24px rgba(34,211,238,0.4); transform: scale(1.25); } 50% { color: #67e8f9; text-shadow: 0 0 8px rgba(34,211,238,0.5); transform: scale(1.1); } 100% { color: white; text-shadow: none; transform: scale(1); } }
+@keyframes cardPulse { 0% { box-shadow: inset 0 0 0 1px rgba(34,211,238,0.5), 0 0 15px 3px rgba(34,211,238,0.2); } 50% { box-shadow: inset 0 0 0 1px rgba(34,211,238,0.25), 0 0 8px 1px rgba(34,211,238,0.1); } 100% { box-shadow: none; } }
+.score-flash { animation: scoreFlash 1.2s ease-out; }
+.card-pulse { animation: cardPulse 1.2s ease-out; }
+.ticker-score.score-flash { animation: scoreFlash 1.2s ease-out; display: inline-block; }
 
 .prob-bar-container { margin: 12px 0 8px; }
 .prob-bar { display: flex; height: 4px; border-radius: 2px; overflow: hidden; }
