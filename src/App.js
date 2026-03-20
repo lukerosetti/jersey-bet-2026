@@ -731,13 +731,20 @@ function RegionsView({ onGameClick, liveGames, playInWinners, customizations, re
     setSelectedRound(null);
   };
 
+  // Helper: get scroll position for a given page index
+  const getPageScrollLeft = (container, idx) => {
+    const pages = container.querySelectorAll('.rounds-carousel-page');
+    if (pages[idx]) return pages[idx].offsetLeft - container.offsetLeft;
+    return 0;
+  };
+
   // Scroll to a round when tab is clicked
   const scrollToRound = (round) => {
     const idx = availableRounds.indexOf(round);
     if (idx === -1 || !scrollRef.current) return;
     isScrolling.current = true;
     const container = scrollRef.current;
-    container.scrollTo({ left: idx * container.offsetWidth, behavior: 'smooth' });
+    container.scrollTo({ left: getPageScrollLeft(container, idx), behavior: 'smooth' });
     setVisibleRound(round);
     setSelectedRound(round);
     setTimeout(() => { isScrolling.current = false; }, 400);
@@ -747,8 +754,15 @@ function RegionsView({ onGameClick, liveGames, playInWinners, customizations, re
   const handleScroll = () => {
     if (isScrolling.current || !scrollRef.current) return;
     const container = scrollRef.current;
-    const idx = Math.round(container.scrollLeft / container.offsetWidth);
-    const round = availableRounds[idx];
+    const pages = container.querySelectorAll('.rounds-carousel-page');
+    const scrollPos = container.scrollLeft;
+    let closestIdx = 0;
+    let closestDist = Infinity;
+    pages.forEach((page, i) => {
+      const dist = Math.abs((page.offsetLeft - container.offsetLeft) - scrollPos);
+      if (dist < closestDist) { closestDist = dist; closestIdx = i; }
+    });
+    const round = availableRounds[closestIdx];
     if (round !== undefined && round !== visibleRound) {
       setVisibleRound(round);
       setSelectedRound(round);
@@ -759,7 +773,7 @@ function RegionsView({ onGameClick, liveGames, playInWinners, customizations, re
   useEffect(() => {
     const idx = availableRounds.indexOf(latestRound);
     if (idx !== -1 && scrollRef.current) {
-      scrollRef.current.scrollTo({ left: idx * scrollRef.current.offsetWidth, behavior: 'auto' });
+      scrollRef.current.scrollTo({ left: getPageScrollLeft(scrollRef.current, idx), behavior: 'auto' });
       setVisibleRound(latestRound);
     }
   }, [activeRegion]); // intentionally only activeRegion — reset scroll on region switch
