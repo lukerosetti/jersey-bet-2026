@@ -139,10 +139,13 @@ export function useLiveScores() {
       const team1Name = normalizeTeamName(awayTeam.team?.displayName || '');
       const team2Name = normalizeTeamName(homeTeam.team?.displayName || '');
       const status = competition.status?.type?.name;
+      const statusState = competition.status?.type?.state; // 'pre', 'in', 'post'
       let gameStatus = 'upcoming';
-      if (status === 'STATUS_IN_PROGRESS') gameStatus = 'live';
+      if (status === 'STATUS_IN_PROGRESS' || status === 'STATUS_END_PERIOD') gameStatus = 'live';
       else if (status === 'STATUS_FINAL') gameStatus = 'final';
       else if (status === 'STATUS_HALFTIME') gameStatus = 'halftime';
+      else if (statusState === 'in') gameStatus = 'live';
+      else if (statusState === 'post') gameStatus = 'final';
       const score1 = parseInt(awayTeam.score) || 0;
       const score2 = parseInt(homeTeam.score) || 0;
       if (gameStatus === 'final') {
