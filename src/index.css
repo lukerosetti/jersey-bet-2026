@@ -44,6 +44,7 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 /* Header */
 .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
 .header h1 { font-size: 28px; font-weight: 700; background: linear-gradient(135deg, var(--cyan), #67e8f9); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.header-logo { height: 96px; width: auto; display: block; margin-bottom: 2px; }
 .header-sub { font-size: 11px; color: var(--text2); text-transform: uppercase; letter-spacing: 1px; }
 .user-avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; cursor: pointer; }
 

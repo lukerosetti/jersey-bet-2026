@@ -98,6 +98,20 @@ function LiveGamesTicker({ resolvedGames, liveGames, playInWinners, onGameClick,
     }
   });
 
+  // Sort live games: least time remaining first (2H < HT < 1H, then by clock ascending)
+  const parseClockSeconds = (time) => {
+    if (!time) return 1200; // no clock = assume full time
+    const parts = time.split(':');
+    return (parseInt(parts[0]) || 0) * 60 + (parseInt(parts[1]) || 0);
+  };
+  const getTimeRemaining = (g) => {
+    if (g.status === 'halftime') return 1200; // ~20 min = halftime + full 2H
+    const clockSec = parseClockSeconds(g.time);
+    if (g.half === 2 || g.half === 'OT') return clockSec; // just clock left
+    return 1200 + clockSec; // 1H: full 2H + remaining 1H clock
+  };
+  liveList.sort((a, b) => getTimeRemaining(a) - getTimeRemaining(b));
+
   // Always collect upcoming games (shown alongside live or alone)
   const allResolved = Object.values(resolvedGames);
   const playInUpcoming = playInGames
@@ -2313,7 +2327,7 @@ function App() {
       <div className={`ptr-indicator ${ptrVisible ? 'visible' : ''} ${ptrRefreshing ? 'refreshing' : ''}`}><div className="ptr-spinner"></div></div>
       <div className="glass-header-bar" />
       <header className="header">
-        <div><div className="header-sub">March Madness 2026</div><h1>Jersey Bet</h1></div>
+        <div><img src="/logo.png" alt="Jersey Bets" className="header-logo" /><div className="header-sub">March Madness 2026</div></div>
         <div className="header-right">
           <button className="settings-btn" onClick={() => setShowSearch(true)}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
           <button className="settings-btn" onClick={() => setShowSettings(true)}>⚙</button>
