@@ -74,7 +74,7 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 /* Rounds Carousel */
 .rounds-carousel { display: flex; overflow-x: auto; overflow-y: clip; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; -ms-overflow-style: none; scrollbar-width: none; }
 .rounds-carousel::-webkit-scrollbar { display: none; }
-.rounds-carousel-page { min-width: 100%; width: 100%; flex-shrink: 0; scroll-snap-align: start; }
+.rounds-carousel-page { min-width: 100%; width: 100%; flex-shrink: 0; scroll-snap-align: start; padding: 4px 0 16px; }
 
 /* Game Card */
 .game-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px; margin-bottom: 12px; cursor: pointer; transition: all 0.2s; }
