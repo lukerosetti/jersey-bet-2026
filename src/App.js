@@ -637,6 +637,16 @@ function RegionsView({ onGameClick, liveGames, playInWinners, customizations, re
 
   const [activeRegion, setActiveRegion] = useState(getDefaultRegion);
   const [selectedRound, setSelectedRound] = useState(null); // null = auto (latest round)
+  const userPickedRegion = useRef(false);
+
+  // Once live data loads, auto-switch to region with live games (if user hasn't manually picked one)
+  useEffect(() => {
+    if (userPickedRegion.current) return;
+    const best = getDefaultRegion();
+    if (best !== 'east' || hasLiveInRegion('east')) {
+      setActiveRegion(best);
+    }
+  }, [resolved]); // re-check when game data updates
 
   const hasLiveInRegion = (regionName) => {
     if (regionName === 'finalfour') {
@@ -699,6 +709,7 @@ function RegionsView({ onGameClick, liveGames, playInWinners, customizations, re
 
   // Reset selected round & scroll when switching regions
   const handleRegionChange = (name) => {
+    userPickedRegion.current = true;
     setActiveRegion(name);
     setSelectedRound(null);
   };
