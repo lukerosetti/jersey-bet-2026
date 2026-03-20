@@ -280,7 +280,8 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 .b-score { font-size: 12px; font-weight: 700; min-width: 20px; text-align: right; flex-shrink: 0; }
 .b-score.loser { opacity: 0.5; }
 .game-status-bar { font-size: 9px; color: var(--text2); display: flex; justify-content: space-between; align-items: center; padding-top: 4px; border-top: 1px solid var(--border); margin-top: 2px; }
-.b-network { font-size: 8px; color: var(--text); font-weight: 500; white-space: nowrap; }
+.b-network { font-size: 8px; color: var(--text); font-weight: 500; white-space: nowrap; margin-left: 4px; }
+.b-location { font-size: 8px; color: var(--text2); opacity: 0.6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90px; text-align: right; }
 .game-status-bar.live { color: var(--red); }
 .game-status-bar.final { color: var(--green); }
 .game-status-bar.upcoming { color: var(--text2); opacity: 0.7; }
