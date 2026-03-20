@@ -31,10 +31,11 @@ function TickerCard({ game, isLive, onGameClick }) {
   return (
     <div className={`ticker-card ${!isLive ? 'upcoming' : ''} ${pulse ? 'card-pulse' : ''}`} onClick={() => onGameClick(game, game.region)}>
       <div className="ticker-status">
-        {isLive
+        <span>{isLive
           ? (game.status === 'halftime' ? 'HT' : `${game.half === 1 ? '1H' : '2H'} ${game.time}`)
           : (game.tip || roundName || 'TBD')
-        }
+        }</span>
+        {game.network && <span className="ticker-network">{game.network}</span>}
       </div>
       <div className="ticker-matchup">
         <div className="ticker-team">
@@ -607,10 +608,23 @@ function GameModal({ game, onClose, customizations, liveGames }) {
 }
 
 function RegionsView({ onGameClick, liveGames, playInWinners, customizations, resolvedMap }) {
-  const [activeRegion, setActiveRegion] = useState('east');
-  const [selectedRound, setSelectedRound] = useState(null); // null = auto (latest round)
   const resolved = resolvedMap || buildResolvedGames(liveGames, playInWinners);
   const regionNames = [...Object.keys(staticRegions), 'finalfour'];
+
+  // Default to the first region with a live game, or 'east' if none
+  const getDefaultRegion = () => {
+    for (const name of Object.keys(staticRegions)) {
+      const hasLive = staticRegions[name]?.games?.some(game => {
+        const merged = resolved[game.id] || mergeWithLiveData(game, liveGames, playInWinners, resolved);
+        return merged.status === 'live' || merged.status === 'halftime';
+      });
+      if (hasLive) return name;
+    }
+    return 'east';
+  };
+
+  const [activeRegion, setActiveRegion] = useState(getDefaultRegion);
+  const [selectedRound, setSelectedRound] = useState(null); // null = auto (latest round)
 
   const hasLiveInRegion = (regionName) => {
     if (regionName === 'finalfour') return false;
@@ -662,16 +676,23 @@ function RegionsView({ onGameClick, liveGames, playInWinners, customizations, re
 
   // Get games for the active region/round
   const getDisplayGames = () => {
+    const sortLiveFirst = (arr) => arr.sort((a, b) => {
+      const aLive = (a.status === 'live' || a.status === 'halftime') ? 0 : 1;
+      const bLive = (b.status === 'live' || b.status === 'halftime') ? 0 : 1;
+      if (aLive !== bLive) return aLive - bLive;
+      return (a.s1 || 16) - (b.s1 || 16);
+    });
     if (activeRegion === 'finalfour') {
       if (displayRound === 6) {
         const champ = finalFourGames.filter(fg => fg.round === 6);
-        return champ.map(fg => resolved[fg.id] || mergeWithLiveData(fg, liveGames, playInWinners, resolved));
+        return sortLiveFirst(champ.map(fg => resolved[fg.id] || mergeWithLiveData(fg, liveGames, playInWinners, resolved)));
       }
       const ff = finalFourGames.filter(fg => fg.round === 5);
-      return ff.map(fg => resolved[fg.id] || mergeWithLiveData(fg, liveGames, playInWinners, resolved));
+      return sortLiveFirst(ff.map(fg => resolved[fg.id] || mergeWithLiveData(fg, liveGames, playInWinners, resolved)));
     }
     const games = staticRegions[activeRegion]?.games?.filter(g => g.round === displayRound) || [];
-    return games.map(g => resolved[g.id] || mergeWithLiveData(g, liveGames, playInWinners, resolved));
+    const merged = games.map(g => resolved[g.id] || mergeWithLiveData(g, liveGames, playInWinners, resolved));
+    return sortLiveFirst(merged);
   };
 
   const displayGames = getDisplayGames();
@@ -2054,7 +2075,7 @@ function TeamSearch({ resolvedMap, customizations, onGameClick, onClose }) {
       <div className="search-container" onClick={e => e.stopPropagation()}>
         <div className="search-header">
           <div className="search-input-wrap">
-            <span className="search-icon">🔍</span>
+            <span className="search-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
             <input ref={inputRef} className="search-input" type="text" placeholder="Search teams or owners..." value={query} onChange={e => setQuery(e.target.value)} />
             {query && <button className="search-clear" onClick={() => setQuery('')}>×</button>}
           </div>
@@ -2160,7 +2181,37 @@ function App() {
       return JSON.parse(localStorage.getItem('jerseyBetCustomizations')) || {};
     } catch { return {}; }
   });
-  const { liveGames, playInWinners, lastUpdate, isLoading, error } = useLiveScores();
+  const { liveGames, playInWinners, lastUpdate, isLoading, error, refetch } = useLiveScores();
+
+  // Pull-to-refresh
+  const [ptrVisible, setPtrVisible] = useState(false);
+  const [ptrRefreshing, setPtrRefreshing] = useState(false);
+  const touchStartY = useRef(0);
+
+  useEffect(() => {
+    const onTouchStart = (e) => { touchStartY.current = e.touches[0].clientY; };
+    const onTouchMove = (e) => {
+      if (window.scrollY === 0 && e.touches[0].clientY - touchStartY.current > 60 && !ptrRefreshing) {
+        setPtrVisible(true);
+      }
+    };
+    const onTouchEnd = async () => {
+      if (ptrVisible && !ptrRefreshing) {
+        setPtrRefreshing(true);
+        await refetch();
+        setPtrRefreshing(false);
+        setPtrVisible(false);
+      }
+    };
+    window.addEventListener('touchstart', onTouchStart, { passive: true });
+    window.addEventListener('touchmove', onTouchMove, { passive: true });
+    window.addEventListener('touchend', onTouchEnd);
+    return () => {
+      window.removeEventListener('touchstart', onTouchStart);
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('touchend', onTouchEnd);
+    };
+  }, [ptrVisible, ptrRefreshing, refetch]);
 
   useEffect(() => {
     if (selectedGame || showSettings || showSearch) {
@@ -2188,11 +2239,12 @@ function App() {
 
   return (
     <div className="app">
+      <div className={`ptr-indicator ${ptrVisible ? 'visible' : ''} ${ptrRefreshing ? 'refreshing' : ''}`}><div className="ptr-spinner"></div></div>
       <div className="glass-header-bar" />
       <header className="header">
         <div><div className="header-sub">March Madness 2026</div><h1>Jersey Bet</h1></div>
         <div className="header-right">
-          <button className="settings-btn" onClick={() => setShowSearch(true)}>🔍</button>
+          <button className="settings-btn" onClick={() => setShowSearch(true)}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
           <button className="settings-btn" onClick={() => setShowSettings(true)}>⚙</button>
           <div className="user-avatar" style={{ background: getUserColor(currentUser) }}>{getUserInitials(currentUser)}</div>
         </div>

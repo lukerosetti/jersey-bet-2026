@@ -127,12 +127,88 @@ export function useLiveScores() {
   const [error, setError] = useState(null);
   const hasInitialFetch = useRef(false);
 
+  // Parse ESPN events into our game/winner format
+  const parseEvents = (events, games, winners) => {
+    if (!events) return;
+    events.forEach(event => {
+      const competition = event.competitions?.[0];
+      if (!competition) return;
+      const homeTeam = competition.competitors?.find(c => c.homeAway === 'home');
+      const awayTeam = competition.competitors?.find(c => c.homeAway === 'away');
+      if (!homeTeam || !awayTeam) return;
+      const team1Name = normalizeTeamName(awayTeam.team?.displayName || '');
+      const team2Name = normalizeTeamName(homeTeam.team?.displayName || '');
+      const status = competition.status?.type?.name;
+      let gameStatus = 'upcoming';
+      if (status === 'STATUS_IN_PROGRESS') gameStatus = 'live';
+      else if (status === 'STATUS_FINAL') gameStatus = 'final';
+      else if (status === 'STATUS_HALFTIME') gameStatus = 'halftime';
+      const score1 = parseInt(awayTeam.score) || 0;
+      const score2 = parseInt(homeTeam.score) || 0;
+      if (gameStatus === 'final') {
+        const winner = score1 > score2 ? team1Name : team2Name;
+        playInGames.forEach(pi => {
+          if ((pi.t1 === team1Name && pi.t2 === team2Name) || (pi.t1 === team2Name && pi.t2 === team1Name)) {
+            winners[pi.id] = winner;
+          }
+        });
+      }
+      const gameKey = [team1Name, team2Name].sort().join('_');
+      const venue = competition.venue;
+      games[gameKey] = {
+        id: event.id, team1: team1Name, team2: team2Name,
+        score1, score2, status: gameStatus,
+        clock: competition.status?.displayClock || '', period: competition.status?.period || 1,
+        network: competition.broadcast || '',
+        venue: venue?.fullName || '', city: venue?.address?.city || '', state: venue?.address?.state || '',
+        startDate: event.date || competition.startDate || ''
+      };
+    });
+  };
+
+  // Fetch multiple dates in parallel and parse results
+  const fetchDates = async (dayOffsets) => {
+    const today = new Date();
+    const games = {};
+    const winners = {};
+    const fetches = dayOffsets.map(async (offset) => {
+      const date = new Date(today);
+      date.setDate(date.getDate() + offset);
+      const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '');
+      try {
+        const response = await fetch(`${ESPN_SCOREBOARD}?groups=100&dates=${dateStr}`);
+        if (!response.ok) return;
+        const data = await response.json();
+        parseEvents(data.events, games, winners);
+      } catch (err) {
+        console.warn(`Error fetching scores for ${dateStr}:`, err);
+      }
+    });
+    await Promise.all(fetches);
+    return { games, winners };
+  };
+
+  // Merge fresh data with cached, update state and localStorage
+  const mergeAndUpdate = (cachedGames, cachedWinners, freshGames, freshWinners) => {
+    const mergedGames = { ...cachedGames, ...freshGames };
+    const mergedWinners = { ...cachedWinners, ...freshWinners };
+    const gamesToCache = {};
+    Object.entries(mergedGames).forEach(([key, game]) => {
+      if (game.status === 'final') gamesToCache[key] = game;
+    });
+    try {
+      localStorage.setItem('jerseyBetGames', JSON.stringify(gamesToCache));
+      localStorage.setItem('jerseyBetPlayInWinners', JSON.stringify(mergedWinners));
+    } catch (e) { console.warn('Could not save to localStorage:', e); }
+    setLiveGames(mergedGames);
+    setPlayInWinners(mergedWinners);
+    setLastUpdate(new Date());
+  };
+
   const fetchScores = useCallback(async () => {
     setIsLoading(true);
     setError(null);
-
     try {
-      // Load cached completed games
       let cachedGames = {};
       let cachedWinners = {};
       try {
@@ -140,120 +216,33 @@ export function useLiveScores() {
         cachedWinners = JSON.parse(localStorage.getItem('jerseyBetPlayInWinners')) || {};
       } catch { }
 
-      // First load: fetch 28 days to recover all historical games
-      // Subsequent polls: only fetch past 4 days for live updates
       const isFirstFetch = !hasInitialFetch.current;
-      const daysToFetch = isFirstFetch ? 28 : 4;
       hasInitialFetch.current = true;
 
-      const today = new Date();
-      const freshGames = {};
-      const freshWinners = {};
+      // Fast fetch: today + yesterday + tomorrow (3 parallel requests)
+      const { games: quickGames, winners: quickWinners } = await fetchDates([-1, 0, 1]);
+      mergeAndUpdate(cachedGames, cachedWinners, quickGames, quickWinners);
+      setIsLoading(false);
 
-      // Fetch past days + upcoming days to get venue data for future games
-      const daysAhead = isFirstFetch ? 21 : 3;
-      for (let i = -daysAhead; i < daysToFetch; i++) {
-        const date = new Date(today);
-        date.setDate(date.getDate() - i);
-        const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '');
-        
-        try {
-          const response = await fetch(`${ESPN_SCOREBOARD}?groups=100&dates=${dateStr}`);
-          if (!response.ok) continue;
-          
-          const data = await response.json();
-          
-          if (data.events) {
-            data.events.forEach(event => {
-              const competition = event.competitions?.[0];
-              if (!competition) return;
-              
-              const homeTeam = competition.competitors?.find(c => c.homeAway === 'home');
-              const awayTeam = competition.competitors?.find(c => c.homeAway === 'away');
-              
-              if (!homeTeam || !awayTeam) return;
-              
-              const team1Name = normalizeTeamName(awayTeam.team?.displayName || '');
-              const team2Name = normalizeTeamName(homeTeam.team?.displayName || '');
-              
-              const status = competition.status?.type?.name;
-              const clock = competition.status?.displayClock;
-              const period = competition.status?.period;
-              
-              let gameStatus = 'upcoming';
-              if (status === 'STATUS_IN_PROGRESS') gameStatus = 'live';
-              else if (status === 'STATUS_FINAL') gameStatus = 'final';
-              else if (status === 'STATUS_HALFTIME') gameStatus = 'halftime';
-              
-              const score1 = parseInt(awayTeam.score) || 0;
-              const score2 = parseInt(homeTeam.score) || 0;
-              
-              if (gameStatus === 'final') {
-                const winner = score1 > score2 ? team1Name : team2Name;
-                playInGames.forEach(pi => {
-                  if ((pi.t1 === team1Name && pi.t2 === team2Name) || 
-                      (pi.t1 === team2Name && pi.t2 === team1Name)) {
-                    freshWinners[pi.id] = winner;
-                  }
-                });
-              }
-              
-              const gameKey = [team1Name, team2Name].sort().join('_');
-              
-              const venue = competition.venue;
-              freshGames[gameKey] = {
-                id: event.id,
-                team1: team1Name,
-                team2: team2Name,
-                score1: score1,
-                score2: score2,
-                status: gameStatus,
-                clock: clock || '',
-                period: period || 1,
-                network: competition.broadcast || '',
-                venue: venue?.fullName || '',
-                city: venue?.address?.city || '',
-                state: venue?.address?.state || '',
-                startDate: event.date || competition.startDate || ''
-              };
-            });
-          }
-        } catch (dayErr) {
-          console.warn(`Error fetching scores for ${dateStr}:`, dayErr);
+      // On first load, backfill remaining days in background (parallel batches)
+      if (isFirstFetch && Object.keys(cachedGames).length < 30) {
+        const backfillOffsets = [];
+        for (let i = -21; i <= 28; i++) {
+          if (i >= -1 && i <= 1) continue; // already fetched
+          backfillOffsets.push(i);
+        }
+        // Fetch in parallel batches of 8 to avoid overwhelming the API
+        for (let b = 0; b < backfillOffsets.length; b += 8) {
+          const batch = backfillOffsets.slice(b, b + 8);
+          const { games: bgGames, winners: bgWinners } = await fetchDates(batch);
+          const currentCached = JSON.parse(localStorage.getItem('jerseyBetGames') || '{}');
+          const currentWinners = JSON.parse(localStorage.getItem('jerseyBetPlayInWinners') || '{}');
+          mergeAndUpdate(currentCached, currentWinners, bgGames, bgWinners);
         }
       }
-      
-      // Merge: cached completed games + fresh data (fresh overwrites for live/recent games)
-      const mergedGames = { ...cachedGames };
-      const mergedWinners = { ...cachedWinners, ...freshWinners };
-      
-      // Update with fresh data, keeping cached finals if not in fresh data
-      Object.entries(freshGames).forEach(([key, game]) => {
-        mergedGames[key] = game;
-      });
-      
-      // Save completed games to localStorage for persistence
-      const gamesToCache = {};
-      Object.entries(mergedGames).forEach(([key, game]) => {
-        if (game.status === 'final') {
-          gamesToCache[key] = game;
-        }
-      });
-      
-      try {
-        localStorage.setItem('jerseyBetGames', JSON.stringify(gamesToCache));
-        localStorage.setItem('jerseyBetPlayInWinners', JSON.stringify(mergedWinners));
-      } catch (e) {
-        console.warn('Could not save to localStorage:', e);
-      }
-      
-      setLiveGames(mergedGames);
-      setPlayInWinners(mergedWinners);
-      setLastUpdate(new Date());
     } catch (err) {
       console.error('Error fetching scores:', err);
       setError(err.message);
-    } finally {
       setIsLoading(false);
     }
   }, []);

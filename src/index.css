@@ -12,7 +12,15 @@
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
+html { background: #060a0e; }
 body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: linear-gradient(180deg, var(--bg) 0%, var(--bg2) 100%); color: var(--text); min-height: 100vh; }
+
+/* Pull-to-refresh */
+.ptr-indicator { position: fixed; top: calc(env(safe-area-inset-top, 0px) - 40px); left: 50%; transform: translateX(-50%); z-index: 999; opacity: 0; transition: opacity 0.2s, top 0.2s; pointer-events: none; }
+.ptr-indicator.visible { opacity: 1; top: calc(env(safe-area-inset-top, 0px) + 8px); }
+.ptr-indicator.refreshing .ptr-spinner { animation: ptrSpin 0.8s linear infinite; }
+.ptr-spinner { width: 24px; height: 24px; border: 2.5px solid rgba(255,255,255,0.15); border-top-color: var(--cyan); border-radius: 50%; }
+@keyframes ptrSpin { to { transform: rotate(360deg); } }
 .app { max-width: 500px; margin: 0 auto; padding: 16px; padding-bottom: 80px; padding-top: calc(env(safe-area-inset-top, 0px) + 16px); }
 
 /* Glass Header Bar - fills the iOS status bar area */
@@ -52,7 +60,8 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 .section-label { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 12px; padding-left: 4px; }
 
 /* Region Tabs */
-.region-tabs { display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; }
+.region-tabs { display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; -ms-overflow-style: none; scrollbar-width: none; }
+.region-tabs::-webkit-scrollbar { display: none; }
 .region-tab { padding: 8px 16px; border: 1px solid var(--border); background: transparent; color: var(--text2); font-size: 13px; font-weight: 500; border-radius: 20px; cursor: pointer; white-space: nowrap; position: relative; transition: all 0.2s; }
 .region-tab.active { background: var(--cyan); border-color: var(--cyan); color: var(--bg); }
 .region-tab .live-dot { position: absolute; top: -2px; right: -2px; width: 8px; height: 8px; background: var(--red); border-radius: 50%; animation: pulse 2s infinite; }
@@ -70,7 +79,7 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 .game-time { font-size: 12px; color: var(--text2); }
 .game-time.live { color: var(--red); font-weight: 600; }
 .game-time.upcoming { color: var(--cyan); }
-.game-network { font-size: 11px; color: var(--text2); background: var(--border); padding: 4px 8px; border-radius: 4px; }
+.game-network { font-size: 12px; color: var(--text); }
 .game-location { font-size: 11px; color: var(--text2); opacity: 0.7; margin: 4px 0 2px; }
 
 .game-teams { display: flex; flex-direction: column; gap: 8px; }
@@ -648,7 +657,8 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 .ticker-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--green), #6ee7b7); opacity: 0.7; animation: tickerPulse 2s ease-in-out infinite; }
 @keyframes tickerPulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
 .ticker-card:hover { border-color: var(--green); transform: translateY(-1px); }
-.ticker-status { font-size: 10px; color: var(--green); font-weight: 600; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.3px; }
+.ticker-status { font-size: 10px; color: var(--green); font-weight: 600; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.3px; display: flex; justify-content: space-between; align-items: center; }
+.ticker-network { color: var(--text); font-size: 10px; font-weight: 500; letter-spacing: 0; text-transform: none; }
 .ticker-matchup { display: flex; flex-direction: column; gap: 3px; }
 .ticker-team { display: flex; align-items: center; gap: 5px; font-size: 12px; }
 .ticker-color { width: 3px; height: 14px; border-radius: 2px; flex-shrink: 0; }
