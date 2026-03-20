@@ -13,9 +13,11 @@ function buildResolvedGames(liveGames, playInWinners) {
 const getCustomColor = (owner, customizations) => customizations?.[owner.id]?.color || owner.color;
 const getCustomInitials = (owner, customizations) => customizations?.[owner.id]?.initials || owner.initials;
 
-function TickerCard({ game, isLive, onGameClick }) {
+function TickerCard({ game, isLive, onGameClick, customizations }) {
   const color1 = getTeamColor(game.t1);
   const color2 = getTeamColor(game.t2);
+  const owner1 = getOwner(game.t1);
+  const owner2 = getOwner(game.t2);
   const roundName = scoringSystem.roundNames[game.round] || '';
   const prevScores = useRef({ sc1: game.sc1, sc2: game.sc2 });
   const [flash1, setFlash1] = useState(false);
@@ -39,12 +41,14 @@ function TickerCard({ game, isLive, onGameClick }) {
       </div>
       <div className="ticker-matchup">
         <div className="ticker-team">
+          {owner1 && <span className="ticker-owner-dot" style={{ background: getCustomColor(owner1, customizations) }}></span>}
           <span className="ticker-color" style={{ background: color1 }}></span>
           <span className="ticker-seed">{game.s1}</span>
           <span className="ticker-name">{game.t1}</span>
           {isLive && <span className={`ticker-score ${flash1 ? 'score-flash' : ''}`}>{game.sc1}</span>}
         </div>
         <div className="ticker-team">
+          {owner2 && <span className="ticker-owner-dot" style={{ background: getCustomColor(owner2, customizations) }}></span>}
           <span className="ticker-color" style={{ background: color2 }}></span>
           <span className="ticker-seed">{game.s2}</span>
           <span className="ticker-name">{game.t2}</span>
@@ -107,7 +111,7 @@ function LiveGamesTicker({ resolvedGames, liveGames, playInWinners, onGameClick,
   if (liveList.length === 0 && upcomingList.length === 0) return null;
 
   const renderCard = (game, idx, isLive) => (
-    <TickerCard key={game.id || idx} game={game} isLive={isLive} onGameClick={onGameClick} />
+    <TickerCard key={game.id || idx} game={game} isLive={isLive} onGameClick={onGameClick} customizations={customizations} />
   );
 
   return (
