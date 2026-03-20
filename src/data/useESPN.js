@@ -489,6 +489,7 @@ export function mergeWithLiveData(staticGame, liveGames, playInWinners, resolved
         city: liveData.city || game.city || '',
         state: liveData.state || game.state || '',
         network: liveData.network || game.network || '',
+        startDate: liveData.startDate || game.startDate || '',
       };
     }
   }

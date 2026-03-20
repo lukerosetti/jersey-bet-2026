@@ -773,3 +773,28 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 .search-game-result.w { color: var(--green); }
 .search-game-result.l { color: var(--red); }
 .search-game-result.upcoming { color: var(--text2); font-weight: 400; font-size: 10px; }
+
+/* Schedule View */
+.schedule-view { padding-bottom: 24px; }
+.schedule-group { margin-bottom: 20px; }
+.schedule-date-header { font-size: 13px; font-weight: 700; color: var(--cyan); text-transform: uppercase; letter-spacing: 0.5px; padding: 8px 4px 6px; border-bottom: 1px solid var(--border); margin-bottom: 8px; }
+.sched-card { display: flex; align-items: center; gap: 10px; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; cursor: pointer; transition: border-color 0.2s; }
+.sched-card:active { border-color: var(--cyan); }
+.sched-card.live { border-color: var(--red); box-shadow: 0 0 8px rgba(239,68,68,0.15); }
+.sched-card.tbd { opacity: 0.5; cursor: default; }
+.sched-left { min-width: 58px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.sched-time-col { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.sched-tip { font-size: 11px; font-weight: 600; color: var(--text); text-align: center; white-space: nowrap; }
+.sched-live-badge { font-size: 9px; font-weight: 800; color: #fff; background: var(--red); padding: 2px 6px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px; animation: pulse 2s infinite; }
+.sched-network { font-size: 9px; color: var(--text2); font-weight: 500; margin-top: 1px; }
+.sched-matchup { flex: 1; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.sched-team { display: flex; align-items: center; gap: 6px; }
+.sched-seed { font-size: 10px; color: var(--text2); font-weight: 600; min-width: 14px; text-align: right; }
+.sched-color { width: 3px; height: 18px; border-radius: 2px; flex-shrink: 0; }
+.sched-logo { width: 18px; height: 18px; object-fit: contain; flex-shrink: 0; }
+.sched-name { font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sched-owner { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.sched-score { font-size: 14px; font-weight: 700; color: var(--text); margin-left: auto; min-width: 22px; text-align: right; }
+.sched-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; min-width: 40px; }
+.sched-round { font-size: 9px; font-weight: 700; color: var(--cyan); background: rgba(34,211,238,0.1); padding: 2px 6px; border-radius: 4px; }
+.sched-region { font-size: 9px; color: var(--text2); }
