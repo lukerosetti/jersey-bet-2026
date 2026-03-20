@@ -29,6 +29,7 @@ const teamNameMap = {
   'Arizona Wildcats': 'Arizona',
   'LIU Sharks': 'LIU',
   'Long Island Sharks': 'LIU',
+  'Long Island University Sharks': 'LIU',
   'Villanova Wildcats': 'Villanova',
   'Utah State Aggies': 'Utah State',
   'Wisconsin Badgers': 'Wisconsin',
@@ -72,6 +73,7 @@ const teamNameMap = {
   'VCU Rams': 'VCU',
   'Illinois Fighting Illini': 'Illinois',
   'Penn Quakers': 'Penn',
+  'Pennsylvania Quakers': 'Penn',
   'Saint Mary\'s Gaels': 'Saint Marys',
   'Texas A&M Aggies': 'Texas A&M',
   'Houston Cougars': 'Houston',
@@ -99,6 +101,7 @@ export const normalizeTeamName = (espnName) => {
   if (lowerName.includes('iowa state') || lowerName.includes('iowa st')) return 'Iowa State';
   if (lowerName.includes('michigan state') || lowerName.includes('michigan st')) return 'Michigan St';
   if (lowerName.includes('north dakota')) return 'North Dakota St';
+  if (lowerName.includes('long island') || lowerName === 'liu') return 'LIU';
 
   // Fuzzy fallback: sort by longest local name first to prevent substring false matches
   const sortedEntries = Object.entries(teamNameMap).sort((a, b) => b[1].length - a[1].length);
