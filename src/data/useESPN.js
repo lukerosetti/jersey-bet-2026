@@ -231,13 +231,16 @@ export function useLiveScores() {
           if (i >= -1 && i <= 1) continue; // already fetched
           backfillOffsets.push(i);
         }
+        // Use running cache to avoid stale localStorage reads between batches
+        let runningGames = { ...cachedGames, ...quickGames };
+        let runningWinners = { ...cachedWinners, ...quickWinners };
         // Fetch in parallel batches of 8 to avoid overwhelming the API
         for (let b = 0; b < backfillOffsets.length; b += 8) {
           const batch = backfillOffsets.slice(b, b + 8);
           const { games: bgGames, winners: bgWinners } = await fetchDates(batch);
-          const currentCached = JSON.parse(localStorage.getItem('jerseyBetGames') || '{}');
-          const currentWinners = JSON.parse(localStorage.getItem('jerseyBetPlayInWinners') || '{}');
-          mergeAndUpdate(currentCached, currentWinners, bgGames, bgWinners);
+          runningGames = { ...runningGames, ...bgGames };
+          runningWinners = { ...runningWinners, ...bgWinners };
+          mergeAndUpdate(runningGames, runningWinners, {}, {});
         }
       }
     } catch (err) {
@@ -485,6 +488,7 @@ export function mergeWithLiveData(staticGame, liveGames, playInWinners, resolved
         venue: liveData.venue || game.venue || '',
         city: liveData.city || game.city || '',
         state: liveData.state || game.state || '',
+        network: liveData.network || game.network || '',
       };
     }
   }

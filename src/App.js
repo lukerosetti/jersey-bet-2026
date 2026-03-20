@@ -613,6 +613,13 @@ function RegionsView({ onGameClick, liveGames, playInWinners, customizations, re
 
   // Default to the first region with a live game, or 'east' if none
   const getDefaultRegion = () => {
+    // Check Final Four games first (most important late in tournament)
+    const hasLiveFF = finalFourGames.some(fg => {
+      const merged = resolved[fg.id] || mergeWithLiveData(fg, liveGames, playInWinners, resolved);
+      return merged.status === 'live' || merged.status === 'halftime';
+    });
+    if (hasLiveFF) return 'finalfour';
+    // Check regional games
     for (const name of Object.keys(staticRegions)) {
       const hasLive = staticRegions[name]?.games?.some(game => {
         const merged = resolved[game.id] || mergeWithLiveData(game, liveGames, playInWinners, resolved);
@@ -627,7 +634,12 @@ function RegionsView({ onGameClick, liveGames, playInWinners, customizations, re
   const [selectedRound, setSelectedRound] = useState(null); // null = auto (latest round)
 
   const hasLiveInRegion = (regionName) => {
-    if (regionName === 'finalfour') return false;
+    if (regionName === 'finalfour') {
+      return finalFourGames.some(fg => {
+        const merged = resolved[fg.id] || mergeWithLiveData(fg, liveGames, playInWinners, resolved);
+        return merged.status === 'live' || merged.status === 'halftime';
+      });
+    }
     return staticRegions[regionName]?.games?.some(game => {
       const merged = resolved[game.id] || mergeWithLiveData(game, liveGames, playInWinners, resolved);
       return merged.status === 'live' || merged.status === 'halftime';
@@ -636,7 +648,15 @@ function RegionsView({ onGameClick, liveGames, playInWinners, customizations, re
 
   // Determine the current active round: stay on a round until ALL its games are final, then advance
   const getLatestRound = (regionName) => {
-    if (regionName === 'finalfour') return 5;
+    if (regionName === 'finalfour') {
+      // Check if Final Four games are all done; if so show Championship
+      const ffGames = finalFourGames.filter(fg => fg.round === 5);
+      const allFFDone = ffGames.every(fg => {
+        const merged = resolved[fg.id] || mergeWithLiveData(fg, liveGames, playInWinners, resolved);
+        return merged.status === 'final';
+      });
+      return allFFDone ? 6 : 5;
+    }
     const games = staticRegions[regionName]?.games || [];
     for (let round = 1; round <= 4; round++) {
       const roundGames = games.filter(g => g.round === round);
@@ -644,9 +664,9 @@ function RegionsView({ onGameClick, liveGames, playInWinners, customizations, re
         const merged = resolved[g.id] || mergeWithLiveData(g, liveGames, playInWinners, resolved);
         return merged.status === 'final';
       });
-      if (!allFinal) return round; // This round isn't done yet — show it
+      if (!allFinal) return round;
     }
-    return 4; // All rounds complete — show Elite 8
+    return 4; // All regional rounds complete — show Elite 8 results
   };
 
   const latestRound = getLatestRound(activeRegion);

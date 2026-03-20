@@ -658,7 +658,7 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 @keyframes tickerPulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
 .ticker-card:hover { border-color: var(--green); transform: translateY(-1px); }
 .ticker-status { font-size: 10px; color: var(--green); font-weight: 600; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.3px; display: flex; justify-content: space-between; align-items: center; }
-.ticker-network { color: var(--text); font-size: 10px; font-weight: 500; letter-spacing: 0; text-transform: none; }
+.ticker-network { color: var(--text); font-size: 10px; font-weight: 500; letter-spacing: 0; text-transform: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 50%; }
 .ticker-matchup { display: flex; flex-direction: column; gap: 3px; }
 .ticker-team { display: flex; align-items: center; gap: 5px; font-size: 12px; }
 .ticker-color { width: 3px; height: 14px; border-radius: 2px; flex-shrink: 0; }
