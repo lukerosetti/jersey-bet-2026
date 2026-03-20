@@ -32,7 +32,7 @@ function TickerCard({ game, isLive, onGameClick }) {
     <div className={`ticker-card ${!isLive ? 'upcoming' : ''} ${pulse ? 'card-pulse' : ''}`} onClick={() => onGameClick(game, game.region)}>
       <div className="ticker-status">
         <span>{isLive
-          ? (game.status === 'halftime' ? 'HT' : `${game.half === 1 ? '1H' : '2H'} ${game.time}`)
+          ? (game.status === 'halftime' ? 'HT' : `${game.half === 1 ? '1H' : '2H'} ${game.time || ''}`)
           : (game.tip || roundName || 'TBD')
         }</span>
         {game.network && <span className="ticker-network">{game.network}</span>}
@@ -498,8 +498,9 @@ function GameModal({ game, onClose, customizations, liveGames }) {
             const halfX = PADL + chartW * 0.5;
 
             // Build smooth monotone path using cardinal spline
+            const probLen = Math.max(t1WinProb.length - 1, 1);
             const points = t1WinProb.map((p, i) => ({
-              x: PADL + (i / (t1WinProb.length - 1)) * chartW,
+              x: PADL + (i / probLen) * chartW,
               y: PADT + (1 - p) * chartH
             }));
             let pathD = `M${points[0].x},${points[0].y}`;
@@ -1112,7 +1113,7 @@ function Leaderboard({ liveGames, playInWinners, customizations, resolvedMap }) 
       {standings.map((player, index) => {
         const isExpanded = expandedPlayer === player.id;
         const progressPct = player.maxPossible > 0 ? Math.min((player.points / (player.points + player.maxPossible)) * 100, 100) : 0;
-        const alivePct = (player.teamsAlive / player.teams.length) * 100;
+        const alivePct = player.teams.length > 0 ? (player.teamsAlive / player.teams.length) * 100 : 0;
         return (
           <div key={player.id} className={`standings-card ${index === 0 ? 'leader' : ''} ${isExpanded ? 'expanded' : ''}`} onClick={() => setExpandedPlayer(isExpanded ? null : player.id)}>
             <div className="standings-main-row">
@@ -1321,7 +1322,7 @@ function Portfolio({ liveGames, playInWinners, customizations, onGameClick, reso
       <div className="portfolio-grid">
         {standings.map((player, idx) => {
           const change = getChange(player);
-          const healthPct = (player.teamsAlive / player.teams.length) * 100;
+          const healthPct = player.teams.length > 0 ? (player.teamsAlive / player.teams.length) * 100 : 0;
           const isExpanded = expandedPlayer === player.id;
           return (
             <div key={player.id} className={`portfolio-card ${idx === 0 ? 'leader' : ''} ${isExpanded ? 'expanded' : ''}`} onClick={() => setExpandedPlayer(isExpanded ? null : player.id)} style={{ cursor: 'pointer' }}>
