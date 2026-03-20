@@ -829,11 +829,11 @@ function BracketGame({ game, onGameClick, customizations, regionName }) {
   return (
     <div className={`bracket-game ${isLive ? 'live' : ''} ${isTBD ? 'tbd' : ''}`} onClick={() => !isTBD && onGameClick(game, regionName)}>
       <div className="bracket-team">
-        <span className="b-seed">{game.s1}</span>
-        <div className="b-color" style={{ background: color1 }}></div>
-        {getTeamLogo(game.t1) && <img className="team-logo bracket-logo" src={getTeamLogo(game.t1)} alt="" />}
-        <span className={`b-name ${isFinal && game.sc1 < game.sc2 ? 'loser' : ''}`}>{game.t1}</span>
-        {owner1 && <div className="b-owner" style={{ background: getCustomColor(owner1, customizations) }}></div>}
+        <span className="b-seed">{game.s1 || '?'}</span>
+        <div className="b-color" style={{ background: game.t1 === 'TBD' ? '#444' : color1 }}></div>
+        {game.t1 !== 'TBD' && getTeamLogo(game.t1) && <img className="team-logo bracket-logo" src={getTeamLogo(game.t1)} alt="" />}
+        <span className={`b-name ${isFinal && game.sc1 < game.sc2 ? 'loser' : ''} ${game.t1 === 'TBD' ? 'tbd' : ''}`}>{game.t1}</span>
+        {game.t1 !== 'TBD' && owner1 && <div className="b-owner" style={{ background: getCustomColor(owner1, customizations) }}></div>}
         {(isLive || isFinal) && <span className={`b-score ${isFinal && game.sc1 < game.sc2 ? 'loser' : ''}`}>{game.sc1}</span>}
       </div>
       <div className="bracket-team">
@@ -844,9 +844,9 @@ function BracketGame({ game, onGameClick, customizations, regionName }) {
         {game.t2 !== 'TBD' && owner2 && <div className="b-owner" style={{ background: getCustomColor(owner2, customizations) }}></div>}
         {(isLive || isFinal) && <span className={`b-score ${isFinal && game.sc2 < game.sc1 ? 'loser' : ''}`}>{game.sc2}</span>}
       </div>
-      {isLive && <div className="game-status-bar live"><span className="mini-live-dot"></span>{game.status === 'halftime' ? 'HT' : game.time}</div>}
+      {isLive && <div className="game-status-bar live"><span className="mini-live-dot"></span>{game.status === 'halftime' ? 'HT' : game.time}{game.network && <span className="b-network">{game.network}</span>}</div>}
       {isFinal && <div className="game-status-bar final">Final</div>}
-      {!isLive && !isFinal && !isTBD && game.tip && <div className="game-status-bar upcoming">{game.tip}</div>}
+      {!isLive && !isFinal && !isTBD && <div className="game-status-bar upcoming">{game.tip || 'TBD'}{game.network && <span className="b-network">{game.network}</span>}</div>}
     </div>
   );
 }
