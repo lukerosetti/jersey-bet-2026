@@ -266,7 +266,8 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 .bracket-connector-left::before { content: ''; position: absolute; left: 0; top: 50%; width: 12px; height: 0; border-top: 1px solid var(--border); }
 
 /* Game card within bracket */
-.bracket-game { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 6px 8px; cursor: pointer; transition: all 0.2s; flex: 1; margin: 0 12px; min-width: 0; }
+.bracket-game { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 6px 8px; cursor: pointer; transition: all 0.2s; flex: 1; margin: 0 12px; min-width: 0; position: relative; }
+.b-network-badge { position: absolute; top: 3px; right: 5px; font-size: 7px; color: var(--text2); opacity: 0.6; font-weight: 600; letter-spacing: 0.3px; }
 .bracket-game:hover { border-color: var(--cyan); }
 .bracket-game.live { border-color: var(--red); box-shadow: 0 0 8px rgba(239,68,68,0.2); }
 .bracket-game.tbd { opacity: 0.5; cursor: default; }

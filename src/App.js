@@ -831,6 +831,7 @@ function BracketGame({ game, onGameClick, customizations, regionName }) {
   const owner2 = getOwner(game.t2);
   return (
     <div className={`bracket-game ${isLive ? 'live' : ''} ${isTBD ? 'tbd' : ''}`} onClick={() => !isTBD && onGameClick(game, regionName)}>
+      {game.network && <span className="b-network-badge">{game.network}</span>}
       <div className="bracket-team">
         <span className="b-seed">{game.s1 || '?'}</span>
         <div className="b-color" style={{ background: game.t1 === 'TBD' ? '#444' : color1 }}></div>
@@ -847,9 +848,9 @@ function BracketGame({ game, onGameClick, customizations, regionName }) {
         {game.t2 !== 'TBD' && owner2 && <div className="b-owner" style={{ background: getCustomColor(owner2, customizations) }}></div>}
         {(isLive || isFinal) && <span className={`b-score ${isFinal && game.sc2 < game.sc1 ? 'loser' : ''}`}>{game.sc2}</span>}
       </div>
-      {isLive && <div className="game-status-bar live"><span><span className="mini-live-dot"></span>{game.status === 'halftime' ? 'HT' : `${game.half >= 3 ? 'OT ' : ''}${game.time}`}{game.network && <span className="b-network">{game.network}</span>}</span>{game.city && <span className="b-location">{game.city}{game.state ? `, ${game.state}` : ''}</span>}</div>}
+      {isLive && <div className="game-status-bar live"><span><span className="mini-live-dot"></span>{game.status === 'halftime' ? 'HT' : `${game.half >= 3 ? 'OT ' : ''}${game.time}`}</span>{game.city && <span className="b-location">{game.city}{game.state ? `, ${game.state}` : ''}</span>}</div>}
       {isFinal && <div className="game-status-bar final"><span>Final</span>{game.city && <span className="b-location">{game.city}{game.state ? `, ${game.state}` : ''}</span>}</div>}
-      {!isLive && !isFinal && !isTBD && <div className="game-status-bar upcoming"><span>{game.tip || 'TBD'}{game.network && <span className="b-network">{game.network}</span>}</span>{game.city && <span className="b-location">{game.city}{game.state ? `, ${game.state}` : ''}</span>}</div>}
+      {!isLive && !isFinal && !isTBD && <div className="game-status-bar upcoming"><span>{game.tip || 'TBD'}</span>{game.city && <span className="b-location">{game.city}{game.state ? `, ${game.state}` : ''}</span>}</div>}
     </div>
   );
 }
