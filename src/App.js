@@ -2409,9 +2409,22 @@ function ScheduleView({ resolvedMap, onGameClick, customizations, liveGames }) {
 
   const roundNames = { 0: 'Play-In', 1: 'R64', 2: 'R32', 3: 'S16', 4: 'E8', 5: 'F4', 6: 'NC' };
 
+  // Derive region from game ID prefix (e1→east, w_r2_1→west, s_s16→south, m_e8→midwest, ff/champ→Final Four)
+  const getRegionFromId = (id) => {
+    if (!id) return '';
+    if (id.startsWith('e')) return 'east';
+    if (id.startsWith('w')) return 'west';
+    if (id.startsWith('s')) return 'south';
+    if (id.startsWith('m')) return 'midwest';
+    if (id.startsWith('ff') || id === 'champ') return '';
+    return '';
+  };
+
   const getRegionLabel = (g) => {
     if (g.region) return g.region.charAt(0).toUpperCase() + g.region.slice(1);
     if (g.label) return g.label;
+    const derived = getRegionFromId(g.id);
+    if (derived) return derived.charAt(0).toUpperCase() + derived.slice(1);
     return '';
   };
 
@@ -2437,7 +2450,7 @@ function ScheduleView({ resolvedMap, onGameClick, customizations, liveGames }) {
               : (game._date ? game._date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : (game.tip || 'TBD'));
 
             return (
-              <div key={game.id} className={`sched-card ${isLive ? 'live' : ''} ${isTBD ? 'tbd' : ''}`} onClick={() => !isTBD && onGameClick(game, game.region || '')}>
+              <div key={game.id} className={`sched-card ${isLive ? 'live' : ''} ${isTBD ? 'tbd' : ''}`} onClick={() => !isTBD && onGameClick(game, game.region || getRegionFromId(game.id))}>
                 <div className="sched-left">
                   <div className="sched-time-col">
                     {isLive ? <span className="sched-live-badge">LIVE</span> : <span className="sched-tip">{timeStr}</span>}
