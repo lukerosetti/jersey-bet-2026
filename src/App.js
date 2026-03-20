@@ -818,75 +818,126 @@ function RegionsView({ onGameClick, liveGames, playInWinners, customizations, re
   );
 }
 
-function BracketView({ onGameClick, liveGames, playInWinners, customizations, resolvedMap }) {
-  const rounds = [
-    { name: 'Round of 64', short: 'R64', round: 1 },
-    { name: 'Round of 32', short: 'R32', round: 2 },
-    { name: 'Sweet 16', short: 'Sweet 16', round: 3 },
-    { name: 'Elite Eight', short: 'Elite 8', round: 4 },
-    { name: 'Final Four', short: 'Final Four', round: 5 },
-    { name: 'Championship', short: 'Champ', round: 6 }
-  ];
-
-  const resolved = resolvedMap || buildResolvedGames(liveGames, playInWinners);
-  const allGames = [];
-  Object.entries(staticRegions).forEach(([regionName, region]) => {
-    region.games.forEach(staticGame => {
-      const game = resolved[staticGame.id] || mergeWithLiveData(staticGame, liveGames, playInWinners, resolved);
-      allGames.push({ ...game, region: regionName });
-    });
-  });
-  // Add Final Four and Championship
-  finalFourGames.forEach(fg => {
-    const game = resolved[fg.id] || mergeWithLiveData(fg, liveGames, playInWinners, resolved);
-    allGames.push({ ...game, region: 'finalfour' });
-  });
-
-  const gamesByRound = rounds.map(r => ({ ...r, games: allGames.filter(g => g.round === r.round) }));
-
+function BracketGame({ game, onGameClick, customizations, regionName }) {
+  const isLive = game.status === 'live' || game.status === 'halftime';
+  const isFinal = game.status === 'final';
+  const isTBD = game.t1 === 'TBD' || game.t2 === 'TBD';
+  const color1 = getTeamColor(game.t1);
+  const color2 = getTeamColor(game.t2);
+  const owner1 = getOwner(game.t1);
+  const owner2 = getOwner(game.t2);
   return (
-    <div className="bracket-mobile">
+    <div className={`bracket-game ${isLive ? 'live' : ''} ${isTBD ? 'tbd' : ''}`} onClick={() => !isTBD && onGameClick(game, regionName)}>
+      <div className="bracket-team">
+        <span className="b-seed">{game.s1}</span>
+        <div className="b-color" style={{ background: color1 }}></div>
+        {getTeamLogo(game.t1) && <img className="team-logo bracket-logo" src={getTeamLogo(game.t1)} alt="" />}
+        <span className={`b-name ${isFinal && game.sc1 < game.sc2 ? 'loser' : ''}`}>{game.t1}</span>
+        {owner1 && <div className="b-owner" style={{ background: getCustomColor(owner1, customizations) }}></div>}
+        {(isLive || isFinal) && <span className={`b-score ${isFinal && game.sc1 < game.sc2 ? 'loser' : ''}`}>{game.sc1}</span>}
+      </div>
+      <div className="bracket-team">
+        <span className="b-seed">{game.s2 || '?'}</span>
+        <div className="b-color" style={{ background: game.t2 === 'TBD' ? '#444' : color2 }}></div>
+        {game.t2 !== 'TBD' && getTeamLogo(game.t2) && <img className="team-logo bracket-logo" src={getTeamLogo(game.t2)} alt="" />}
+        <span className={`b-name ${isFinal && game.sc2 < game.sc1 ? 'loser' : ''} ${game.t2 === 'TBD' ? 'tbd' : ''}`}>{game.t2 === 'TBD' ? 'TBD' : game.t2}</span>
+        {game.t2 !== 'TBD' && owner2 && <div className="b-owner" style={{ background: getCustomColor(owner2, customizations) }}></div>}
+        {(isLive || isFinal) && <span className={`b-score ${isFinal && game.sc2 < game.sc1 ? 'loser' : ''}`}>{game.sc2}</span>}
+      </div>
+      {isLive && <div className="game-status-bar live"><span className="mini-live-dot"></span>{game.time}</div>}
+    </div>
+  );
+}
+
+function RegionBracket({ regionName, resolved, onGameClick, customizations }) {
+  const games = staticRegions[regionName]?.games || [];
+  const r1 = games.filter(g => g.round === 1).map(g => resolved[g.id] || g);
+  const r2 = games.filter(g => g.round === 2).map(g => resolved[g.id] || g);
+  const r3 = games.filter(g => g.round === 3).map(g => resolved[g.id] || g);
+  const r4 = games.filter(g => g.round === 4).map(g => resolved[g.id] || g);
+  const roundData = [
+    { label: 'R64', games: r1 },
+    { label: 'R32', games: r2 },
+    { label: 'S16', games: r3 },
+    { label: 'E8', games: r4 }
+  ];
+  return (
+    <div className="bracket-region">
       <div className="bracket-scroll">
         <div className="bracket-track">
-          {gamesByRound.map(round => (
-            <div key={round.round} className="round-col">
-              <div className="round-header"><div className="round-name">{round.short}</div></div>
-              <div className="round-games">
-                {round.games.map((game, idx) => {
-                  const isLive = game.status === 'live' || game.status === 'halftime';
-                  const isFinal = game.status === 'final';
-                  const isTBD = game.t1 === 'TBD' || game.t2 === 'TBD';
-                  const color1 = getTeamColor(game.t1);
-                  const color2 = getTeamColor(game.t2);
-                  const owner1 = getOwner(game.t1);
-                  const owner2 = getOwner(game.t2);
-                  return (
-                    <div key={idx} className={`bracket-game ${isLive ? 'live' : ''} ${isTBD ? 'tbd' : ''}`} onClick={() => !isTBD && onGameClick(game, game.region)}>
-                      <div className="bracket-team">
-                        <span className="b-seed">{game.s1}</span>
-                        <div className="b-color" style={{ background: color1 }}></div>
-                        {getTeamLogo(game.t1) && <img className="team-logo bracket-logo" src={getTeamLogo(game.t1)} alt="" />}
-                        <span className={`b-name ${isFinal && game.sc1 < game.sc2 ? 'loser' : ''}`}>{game.t1}</span>
-                        {owner1 && <div className="b-owner" style={{ background: getCustomColor(owner1, customizations) }}></div>}
-                        {(isLive || isFinal) && <span className={`b-score ${isFinal && game.sc1 < game.sc2 ? 'loser' : ''}`}>{game.sc1}</span>}
-                      </div>
-                      <div className="bracket-team">
-                        <span className="b-seed">{game.s2 || '?'}</span>
-                        <div className="b-color" style={{ background: game.t2 === 'TBD' ? '#444' : color2 }}></div>
-                        {game.t2 !== 'TBD' && getTeamLogo(game.t2) && <img className="team-logo bracket-logo" src={getTeamLogo(game.t2)} alt="" />}
-                        <span className={`b-name ${isFinal && game.sc2 < game.sc1 ? 'loser' : ''} ${game.t2 === 'TBD' ? 'tbd' : ''}`}>{game.t2 === 'TBD' ? 'TBD' : game.t2}</span>
-                        {game.t2 !== 'TBD' && owner2 && <div className="b-owner" style={{ background: getCustomColor(owner2, customizations) }}></div>}
-                        {(isLive || isFinal) && <span className={`b-score ${isFinal && game.sc2 < game.sc1 ? 'loser' : ''}`}>{game.sc2}</span>}
-                      </div>
-                      {isLive && <div className="game-status-bar live"><span className="mini-live-dot"></span>{game.time}</div>}
-                    </div>
-                  );
-                })}
+          {roundData.map((rd, ri) => (
+            <div key={ri} className={`round-col round-col-${ri + 1}`}>
+              <div className="round-header"><div className="round-name">{rd.label}</div></div>
+              <div className={`round-games round-games-${ri + 1}`}>
+                {rd.games.map((game, gi) => (
+                  <div key={game.id} className={`bracket-slot round-${ri + 1}-slot`}>
+                    {ri > 0 && <div className="bracket-connector-left"></div>}
+                    <BracketGame game={game} onGameClick={onGameClick} customizations={customizations} regionName={regionName} />
+                    {ri < roundData.length - 1 && <div className="bracket-connector-right"></div>}
+                  </div>
+                ))}
               </div>
             </div>
           ))}
         </div>
       </div>
+    </div>
+  );
+}
+
+function FinalFourBracket({ resolved, onGameClick, customizations }) {
+  const ff1 = resolved['ff1'] || finalFourGames[0];
+  const ff2 = resolved['ff2'] || finalFourGames[1];
+  const champ = resolved['champ'] || finalFourGames[2];
+  return (
+    <div className="bracket-region bracket-ff">
+      <div className="bracket-scroll">
+        <div className="bracket-track bracket-track-ff">
+          <div className="round-col round-col-ff">
+            <div className="round-header"><div className="round-name">Final Four</div></div>
+            <div className="round-games round-games-ff">
+              <div className="bracket-slot">
+                <BracketGame game={ff1} onGameClick={onGameClick} customizations={customizations} regionName="finalfour" />
+                <div className="bracket-connector-right"></div>
+              </div>
+              <div className="bracket-slot">
+                <BracketGame game={ff2} onGameClick={onGameClick} customizations={customizations} regionName="finalfour" />
+                <div className="bracket-connector-right"></div>
+              </div>
+            </div>
+          </div>
+          <div className="round-col round-col-champ">
+            <div className="round-header"><div className="round-name">Championship</div></div>
+            <div className="round-games round-games-champ">
+              <div className="bracket-slot">
+                <div className="bracket-connector-left"></div>
+                <BracketGame game={champ} onGameClick={onGameClick} customizations={customizations} regionName="finalfour" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BracketView({ onGameClick, liveGames, playInWinners, customizations, resolvedMap }) {
+  const resolved = resolvedMap || buildResolvedGames(liveGames, playInWinners);
+  const regionNames = Object.keys(staticRegions);
+  const [activeRegion, setActiveRegion] = useState('east');
+  const tabs = [...regionNames.map(r => ({ key: r, label: staticRegions[r].name })), { key: 'finalfour', label: 'Final Four' }];
+
+  return (
+    <div className="bracket-mobile">
+      <div className="bracket-region-tabs">
+        {tabs.map(tab => (
+          <button key={tab.key} className={`bracket-region-tab ${activeRegion === tab.key ? 'active' : ''}`} onClick={() => setActiveRegion(tab.key)}>{tab.label}</button>
+        ))}
+      </div>
+      {activeRegion === 'finalfour'
+        ? <FinalFourBracket resolved={resolved} onGameClick={onGameClick} customizations={customizations} />
+        : <RegionBracket regionName={activeRegion} resolved={resolved} onGameClick={onGameClick} customizations={customizations} />
+      }
     </div>
   );
 }

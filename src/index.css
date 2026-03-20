@@ -226,29 +226,62 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 
 /* Bracket View */
 .bracket-mobile { overflow: hidden; }
-.bracket-scroll { overflow-x: auto; padding-bottom: 16px; margin: 0 -16px; padding-left: 16px; padding-right: 16px; }
-.bracket-track { display: flex; gap: 12px; min-width: max-content; }
-.round-col { min-width: 160px; }
-.round-header { margin-bottom: 12px; padding: 8px; background: var(--card); border-radius: 8px; text-align: center; }
-.round-name { font-size: 13px; font-weight: 600; }
-.round-date { font-size: 11px; color: var(--text2); }
-.round-games { display: flex; flex-direction: column; gap: 8px; }
+.bracket-region-tabs { display: flex; gap: 4px; margin-bottom: 12px; overflow-x: auto; -ms-overflow-style: none; scrollbar-width: none; }
+.bracket-region-tabs::-webkit-scrollbar { display: none; }
+.bracket-region-tab { padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border); background: transparent; color: var(--text2); font-size: 12px; font-weight: 500; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
+.bracket-region-tab.active { background: rgba(255,255,255,0.1); border-color: var(--cyan); color: var(--text); }
 
-.bracket-game { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 8px; cursor: pointer; transition: all 0.2s; }
+.bracket-region { overflow: hidden; }
+.bracket-scroll { overflow-x: auto; padding-bottom: 16px; margin: 0 -16px; padding-left: 16px; padding-right: 16px; -ms-overflow-style: none; scrollbar-width: none; }
+.bracket-scroll::-webkit-scrollbar { display: none; }
+.bracket-track { display: flex; gap: 0; min-width: max-content; align-items: stretch; }
+.bracket-track-ff { align-items: center; }
+
+.round-col { min-width: 155px; display: flex; flex-direction: column; }
+.round-col-ff { min-width: 170px; }
+.round-col-champ { min-width: 170px; }
+.round-header { margin-bottom: 8px; padding: 6px 8px; background: var(--card); border-radius: 8px; text-align: center; }
+.round-name { font-size: 12px; font-weight: 600; }
+
+/* Bracket slots - each slot holds a game + connectors, flex-grows to fill space evenly */
+.round-games { display: flex; flex-direction: column; flex: 1; }
+.round-games-1 { gap: 4px; }
+.round-games-2 { gap: 4px; }
+.round-games-3 { gap: 4px; }
+.round-games-4 { gap: 4px; }
+.round-games-ff { gap: 24px; justify-content: center; flex: 1; }
+.round-games-champ { justify-content: center; flex: 1; }
+
+.bracket-slot { position: relative; display: flex; align-items: center; flex: 1; padding: 2px 0; min-height: 52px; }
+.round-1-slot { flex: 1; }
+
+/* Connector lines */
+.bracket-connector-right { position: absolute; right: -1px; top: 0; bottom: 0; width: 12px; }
+.bracket-connector-right::before { content: ''; position: absolute; right: 0; top: 50%; width: 12px; height: 0; border-top: 1px solid var(--border); }
+/* Vertical line connecting pairs - odd slots go down, even slots go up */
+.bracket-slot:nth-child(odd) .bracket-connector-right::after { content: ''; position: absolute; right: 0; top: 50%; bottom: 0; width: 0; border-right: 1px solid var(--border); }
+.bracket-slot:nth-child(even) .bracket-connector-right::after { content: ''; position: absolute; right: 0; top: 0; bottom: 50%; width: 0; border-right: 1px solid var(--border); }
+
+.bracket-connector-left { position: absolute; left: -1px; top: 0; bottom: 0; width: 12px; }
+.bracket-connector-left::before { content: ''; position: absolute; left: 0; top: 50%; width: 12px; height: 0; border-top: 1px solid var(--border); }
+
+/* Game card within bracket */
+.bracket-game { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 6px 8px; cursor: pointer; transition: all 0.2s; flex: 1; margin: 0 12px; min-width: 0; }
 .bracket-game:hover { border-color: var(--cyan); }
-.bracket-game.live { border-color: var(--red); }
+.bracket-game.live { border-color: var(--red); box-shadow: 0 0 8px rgba(239,68,68,0.2); }
 .bracket-game.tbd { opacity: 0.5; cursor: default; }
-.bracket-team { display: flex; align-items: center; gap: 6px; padding: 4px 0; }
-.b-seed { font-size: 10px; color: var(--text2); width: 16px; text-align: center; }
-.b-color { width: 3px; height: 20px; border-radius: 2px; }
-.b-name { flex: 1; font-size: 12px; font-weight: 500; }
+.bracket-team { display: flex; align-items: center; gap: 4px; padding: 2px 0; }
+.b-seed { font-size: 9px; color: var(--text2); width: 14px; text-align: center; flex-shrink: 0; }
+.b-color { width: 3px; height: 18px; border-radius: 2px; flex-shrink: 0; }
+.b-name { flex: 1; font-size: 11px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .b-name.loser { opacity: 0.5; }
-.b-owner { width: 8px; height: 8px; border-radius: 50%; }
-.b-score { font-size: 14px; font-weight: 700; min-width: 24px; text-align: right; }
+.b-name.tbd { font-style: italic; color: var(--text2); }
+.b-owner { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.b-score { font-size: 12px; font-weight: 700; min-width: 20px; text-align: right; flex-shrink: 0; }
 .b-score.loser { opacity: 0.5; }
-.game-status-bar { font-size: 10px; color: var(--text2); text-align: center; padding-top: 6px; border-top: 1px solid var(--border); margin-top: 4px; }
+.game-status-bar { font-size: 9px; color: var(--text2); text-align: center; padding-top: 4px; border-top: 1px solid var(--border); margin-top: 2px; }
 .game-status-bar.live { color: var(--red); }
-.mini-live-dot { display: inline-block; width: 6px; height: 6px; background: var(--red); border-radius: 50%; margin-right: 4px; animation: pulse 2s infinite; }
+.mini-live-dot { display: inline-block; width: 5px; height: 5px; background: var(--red); border-radius: 50%; margin-right: 3px; animation: pulse 2s infinite; }
 
 /* Final Four */
 .ff-banner { background: linear-gradient(135deg, var(--card), var(--border)); border-radius: 16px; padding: 24px; text-align: center; margin-bottom: 16px; }
