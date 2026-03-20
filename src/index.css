@@ -505,18 +505,6 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 
 .portfolio-card.expanded { grid-column: 1 / -1; }
 .portfolio-team-list { margin-top: 12px; border-top: 1px solid var(--border); padding-top: 8px; }
-.portfolio-team-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: 12px; border-bottom: 1px solid rgba(255,255,255,0.04); cursor: pointer; transition: background 0.15s; border-radius: 6px; padding-left: 4px; padding-right: 4px; }
-.portfolio-team-row:hover { background: rgba(255,255,255,0.05); }
-.portfolio-team-row:last-child { border-bottom: none; }
-.portfolio-team-row.eliminated { opacity: 0.5; }
-.portfolio-team-row.eliminated .portfolio-team-name { text-decoration: line-through; text-decoration-color: var(--red); }
-.portfolio-team-status { font-size: 8px; width: 14px; text-align: center; }
-.portfolio-team-status.alive { color: var(--green); }
-.portfolio-team-status.eliminated { color: var(--red); font-size: 10px; }
-.portfolio-team-seed { font-size: 10px; color: var(--text2); width: 16px; text-align: right; }
-.portfolio-team-name { flex: 1; font-weight: 500; color: var(--text); }
-.portfolio-team-pts { font-size: 11px; font-weight: 600; color: var(--green); min-width: 36px; text-align: right; }
-.portfolio-team-row.eliminated .portfolio-team-pts { color: var(--text2); }
 
 .portfolio-sections { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
 .portfolio-section { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px; }
