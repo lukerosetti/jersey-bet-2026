@@ -2327,9 +2327,24 @@ function TeamSearch({ resolvedMap, customizations, onGameClick, onClose }) {
 
 // ── Schedule View ──────────────────────────────────────────────────
 function ScheduleView({ resolvedMap, onGameClick, customizations, liveGames }) {
-  // Collect all non-final games from resolvedMap
+  // Collect games: keep finals until their entire round concludes
   const games = useMemo(() => {
-    const list = Object.values(resolvedMap).filter(g => g.status !== 'final');
+    const allGames = Object.values(resolvedMap);
+    // Determine which rounds are fully complete (every game in that round is final)
+    const roundGames = {};
+    allGames.forEach(g => {
+      const r = g.round || 0;
+      if (!roundGames[r]) roundGames[r] = [];
+      roundGames[r].push(g);
+    });
+    const completedRounds = new Set();
+    Object.entries(roundGames).forEach(([r, games]) => {
+      if (games.length > 0 && games.every(g => g.status === 'final')) {
+        completedRounds.add(Number(r));
+      }
+    });
+    // Keep games whose round is NOT fully completed, plus all future/TBD games
+    const list = allGames.filter(g => !completedRounds.has(g.round || 0));
 
     // Day mapping for static tip times (tournament 2026: Tue=Mar 17, Wed=Mar 18, Thu=Mar 19, Fri=Mar 20, Sat=Mar 21, Sun=Mar 22...)
     const dayMap = { 'Tue': '2026-03-17', 'Wed': '2026-03-18', 'Thu': '2026-03-19', 'Fri': '2026-03-20', 'Sat': '2026-03-21', 'Sun': '2026-03-22', 'Mon': '2026-03-23' };
@@ -2439,6 +2454,7 @@ function ScheduleView({ resolvedMap, onGameClick, customizations, liveGames }) {
           <div className="schedule-date-header">{group.label}</div>
           {group.games.map(game => {
             const isLive = game.status === 'live' || game.status === 'halftime';
+            const isFinal = game.status === 'final';
             const isTBD = game.t1 === 'TBD' || game.t2 === 'TBD';
             const color1 = getTeamColor(game.t1);
             const color2 = getTeamColor(game.t2);
@@ -2447,13 +2463,14 @@ function ScheduleView({ resolvedMap, onGameClick, customizations, liveGames }) {
             const region = getRegionLabel(game);
             const timeStr = isLive
               ? (game.status === 'halftime' ? 'HT' : `${game.half >= 3 ? 'OT' : game.half === 1 ? '1H' : '2H'} ${game.time}`)
+              : isFinal ? 'Final'
               : (game._date ? game._date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : (game.tip || 'TBD'));
 
             return (
-              <div key={game.id} className={`sched-card ${isLive ? 'live' : ''} ${isTBD ? 'tbd' : ''}`} onClick={() => !isTBD && onGameClick(game, game.region || getRegionFromId(game.id))}>
+              <div key={game.id} className={`sched-card ${isLive ? 'live' : ''} ${isFinal ? 'final' : ''} ${isTBD ? 'tbd' : ''}`} onClick={() => !isTBD && onGameClick(game, game.region || getRegionFromId(game.id))}>
                 <div className="sched-left">
                   <div className="sched-time-col">
-                    {isLive ? <span className="sched-live-badge">LIVE</span> : <span className="sched-tip">{timeStr}</span>}
+                    {isLive ? <span className="sched-live-badge">LIVE</span> : isFinal ? <span className="sched-final-badge">Final</span> : <span className="sched-tip">{timeStr}</span>}
                     {game.network && <span className="sched-network">{game.network}</span>}
                   </div>
                 </div>
@@ -2464,7 +2481,7 @@ function ScheduleView({ resolvedMap, onGameClick, customizations, liveGames }) {
                     {game.t1 !== 'TBD' && getTeamLogo(game.t1) && <img className="sched-logo" src={getTeamLogo(game.t1)} alt="" />}
                     <span className="sched-name">{game.t1}</span>
                     {owner1 && <div className="sched-owner" style={{ background: getCustomColor(owner1, customizations) }}></div>}
-                    {isLive && <span className="sched-score">{game.sc1}</span>}
+                    {(isLive || isFinal) && <span className={`sched-score ${isFinal && game.sc1 < game.sc2 ? 'loser' : ''}`}>{game.sc1}</span>}
                   </div>
                   <div className="sched-team">
                     <span className="sched-seed">{game.s2 || '?'}</span>
@@ -2472,7 +2489,7 @@ function ScheduleView({ resolvedMap, onGameClick, customizations, liveGames }) {
                     {game.t2 !== 'TBD' && getTeamLogo(game.t2) && <img className="sched-logo" src={getTeamLogo(game.t2)} alt="" />}
                     <span className="sched-name">{game.t2 === 'TBD' ? 'TBD' : game.t2}</span>
                     {owner2 && <div className="sched-owner" style={{ background: getCustomColor(owner2, customizations) }}></div>}
-                    {isLive && <span className="sched-score">{game.sc2}</span>}
+                    {(isLive || isFinal) && <span className={`sched-score ${isFinal && game.sc2 < game.sc1 ? 'loser' : ''}`}>{game.sc2}</span>}
                   </div>
                 </div>
                 <div className="sched-meta">

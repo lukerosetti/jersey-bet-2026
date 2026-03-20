@@ -769,7 +769,10 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 .sched-card { display: flex; align-items: center; gap: 10px; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; cursor: pointer; transition: border-color 0.2s; }
 .sched-card:active { border-color: var(--cyan); }
 .sched-card.live { border-color: var(--red); box-shadow: 0 0 8px rgba(239,68,68,0.15); }
+.sched-card.final { opacity: 0.55; }
 .sched-card.tbd { opacity: 0.5; cursor: default; }
+.sched-final-badge { font-size: 10px; font-weight: 700; color: var(--green); text-align: center; }
+.sched-score.loser { opacity: 0.45; }
 .sched-left { min-width: 58px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
 .sched-time-col { display: flex; flex-direction: column; align-items: center; gap: 2px; }
 .sched-tip { font-size: 11px; font-weight: 600; color: var(--text); text-align: center; white-space: nowrap; }
