@@ -1180,7 +1180,7 @@ function buildEnhancedStandings(liveGames, playInWinners, resolvedMap) {
       const winner = g.sc1 > g.sc2 ? g.t1 : g.t2;
       const winnerSeed = g.sc1 > g.sc2 ? g.s1 : g.s2;
       const loserSeed = g.sc1 > g.sc2 ? g.s2 : g.s1;
-      if (player.teams.includes(winner) && winnerSeed > loserSeed && (winnerSeed - loserSeed) >= 5) upsetCount++;
+      if (player.teams.includes(winner) && winnerSeed > loserSeed) upsetCount++;
     });
 
     // Build team details
