@@ -281,6 +281,8 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 .b-score.loser { opacity: 0.5; }
 .game-status-bar { font-size: 9px; color: var(--text2); text-align: center; padding-top: 4px; border-top: 1px solid var(--border); margin-top: 2px; }
 .game-status-bar.live { color: var(--red); }
+.game-status-bar.final { color: var(--green); }
+.game-status-bar.upcoming { color: var(--text2); opacity: 0.7; }
 .mini-live-dot { display: inline-block; width: 5px; height: 5px; background: var(--red); border-radius: 50%; margin-right: 3px; animation: pulse 2s infinite; }
 
 /* Final Four */

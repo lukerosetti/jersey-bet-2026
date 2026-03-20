@@ -844,7 +844,9 @@ function BracketGame({ game, onGameClick, customizations, regionName }) {
         {game.t2 !== 'TBD' && owner2 && <div className="b-owner" style={{ background: getCustomColor(owner2, customizations) }}></div>}
         {(isLive || isFinal) && <span className={`b-score ${isFinal && game.sc2 < game.sc1 ? 'loser' : ''}`}>{game.sc2}</span>}
       </div>
-      {isLive && <div className="game-status-bar live"><span className="mini-live-dot"></span>{game.time}</div>}
+      {isLive && <div className="game-status-bar live"><span className="mini-live-dot"></span>{game.status === 'halftime' ? 'HT' : game.time}</div>}
+      {isFinal && <div className="game-status-bar final">Final</div>}
+      {!isLive && !isFinal && !isTBD && game.tip && <div className="game-status-bar upcoming">{game.tip}</div>}
     </div>
   );
 }
