@@ -34,7 +34,7 @@ function TickerCard({ game, isLive, onGameClick, customizations }) {
     <div className={`ticker-card ${!isLive ? 'upcoming' : ''} ${pulse ? 'card-pulse' : ''}`} onClick={() => onGameClick(game, game.region)}>
       <div className="ticker-status">
         <span>{isLive
-          ? (game.status === 'halftime' ? 'HT' : `${game.half === 1 ? '1H' : '2H'} ${game.time || ''}`)
+          ? (game.status === 'halftime' ? 'HT' : `${game.half >= 3 ? 'OT' : game.half === 1 ? '1H' : '2H'} ${game.time || ''}`)
           : (game.tip || roundName || 'TBD')
         }</span>
         {game.network && <span className="ticker-network">{game.network}</span>}
@@ -107,7 +107,8 @@ function LiveGamesTicker({ resolvedGames, liveGames, playInWinners, onGameClick,
   const getTimeRemaining = (g) => {
     if (g.status === 'halftime') return 1200; // ~20 min = halftime + full 2H
     const clockSec = parseClockSeconds(g.time);
-    if (g.half === 2 || g.half === 'OT') return clockSec; // just clock left
+    if (g.half >= 3) return clockSec - 100; // OT: least time remaining (bias to front)
+    if (g.half === 2) return clockSec; // 2H: just clock left
     return 1200 + clockSec; // 1H: full 2H + remaining 1H clock
   };
   liveList.sort((a, b) => getTimeRemaining(a) - getTimeRemaining(b));
@@ -246,7 +247,7 @@ function GameCard({ game, onClick, customizations }) {
     <div className={`game-card ${isLive ? 'live' : ''} ${isTBD ? 'tbd-game' : ''} ${cardPulse ? 'card-pulse' : ''}`} onClick={isTBD ? undefined : onClick}>
       <div className="game-header">
         <div className="game-status">
-          {isLive ? (<><span className="live-badge">{game.status === 'halftime' ? 'Half' : 'Live'}</span><span className="game-time live">{game.status === 'halftime' ? 'Halftime' : `${game.half === 1 ? '1H' : '2H'} ${game.time}`}</span></>) : isFinal ? (<span className="game-time" style={{ color: 'var(--green)' }}>Final</span>) : (<span className="game-time upcoming">{game.tip}</span>)}
+          {isLive ? (<><span className="live-badge">{game.status === 'halftime' ? 'Half' : 'Live'}</span><span className="game-time live">{game.status === 'halftime' ? 'Halftime' : `${game.half >= 3 ? 'OT' : game.half === 1 ? '1H' : '2H'} ${game.time}`}</span></>) : isFinal ? (<span className="game-time" style={{ color: 'var(--green)' }}>Final</span>) : (<span className="game-time upcoming">{game.tip}</span>)}
         </div>
         <span className="game-network">{game.network}</span>
       </div>
@@ -273,18 +274,20 @@ function GameCard({ game, onClick, customizations }) {
           {(isLive || isFinal) && <span className={`team-score ${team1Winning ? 'loser' : ''} ${flash2 ? 'score-flash' : ''}`}>{game.sc2}</span>}
         </div>
       </div>
+      {!isTBD && game.prob1 != null && (
+        <div className="prob-bar-container"><div className="prob-bar"><div style={{ width: `${game.prob1}%`, background: color1 }}></div><div style={{ width: `${100 - game.prob1}%`, background: color2 }}></div></div></div>
+      )}
       {!isTBD && (
-        <>
-          <div className="prob-bar-container"><div className="prob-bar"><div style={{ width: `${game.prob1}%`, background: color1 }}></div><div style={{ width: `${100 - game.prob1}%`, background: color2 }}></div></div></div>
-          <div className="game-footer">
+        <div className="game-footer">
+          {(game.spread || game.total || game.ml) && (
             <div className="betting-preview">
-              <div className="bet-item"><div className="bet-label">Spread</div><div className="bet-value">{game.spread?.split(' ')[1]}</div></div>
-              <div className="bet-item"><div className="bet-label">O/U</div><div className="bet-value">{game.total}</div></div>
-              <div className="bet-item"><div className="bet-label">ML</div><div className="bet-value">{game.ml}</div></div>
+              {game.spread && <div className="bet-item"><div className="bet-label">Spread</div><div className="bet-value">{game.spread?.split(' ')[1]}</div></div>}
+              {game.total && <div className="bet-item"><div className="bet-label">O/U</div><div className="bet-value">{game.total}</div></div>}
+              {game.ml && <div className="bet-item"><div className="bet-label">ML</div><div className="bet-value">{game.ml}</div></div>}
             </div>
-            <span className="view-more">Details →</span>
-          </div>
-        </>
+          )}
+          <span className="view-more">Details →</span>
+        </div>
       )}
     </div>
   );
@@ -446,7 +449,7 @@ function GameModal({ game, onClose, customizations, liveGames }) {
       <div className="play-by-play">
         {gameDetails.plays.slice(0, 20).map((play, idx) => (
           <div key={idx} className="pbp-item">
-            <span className="pbp-time">{play.clock} {play.period === 1 ? '1H' : '2H'}</span>
+            <span className="pbp-time">{play.clock} {play.period >= 3 ? 'OT' : play.period === 1 ? '1H' : '2H'}</span>
             <div className="pbp-content"><div className="pbp-text">{play.text}</div>{(play.scoreAway != null || play.scoreHome != null) && <div className="pbp-score">{play.scoreAway} - {play.scoreHome}</div>}</div>
           </div>
         ))}
@@ -484,7 +487,7 @@ function GameModal({ game, onClose, customizations, liveGames }) {
             </div>
           </div>
           {game.city && <div className="m-location">{game.venue ? `${game.venue} · ` : ''}{game.city}{game.state ? `, ${game.state}` : ''}</div>}
-          {currentIsLive && <div className="status-bar live"><span className="live-badge">LIVE</span><span>{currentHalf === 1 ? '1st Half' : '2nd Half'} · {currentTime}</span></div>}
+          {currentIsLive && <div className="status-bar live"><span className="live-badge">LIVE</span><span>{currentHalf >= 3 ? 'Overtime' : currentHalf === 1 ? '1st Half' : '2nd Half'} · {currentTime}</span></div>}
           <div className="stats-tabs">
             <button className={`stats-tab ${activeTab === 'boxscore' ? 'active' : ''}`} onClick={() => setActiveTab('boxscore')}>{isUpcoming ? 'Season Stats' : 'Box Score'}</button>
             <button className={`stats-tab ${activeTab === 'teamstats' ? 'active' : ''}`} onClick={() => setActiveTab('teamstats')}>Team Stats</button>
@@ -844,7 +847,7 @@ function BracketGame({ game, onGameClick, customizations, regionName }) {
         {game.t2 !== 'TBD' && owner2 && <div className="b-owner" style={{ background: getCustomColor(owner2, customizations) }}></div>}
         {(isLive || isFinal) && <span className={`b-score ${isFinal && game.sc2 < game.sc1 ? 'loser' : ''}`}>{game.sc2}</span>}
       </div>
-      {isLive && <div className="game-status-bar live"><span className="mini-live-dot"></span>{game.status === 'halftime' ? 'HT' : game.time}{game.network && <span className="b-network">{game.network}</span>}</div>}
+      {isLive && <div className="game-status-bar live"><span className="mini-live-dot"></span>{game.status === 'halftime' ? 'HT' : `${game.half >= 3 ? 'OT ' : ''}${game.time}`}{game.network && <span className="b-network">{game.network}</span>}</div>}
       {isFinal && <div className="game-status-bar final">Final</div>}
       {!isLive && !isFinal && !isTBD && <div className="game-status-bar upcoming">{game.tip || 'TBD'}{game.network && <span className="b-network">{game.network}</span>}</div>}
     </div>
@@ -1137,7 +1140,7 @@ function buildEnhancedStandings(liveGames, playInWinners, resolvedMap) {
     const winnerSeed = g.sc1 > g.sc2 ? g.s1 : g.s2;
     const loserSeed = g.sc1 > g.sc2 ? g.s2 : g.s1;
     const margin = Math.abs(g.sc1 - g.sc2);
-    if (winnerSeed > loserSeed && (winnerSeed - loserSeed) >= 5) {
+    if (winnerSeed > loserSeed) {
       totalUpsets++;
       if (!biggestUpset || (winnerSeed - loserSeed) > (biggestUpset.seedDiff)) {
         biggestUpset = { winner: g.sc1 > g.sc2 ? g.t1 : g.t2, loser: g.sc1 > g.sc2 ? g.t2 : g.t1, winnerSeed, loserSeed, seedDiff: winnerSeed - loserSeed };
