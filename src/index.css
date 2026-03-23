@@ -120,8 +120,6 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 .card-pulse { animation: cardPulse 1.2s ease-out; }
 .ticker-score.score-flash { animation: scoreFlash 1.2s ease-out; display: inline-block; }
 
-.prob-bar-container { margin: 12px 0 8px; }
-.prob-bar { display: flex; height: 4px; border-radius: 2px; overflow: hidden; }
 
 .game-footer { display: flex; justify-content: space-between; align-items: center; }
 .betting-preview { display: flex; gap: 16px; }

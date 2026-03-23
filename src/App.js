@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { owners } from './data/bracketData';
 import { useLiveScores } from './data/useESPN';
-import { useOdds } from './adapters/odds/useOdds';
 import { buildResolvedGames } from './logic/helpers';
 import { TournamentProvider } from './context/TournamentContext';
 import config from './tournaments/active';
@@ -39,7 +38,6 @@ function App() {
     } catch { return {}; }
   });
   const { liveGames, playInWinners, lastUpdate, isLoading, error, refetch } = useLiveScores();
-  const { odds } = useOdds();
 
   // Pull-to-refresh
   const [ptrVisible, setPtrVisible] = useState(false);
@@ -118,14 +116,14 @@ function App() {
       <LiveIndicator lastUpdate={lastUpdate} isLoading={isLoading} error={error} />
       <LiveGamesTicker resolvedGames={resolvedAll} liveGames={liveGames} playInWinners={playInWinners} onGameClick={handleGameClick} customizations={customizations} />
       <main>
-        {currentTab === 'regions' && <RegionsView onGameClick={handleGameClick} liveGames={liveGames} playInWinners={playInWinners} customizations={customizations} resolvedMap={resolvedAll} odds={odds} />}
+        {currentTab === 'regions' && <RegionsView onGameClick={handleGameClick} liveGames={liveGames} playInWinners={playInWinners} customizations={customizations} resolvedMap={resolvedAll} />}
         {currentTab === 'schedule' && <ScheduleView resolvedMap={resolvedAll} onGameClick={handleGameClick} customizations={customizations} liveGames={liveGames} />}
         {currentTab === 'bracket' && <BracketView onGameClick={handleGameClick} liveGames={liveGames} playInWinners={playInWinners} customizations={customizations} resolvedMap={resolvedAll} />}
         {currentTab === 'standings' && <Leaderboard liveGames={liveGames} playInWinners={playInWinners} customizations={customizations} resolvedMap={resolvedAll} />}
         {currentTab === 'coolstuff' && renderCoolStuffContent()}
       </main>
       <div className="legend">{owners.map(owner => (<div key={owner.id} className="legend-item"><div className="legend-dot" style={{ background: getUserColor(owner) }}></div>{owner.name}</div>))}</div>
-      {selectedGame && <GameModal game={selectedGame} onClose={() => setSelectedGame(null)} customizations={customizations} liveGames={liveGames} odds={odds} />}
+      {selectedGame && <GameModal game={selectedGame} onClose={() => setSelectedGame(null)} customizations={customizations} liveGames={liveGames} />}
       {showSettings && <div className="modal-bg" onClick={() => setShowSettings(false)}><div className="modal" onClick={e => e.stopPropagation()}><div className="modal-handle"></div><div className="modal-head"><span className="modal-title">Settings</span><button className="modal-close" onClick={() => setShowSettings(false)}>×</button></div><div className="modal-body"><Settings currentUser={currentUser} setCurrentUser={setCurrentUser} customizations={customizations} setCustomizations={setCustomizations} /></div></div></div>}
       {showSearch && <TeamSearch resolvedMap={resolvedAll} customizations={customizations} onGameClick={(g, r) => { setShowSearch(false); handleGameClick(g, r); }} onClose={() => setShowSearch(false)} />}
     </div>

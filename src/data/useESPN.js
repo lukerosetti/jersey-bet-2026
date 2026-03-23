@@ -100,6 +100,10 @@ export function useLiveScores() {
       // Extract team season records from ESPN (competitors[].records[0].summary)
       const awayRecord = awayTeam.records?.[0]?.summary || '';
       const homeRecord = homeTeam.records?.[0]?.summary || '';
+      // Extract spread from ESPN odds (available pregame)
+      const oddsData = competition.odds?.[0];
+      const spread = oddsData?.details || '';
+      const overUnder = oddsData?.overUnder ? String(oddsData.overUnder) : '';
       games[gameKey] = {
         id: event.id, team1: team1Name, team2: team2Name,
         score1, score2, status: gameStatus,
@@ -107,7 +111,8 @@ export function useLiveScores() {
         network: competition.broadcast || '',
         venue: venue?.fullName || '', city: venue?.address?.city || '', state: venue?.address?.state || '',
         startDate: event.date || competition.startDate || '',
-        rec1: awayRecord, rec2: homeRecord
+        rec1: awayRecord, rec2: homeRecord,
+        spread, overUnder
       };
     });
   };
@@ -448,6 +453,8 @@ export function mergeWithLiveData(staticGame, liveGames, playInWinners, resolved
         startDate: liveData.startDate || game.startDate || '',
         rec1: espnRec1 || game.rec1 || '',
         rec2: espnRec2 || game.rec2 || '',
+        spread: liveData.spread || game.spread || '',
+        overUnder: liveData.overUnder || game.overUnder || '',
       };
     }
   }
