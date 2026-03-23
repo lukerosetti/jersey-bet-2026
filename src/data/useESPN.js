@@ -236,23 +236,27 @@ export function useLiveScores() {
       const isFirstFetch = !hasInitialFetch.current;
       hasInitialFetch.current = true;
 
-      // Fast fetch: yesterday through +7 days (covers current + next round schedule)
-      const quickOffsets = [];
-      for (let i = -1; i <= 7; i++) quickOffsets.push(i);
-      const { games: quickGames, winners: quickWinners } = await fetchDates(quickOffsets);
+      // Live poll: yesterday + today + tomorrow (3 requests, runs every 30s)
+      const { games: quickGames, winners: quickWinners } = await fetchDates([-1, 0, 1]);
       mergeAndUpdate(cachedGames, cachedWinners, quickGames, quickWinners);
       setIsLoading(false);
 
-      // On first load, backfill remaining tournament days in background
+      // On first load, fetch full tournament schedule (+2 to +15 days) then backfill history
       if (isFirstFetch) {
+        // Schedule fetch: covers S16, E8, F4, Championship from any point in tourney
+        const schedOffsets = [];
+        for (let i = 2; i <= 15; i++) schedOffsets.push(i);
+        const { games: schedGames, winners: schedWinners } = await fetchDates(schedOffsets);
+        let runningGames = { ...cachedGames, ...quickGames, ...schedGames };
+        let runningWinners = { ...cachedWinners, ...quickWinners, ...schedWinners };
+        mergeAndUpdate(runningGames, runningWinners, {}, {});
+
+        // Backfill historical days
         const backfillOffsets = [];
         for (let i = -21; i <= 28; i++) {
-          if (i >= -1 && i <= 7) continue; // already fetched
+          if (i >= -1 && i <= 15) continue; // already fetched
           backfillOffsets.push(i);
         }
-        // Use running cache to avoid stale localStorage reads between batches
-        let runningGames = { ...cachedGames, ...quickGames };
-        let runningWinners = { ...cachedWinners, ...quickWinners };
         // Fetch in parallel batches of 8 to avoid overwhelming the API
         for (let b = 0; b < backfillOffsets.length; b += 8) {
           const batch = backfillOffsets.slice(b, b + 8);
