@@ -108,7 +108,16 @@ export function calculateBadges(liveGames, playInWinners, resolvedMap) {
   owners.forEach(o => { playerBadges[o.id] = { glory: [], shame: [] }; });
 
   const resolved = resolvedMap || buildResolvedGames(liveGames, playInWinners);
-  const completedGames = Object.values(resolved).filter(g => g.status === 'final');
+  const completedGames = Object.values(resolved).filter(g => g.status === 'final')
+    .sort((a, b) => {
+      // Sort chronologically by startDate, then by round, then by game ID
+      if (a.startDate && b.startDate) return new Date(a.startDate) - new Date(b.startDate);
+      if (a.startDate) return -1;
+      if (b.startDate) return 1;
+      const roundDiff = (a.round || 1) - (b.round || 1);
+      if (roundDiff !== 0) return roundDiff;
+      return (a.id || '').localeCompare(b.id || '');
+    });
 
   if (completedGames.length === 0) return playerBadges;
 

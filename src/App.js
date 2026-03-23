@@ -3,6 +3,7 @@ import { owners } from './data/bracketData';
 import { useLiveScores } from './data/useESPN';
 import { buildResolvedGames } from './logic/helpers';
 import { TournamentProvider } from './context/TournamentContext';
+import config from './tournaments/active';
 
 // Shared components
 import LiveGamesTicker from './views/shared/LiveGamesTicker';
@@ -98,7 +99,7 @@ function App() {
       <div className={`ptr-indicator ${ptrVisible ? 'visible' : ''} ${ptrRefreshing ? 'refreshing' : ''}`}><div className="ptr-spinner"></div></div>
       <div className="glass-header-bar" />
       <header className="header">
-        <div><img src="/logo.png" alt="Jersey Bets" className="header-logo" /><div className="header-sub">March Madness 2026</div></div>
+        <div><img src="/logo.png" alt="Jersey Bets" className="header-logo" /><div className="header-sub">{config.name.toUpperCase()}</div></div>
         <div className="header-right">
           <button className="settings-btn" onClick={() => setShowSearch(true)}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
           <button className="settings-btn" onClick={() => setShowSettings(true)}>⚙</button>

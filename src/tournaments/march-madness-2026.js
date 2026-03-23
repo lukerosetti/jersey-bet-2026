@@ -151,7 +151,10 @@ const networkStreaming = {
   'CBS': { primary: 'https://www.paramountplus.com', primaryName: 'Paramount+', espn: 'https://www.espn.com/watch' },
   'TBS': { primary: 'https://www.max.com', primaryName: 'Max', espn: 'https://www.espn.com/watch' },
   'TNT': { primary: 'https://www.max.com', primaryName: 'Max', espn: 'https://www.espn.com/watch' },
-  'TruTV': { primary: 'https://www.max.com', primaryName: 'Max', espn: 'https://www.espn.com/watch' }
+  'TruTV': { primary: 'https://www.max.com', primaryName: 'Max', espn: 'https://www.espn.com/watch' },
+  'truTV': { primary: 'https://www.max.com', primaryName: 'Max', espn: 'https://www.espn.com/watch' },
+  'TBS/truTV': { primary: 'https://www.max.com', primaryName: 'Max', espn: 'https://www.espn.com/watch' },
+  'TBS/TruTV': { primary: 'https://www.max.com', primaryName: 'Max', espn: 'https://www.espn.com/watch' },
 };
 
 const scoringSystem = {

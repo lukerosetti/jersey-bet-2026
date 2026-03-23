@@ -15,7 +15,7 @@ function Leaderboard({ liveGames, playInWinners, customizations, resolvedMap }) 
       {/* Player Cards */}
       {standings.map((player, index) => {
         const isExpanded = expandedPlayer === player.id;
-        const progressPct = player.maxPossible > 0 ? Math.min((player.points / (player.points + player.maxPossible)) * 100, 100) : 0;
+        const progressPct = player.maxPossible > 0 ? Math.min((player.points / player.maxPossible) * 100, 100) : 0;
         const alivePct = player.teams.length > 0 ? (player.teamsAlive / player.teams.length) * 100 : 0;
         return (
           <div key={player.id} className={`standings-card ${index === 0 ? 'leader' : ''} ${isExpanded ? 'expanded' : ''}`} onClick={() => setExpandedPlayer(isExpanded ? null : player.id)}>
