@@ -16,5 +16,22 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      // Unregister any stale service workers from previous builds
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          registrations.forEach(function(registration) {
+            registration.unregister();
+            console.log('Unregistered stale service worker');
+          });
+        });
+      }
+      // Clear all caches
+      if ('caches' in window) {
+        caches.keys().then(function(names) {
+          names.forEach(function(name) { caches.delete(name); });
+        });
+      }
+    </script>
   </body>
 </html>
