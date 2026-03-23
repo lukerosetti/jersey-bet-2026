@@ -60,24 +60,22 @@ function TickerCard({ game, isLive, onGameClick, customizations }) {
 }
 
 function LiveGamesTicker({ resolvedGames, liveGames, playInWinners, onGameClick, customizations }) {
-  // Sort by round first (cross-week safe), then by tip time within same round
-  const parseTip = (tip) => {
-    if (!tip) return Infinity;
-    const dayOrder = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
-    const parts = tip.match(/^(\w+)\s+(\d+):(\d+)\s+(AM|PM)$/);
-    if (!parts) return Infinity;
-    const [, day, hr, min, ampm] = parts;
-    let hours = parseInt(hr);
-    if (ampm === 'PM' && hours !== 12) hours += 12;
-    if (ampm === 'AM' && hours === 12) hours = 0;
-    return (dayOrder[day] ?? 7) * 1440 + hours * 60 + parseInt(min);
+  // Sort upcoming games chronologically using startDate (ISO) when available, then tip string
+  const getStartTime = (g) => {
+    if (g.startDate) {
+      const d = new Date(g.startDate);
+      if (!isNaN(d.getTime())) return d.getTime();
+    }
+    return Infinity;
   };
   const sortUpcoming = (a, b) => {
+    // Primary: chronological by ESPN startDate
+    const timeDiff = getStartTime(a) - getStartTime(b);
+    if (timeDiff !== 0 && isFinite(getStartTime(a)) && isFinite(getStartTime(b))) return timeDiff;
+    // Fallback: lower round first
     const roundDiff = (a.round || 0) - (b.round || 0);
     if (roundDiff !== 0) return roundDiff;
-    const tipDiff = parseTip(a.tip) - parseTip(b.tip);
-    if (tipDiff !== 0) return tipDiff;
-    // When no tip times, sort by seed (lower seed first) then by game ID
+    // Fallback: lower seed first, then game ID
     const seedDiff = (a.s1 || 99) - (b.s1 || 99);
     if (seedDiff !== 0) return seedDiff;
     return (a.id || '').localeCompare(b.id || '');

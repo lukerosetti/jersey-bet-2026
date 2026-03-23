@@ -113,7 +113,7 @@ export const normalizeTeamName = (espnName) => {
 };
 
 // Cache version - bump this to force all browsers to clear stale data
-const CACHE_VERSION = 2;
+const CACHE_VERSION = 3;
 
 // Hook to fetch live scores with localStorage caching for completed games
 export function useLiveScores() {
@@ -236,16 +236,18 @@ export function useLiveScores() {
       const isFirstFetch = !hasInitialFetch.current;
       hasInitialFetch.current = true;
 
-      // Fast fetch: today + yesterday + tomorrow (3 parallel requests)
-      const { games: quickGames, winners: quickWinners } = await fetchDates([-1, 0, 1]);
+      // Fast fetch: yesterday through +7 days (covers current + next round schedule)
+      const quickOffsets = [];
+      for (let i = -1; i <= 7; i++) quickOffsets.push(i);
+      const { games: quickGames, winners: quickWinners } = await fetchDates(quickOffsets);
       mergeAndUpdate(cachedGames, cachedWinners, quickGames, quickWinners);
       setIsLoading(false);
 
-      // On first load, backfill remaining days in background (parallel batches)
-      if (isFirstFetch && Object.keys(cachedGames).length < 30) {
+      // On first load, backfill remaining tournament days in background
+      if (isFirstFetch) {
         const backfillOffsets = [];
         for (let i = -21; i <= 28; i++) {
-          if (i >= -1 && i <= 1) continue; // already fetched
+          if (i >= -1 && i <= 7) continue; // already fetched
           backfillOffsets.push(i);
         }
         // Use running cache to avoid stale localStorage reads between batches
