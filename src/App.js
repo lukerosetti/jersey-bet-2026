@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { owners } from './data/bracketData';
 import { useLiveScores } from './data/useESPN';
 import { buildResolvedGames } from './logic/helpers';
+import { TournamentProvider } from './context/TournamentContext';
 
 // Shared components
 import LiveGamesTicker from './views/shared/LiveGamesTicker';
@@ -92,6 +93,7 @@ function App() {
   };
 
   return (
+    <TournamentProvider>
     <div className="app">
       <div className={`ptr-indicator ${ptrVisible ? 'visible' : ''} ${ptrRefreshing ? 'refreshing' : ''}`}><div className="ptr-spinner"></div></div>
       <div className="glass-header-bar" />
@@ -124,6 +126,7 @@ function App() {
       {showSettings && <div className="modal-bg" onClick={() => setShowSettings(false)}><div className="modal" onClick={e => e.stopPropagation()}><div className="modal-handle"></div><div className="modal-head"><span className="modal-title">Settings</span><button className="modal-close" onClick={() => setShowSettings(false)}>×</button></div><div className="modal-body"><Settings currentUser={currentUser} setCurrentUser={setCurrentUser} customizations={customizations} setCustomizations={setCustomizations} /></div></div></div>}
       {showSearch && <TeamSearch resolvedMap={resolvedAll} customizations={customizations} onGameClick={(g, r) => { setShowSearch(false); handleGameClick(g, r); }} onClose={() => setShowSearch(false)} />}
     </div>
+    </TournamentProvider>
   );
 }
 

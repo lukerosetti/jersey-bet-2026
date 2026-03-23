@@ -1,91 +1,16 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { playInGames } from '../data/bracketData';
 import { teamSeasonStats } from '../data/teamStats';
+import config from '../tournaments/active';
 
-// ESPN API endpoints
-const ESPN_SCOREBOARD = 'https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard';
-const ESPN_TEAM = 'https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/teams';
-const ESPN_GAME = 'https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/summary';
+// ESPN API endpoints (driven by tournament config)
+const BASE = 'https://site.api.espn.com/apis/site/v2/sports';
+const ESPN_SCOREBOARD = `${BASE}/${config.dataSource.sport}/${config.dataSource.league}/scoreboard`;
+const ESPN_TEAM = `${BASE}/${config.dataSource.sport}/${config.dataSource.league}/teams`;
+const ESPN_GAME = `${BASE}/${config.dataSource.sport}/${config.dataSource.league}/summary`;
 
-// Team name mapping (ESPN name -> our name)
-const teamNameMap = {
-  'Duke Blue Devils': 'Duke',
-  'Siena Saints': 'Siena',
-  'Ohio State Buckeyes': 'Ohio State',
-  'TCU Horned Frogs': 'TCU',
-  'St. John\'s Red Storm': 'St Johns',
-  'Northern Iowa Panthers': 'Northern Iowa',
-  'Kansas Jayhawks': 'Kansas',
-  'California Baptist Lancers': 'Cal Baptist',
-  'Louisville Cardinals': 'Louisville',
-  'South Florida Bulls': 'South Florida',
-  'Michigan State Spartans': 'Michigan St',
-  'North Dakota State Bison': 'North Dakota St',
-  'UCLA Bruins': 'UCLA',
-  'UCF Knights': 'UCF',
-  'UConn Huskies': 'UConn',
-  'Connecticut Huskies': 'UConn',
-  'Furman Paladins': 'Furman',
-  'Arizona Wildcats': 'Arizona',
-  'LIU Sharks': 'LIU',
-  'Long Island Sharks': 'LIU',
-  'Long Island University Sharks': 'LIU',
-  'Villanova Wildcats': 'Villanova',
-  'Utah State Aggies': 'Utah State',
-  'Wisconsin Badgers': 'Wisconsin',
-  'High Point Panthers': 'High Point',
-  'Arkansas Razorbacks': 'Arkansas',
-  'Hawaii Rainbow Warriors': 'Hawaii',
-  'Hawai\'i Rainbow Warriors': 'Hawaii',
-  'BYU Cougars': 'BYU',
-  'Texas Longhorns': 'Texas',
-  'Gonzaga Bulldogs': 'Gonzaga',
-  'Kennesaw State Owls': 'Kennesaw St',
-  'Miami Hurricanes': 'Miami FL',
-  'Missouri Tigers': 'Missouri',
-  'Purdue Boilermakers': 'Purdue',
-  'Queens Royals': 'Queens',
-  'Michigan Wolverines': 'Michigan',
-  'Howard Bison': 'Howard',
-  'Georgia Bulldogs': 'Georgia',
-  'Saint Louis Billikens': 'Saint Louis',
-  'Texas Tech Red Raiders': 'Texas Tech',
-  'Akron Zips': 'Akron',
-  'Alabama Crimson Tide': 'Alabama',
-  'Hofstra Pride': 'Hofstra',
-  'Tennessee Volunteers': 'Tennessee',
-  'SMU Mustangs': 'SMU',
-  'Virginia Cavaliers': 'Virginia',
-  'Wright State Raiders': 'Wright St',
-  'Kentucky Wildcats': 'Kentucky',
-  'Santa Clara Broncos': 'Santa Clara',
-  'Iowa State Cyclones': 'Iowa State',
-  'Tennessee State Tigers': 'Tennessee St',
-  'Florida Gators': 'Florida',
-  'Lehigh Mountain Hawks': 'Lehigh',
-  'Clemson Tigers': 'Clemson',
-  'Iowa Hawkeyes': 'Iowa',
-  'Vanderbilt Commodores': 'Vanderbilt',
-  'McNeese Cowboys': 'McNeese',
-  'Nebraska Cornhuskers': 'Nebraska',
-  'Troy Trojans': 'Troy',
-  'North Carolina Tar Heels': 'North Carolina',
-  'VCU Rams': 'VCU',
-  'Illinois Fighting Illini': 'Illinois',
-  'Penn Quakers': 'Penn',
-  'Pennsylvania Quakers': 'Penn',
-  'Saint Mary\'s Gaels': 'Saint Marys',
-  'Texas A&M Aggies': 'Texas A&M',
-  'Houston Cougars': 'Houston',
-  'Idaho Vandals': 'Idaho',
-  'Prairie View A&M Panthers': 'Prairie View AM',
-  'NC State Wolfpack': 'NC State',
-  'North Carolina State Wolfpack': 'NC State',
-  'UMBC Retrievers': 'UMBC',
-  'Miami (OH) RedHawks': 'Miami OH',
-  'Miami Ohio RedHawks': 'Miami OH',
-  'Miami RedHawks': 'Miami OH'
-};
+// Team name mapping from tournament config (ESPN name -> our name)
+const teamNameMap = config.dataSource.nameMap;
 
 export const normalizeTeamName = (espnName) => {
   if (!espnName) return '';
@@ -193,7 +118,7 @@ export function useLiveScores() {
       date.setDate(date.getDate() + offset);
       const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '');
       try {
-        const response = await fetch(`${ESPN_SCOREBOARD}?groups=100&dates=${dateStr}`);
+        const response = await fetch(`${ESPN_SCOREBOARD}?groups=${config.dataSource.group}&dates=${dateStr}`);
         if (!response.ok) return;
         const data = await response.json();
         parseEvents(data.events, games, winners);
