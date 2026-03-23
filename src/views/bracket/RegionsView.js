@@ -5,7 +5,7 @@ import { buildResolvedGames } from '../../logic/helpers';
 import PlayInGames from '../shared/PlayInGames';
 import GameCard from '../shared/GameCard';
 
-function RegionsView({ onGameClick, liveGames, playInWinners, customizations, resolvedMap }) {
+function RegionsView({ onGameClick, liveGames, playInWinners, customizations, resolvedMap, odds }) {
   const resolved = resolvedMap || buildResolvedGames(liveGames, playInWinners);
   const regionNames = [...Object.keys(staticRegions), 'finalfour'];
 
@@ -179,7 +179,7 @@ function RegionsView({ onGameClick, liveGames, playInWinners, customizations, re
 
   return (
     <div>
-      <PlayInGames liveGames={liveGames} playInWinners={playInWinners} onGameClick={onGameClick} customizations={customizations} />
+      <PlayInGames liveGames={liveGames} playInWinners={playInWinners} onGameClick={onGameClick} customizations={customizations} odds={odds} />
       <div className="region-tabs">
         {regionNames.map(name => (
           <button key={name} className={`region-tab ${activeRegion === name ? 'active' : ''}`} onClick={() => handleRegionChange(name)}>
@@ -202,7 +202,7 @@ function RegionsView({ onGameClick, liveGames, playInWinners, customizations, re
         {availableRounds.map(round => (
           <div className="rounds-carousel-page" key={round}>
             {getGamesForRound(round).map((game, idx) => (
-              <GameCard key={game.id || idx} game={game} onClick={() => !(game.t1 === 'TBD' && game.t2 === 'TBD') && onGameClick(game, activeRegion)} customizations={customizations} />
+              <GameCard key={game.id || idx} game={game} onClick={() => !(game.t1 === 'TBD' && game.t2 === 'TBD') && onGameClick(game, activeRegion)} customizations={customizations} odds={odds} />
             ))}
           </div>
         ))}

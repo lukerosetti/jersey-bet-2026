@@ -2,7 +2,7 @@ import React from 'react';
 import { playInGames, getTeamColor, getOwner } from '../../data/bracketData';
 import GameCard from './GameCard';
 
-function PlayInGames({ liveGames, playInWinners, onGameClick, customizations }) {
+function PlayInGames({ liveGames, playInWinners, onGameClick, customizations, odds }) {
   const renderPlayInGame = (pi) => {
     const gameKey = [pi.t1, pi.t2].sort().join('_');
     const liveData = liveGames[gameKey];
@@ -28,7 +28,7 @@ function PlayInGames({ liveGames, playInWinners, onGameClick, customizations }) 
     };
 
     return (
-      <GameCard key={pi.id} game={gameObj} onClick={() => onGameClick && onGameClick(gameObj, 'playin')} customizations={customizations} />
+      <GameCard key={pi.id} game={gameObj} onClick={() => onGameClick && onGameClick(gameObj, 'playin')} customizations={customizations} odds={odds} />
     );
   };
 

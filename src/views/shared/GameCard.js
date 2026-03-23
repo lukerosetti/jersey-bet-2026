@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { getTeamColor, getTeamLogo, getOwner } from '../../data/bracketData';
 import { getCustomColor } from '../../logic/helpers';
 
-function GameCard({ game, onClick, customizations }) {
+function GameCard({ game, onClick, customizations, odds }) {
   const isLive = game.status === 'live' || game.status === 'halftime';
   const isFinal = game.status === 'final';
   const owner1 = getOwner(game.t1);
@@ -14,6 +14,10 @@ function GameCard({ game, onClick, customizations }) {
   const team1Eliminated = isFinal && team2Winning;
   const team2Eliminated = isFinal && team1Winning;
   const isTBD = game.t1 === 'TBD' || game.t2 === 'TBD';
+
+  // Resolve odds for this game
+  const gameKey = (!isTBD) ? [game.t1, game.t2].sort().join('_') : null;
+  const gameOdds = gameKey && odds ? odds[gameKey] : null;
 
   // Score flash tracking
   const prevScores = useRef({ sc1: game.sc1, sc2: game.sc2 });
@@ -27,6 +31,23 @@ function GameCard({ game, onClick, customizations }) {
     }
     prevScores.current = { sc1: game.sc1, sc2: game.sc2 };
   }, [game.sc1, game.sc2, isLive]);
+
+  // Format spread for display
+  const formatSpread = () => {
+    if (!gameOdds || gameOdds.spread == null) return null;
+    const spread = gameOdds.spread > 0 ? `+${gameOdds.spread}` : String(gameOdds.spread);
+    return spread;
+  };
+
+  // Format moneyline for display
+  const formatML = () => {
+    if (!gameOdds) return null;
+    const ml = gameOdds.ml1 != null ? gameOdds.ml1 : gameOdds.ml2;
+    if (ml == null) return null;
+    // Show the favorite's moneyline
+    const favMl = Math.min(gameOdds.ml1 || 0, gameOdds.ml2 || 0);
+    return favMl > 0 ? `+${favMl}` : String(favMl);
+  };
 
   return (
     <div className={`game-card ${isLive ? 'live' : ''} ${isTBD ? 'tbd-game' : ''} ${cardPulse ? 'card-pulse' : ''}`} onClick={isTBD ? undefined : onClick}>
@@ -59,16 +80,13 @@ function GameCard({ game, onClick, customizations }) {
           {(isLive || isFinal) && <span className={`team-score ${team1Winning ? 'loser' : ''} ${flash2 ? 'score-flash' : ''}`}>{game.sc2}</span>}
         </div>
       </div>
-      {!isTBD && game.prob1 != null && (
-        <div className="prob-bar-container"><div className="prob-bar"><div style={{ width: `${game.prob1}%`, background: color1 }}></div><div style={{ width: `${100 - game.prob1}%`, background: color2 }}></div></div></div>
-      )}
       {!isTBD && (
         <div className="game-footer">
-          {(game.spread || game.total || game.ml) && (
+          {gameOdds && (gameOdds.spread != null || gameOdds.total != null || gameOdds.ml1 != null) && (
             <div className="betting-preview">
-              {game.spread && <div className="bet-item"><div className="bet-label">Spread</div><div className="bet-value">{game.spread?.split(' ')[1]}</div></div>}
-              {game.total && <div className="bet-item"><div className="bet-label">O/U</div><div className="bet-value">{game.total}</div></div>}
-              {game.ml && <div className="bet-item"><div className="bet-label">ML</div><div className="bet-value">{game.ml}</div></div>}
+              {gameOdds.spread != null && <div className="bet-item"><div className="bet-label">Spread</div><div className="bet-value">{formatSpread()}</div></div>}
+              {gameOdds.total != null && <div className="bet-item"><div className="bet-label">O/U</div><div className="bet-value">{gameOdds.total}</div></div>}
+              {(gameOdds.ml1 != null || gameOdds.ml2 != null) && <div className="bet-item"><div className="bet-label">ML</div><div className="bet-value">{formatML()}</div></div>}
             </div>
           )}
           <span className="view-more">Details →</span>

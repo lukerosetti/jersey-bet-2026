@@ -3,7 +3,7 @@ import { getTeamColor, getTeamLogo, getOwner, getStreaming, scoringSystem } from
 import { fetchGameDetails, fetchTeamRoster } from '../../data/useESPN';
 import { getCustomColor } from '../../logic/helpers';
 
-function GameModal({ game, onClose, customizations, liveGames }) {
+function GameModal({ game, onClose, customizations, liveGames, odds }) {
   const [activeTab, setActiveTab] = useState('boxscore');
   const [gameDetails, setGameDetails] = useState(null);
   const [preGameStats, setPreGameStats] = useState({});
@@ -315,14 +315,26 @@ function GameModal({ game, onClose, customizations, liveGames }) {
               </div>
             );
           })()}
-          {(game.spread || game.total || game.ml) && <div className="bet-box">
-            <div className="bet-head">Game Lines</div>
-            <div className="bet-grid">
-              {game.spread && <div className="m-bet-item"><div className="m-bet-label">Spread</div><div className="m-bet-val">{game.spread}</div></div>}
-              {game.total && <div className="m-bet-item"><div className="m-bet-label">Over/Under</div><div className="m-bet-val">{game.total}</div></div>}
-              {game.ml && <div className="m-bet-item"><div className="m-bet-label">Moneyline</div><div className="m-bet-val">{game.ml}</div></div>}
-            </div>
-          </div>}
+          {(() => {
+            const isTBD = game.t1 === 'TBD' || game.t2 === 'TBD';
+            const oddsKey = !isTBD ? [game.t1, game.t2].sort().join('_') : null;
+            const gameOdds = oddsKey && odds ? odds[oddsKey] : null;
+            if (!gameOdds || (gameOdds.spread == null && gameOdds.total == null && gameOdds.ml1 == null)) return null;
+            const spreadDisplay = gameOdds.spread != null ? `${gameOdds.spreadTeam || ''} ${gameOdds.spread > 0 ? '+' : ''}${gameOdds.spread}`.trim() : null;
+            const ml1Display = gameOdds.ml1 != null ? (gameOdds.ml1 > 0 ? `+${gameOdds.ml1}` : String(gameOdds.ml1)) : null;
+            const ml2Display = gameOdds.ml2 != null ? (gameOdds.ml2 > 0 ? `+${gameOdds.ml2}` : String(gameOdds.ml2)) : null;
+            const mlDisplay = ml1Display && ml2Display ? `${gameOdds.team1} ${ml1Display} / ${gameOdds.team2} ${ml2Display}` : (ml1Display || ml2Display);
+            return (
+              <div className="bet-box">
+                <div className="bet-head">Game Lines</div>
+                <div className="bet-grid">
+                  {spreadDisplay && <div className="m-bet-item"><div className="m-bet-label">Spread</div><div className="m-bet-val">{spreadDisplay}</div></div>}
+                  {gameOdds.total != null && <div className="m-bet-item"><div className="m-bet-label">Over/Under</div><div className="m-bet-val">{gameOdds.total}</div></div>}
+                  {mlDisplay && <div className="m-bet-item"><div className="m-bet-label">Moneyline</div><div className="m-bet-val">{mlDisplay}</div></div>}
+                </div>
+              </div>
+            );
+          })()}
           {streaming && game.network && (
             <div className="watch-box">
               <div className="sec-title">Where to Watch</div>

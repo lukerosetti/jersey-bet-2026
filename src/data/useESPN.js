@@ -97,13 +97,17 @@ export function useLiveScores() {
       }
       const gameKey = [team1Name, team2Name].sort().join('_');
       const venue = competition.venue;
+      // Extract team season records from ESPN (competitors[].records[0].summary)
+      const awayRecord = awayTeam.records?.[0]?.summary || '';
+      const homeRecord = homeTeam.records?.[0]?.summary || '';
       games[gameKey] = {
         id: event.id, team1: team1Name, team2: team2Name,
         score1, score2, status: gameStatus,
         clock: competition.status?.displayClock || '', period: competition.status?.period || 1,
         network: competition.broadcast || '',
         venue: venue?.fullName || '', city: venue?.address?.city || '', state: venue?.address?.state || '',
-        startDate: event.date || competition.startDate || ''
+        startDate: event.date || competition.startDate || '',
+        rec1: awayRecord, rec2: homeRecord
       };
     });
   };
@@ -423,6 +427,10 @@ export function mergeWithLiveData(staticGame, liveGames, playInWinners, resolved
         } catch {}
       }
 
+      // Map ESPN rec1/rec2 (away/home) to our game t1/t2
+      const espnRec1 = t1IsFirst ? liveData.rec1 : liveData.rec2;
+      const espnRec2 = t1IsFirst ? liveData.rec2 : liveData.rec1;
+
       return {
         ...game,
         espnId: liveData.id,
@@ -438,6 +446,8 @@ export function mergeWithLiveData(staticGame, liveGames, playInWinners, resolved
         state: liveData.state || game.state || '',
         network: liveData.network || game.network || '',
         startDate: liveData.startDate || game.startDate || '',
+        rec1: espnRec1 || game.rec1 || '',
+        rec2: espnRec2 || game.rec2 || '',
       };
     }
   }
