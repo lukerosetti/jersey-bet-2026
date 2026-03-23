@@ -112,8 +112,19 @@ export const normalizeTeamName = (espnName) => {
   return espnName.replace(/\s+(Wildcats|Bulldogs|Tigers|Bears|Eagles|Hawks|Cardinals|Blue Devils|Tar Heels|Jayhawks|Hoosiers|Spartans|Wolverines|Buckeyes|Boilermakers|Fighting Illini|Hawkeyes|Badgers|Gophers|Cornhuskers|Cyclones|Cowboys|Red Raiders|Longhorns|Aggies|Razorbacks|Volunteers|Crimson Tide|Commodores|Rebels|Gamecocks|Cavaliers|Hokies|Demon Deacons|Wolfpack|Orange|Panthers|Hurricanes|Seminoles|Yellow Jackets|Rams|Owls|Gaels|Dons|Broncos|Toreros|Waves|Lions|Zags|Retrievers|RedHawks|Mountain Hawks|Bison|Huskies)$/i, '').trim();
 };
 
+// Cache version - bump this to force all browsers to clear stale data
+const CACHE_VERSION = 2;
+
 // Hook to fetch live scores with localStorage caching for completed games
 export function useLiveScores() {
+  // Clear stale cache if version mismatch
+  const storedVersion = parseInt(localStorage.getItem('jerseyBetCacheVersion') || '0');
+  if (storedVersion < CACHE_VERSION) {
+    localStorage.removeItem('jerseyBetGames');
+    localStorage.removeItem('jerseyBetPlayInWinners');
+    localStorage.setItem('jerseyBetCacheVersion', String(CACHE_VERSION));
+  }
+
   // Load cached games from localStorage on init
   const [liveGames, setLiveGames] = useState(() => {
     try {

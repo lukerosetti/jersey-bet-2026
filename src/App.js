@@ -75,7 +75,12 @@ function LiveGamesTicker({ resolvedGames, liveGames, playInWinners, onGameClick,
   const sortUpcoming = (a, b) => {
     const roundDiff = (a.round || 0) - (b.round || 0);
     if (roundDiff !== 0) return roundDiff;
-    return parseTip(a.tip) - parseTip(b.tip);
+    const tipDiff = parseTip(a.tip) - parseTip(b.tip);
+    if (tipDiff !== 0) return tipDiff;
+    // When no tip times, sort by seed (lower seed first) then by game ID
+    const seedDiff = (a.s1 || 99) - (b.s1 || 99);
+    if (seedDiff !== 0) return seedDiff;
+    return (a.id || '').localeCompare(b.id || '');
   };
 
   // Collect all live/halftime games
