@@ -139,19 +139,21 @@ export function useLiveScores() {
     return { games, winners };
   };
 
-  // Merge fresh data with cached, update state and localStorage
+  // Merge fresh data with cached and existing state, update localStorage
   const mergeAndUpdate = (cachedGames, cachedWinners, freshGames, freshWinners) => {
-    const mergedGames = { ...cachedGames, ...freshGames };
-    const mergedWinners = { ...cachedWinners, ...freshWinners };
-    const gamesToCache = {};
-    Object.entries(mergedGames).forEach(([key, game]) => {
-      if (game.status === 'final') gamesToCache[key] = game;
+    // Use functional setState to preserve existing schedule data from earlier fetches
+    // Fresh data overrides cache, which overrides existing state
+    setLiveGames(prev => {
+      const mergedGames = { ...prev, ...cachedGames, ...freshGames };
+      const gamesToCache = {};
+      Object.entries(mergedGames).forEach(([key, game]) => {
+        if (game.status === 'final') gamesToCache[key] = game;
+      });
+      try { localStorage.setItem('jerseyBetGames', JSON.stringify(gamesToCache)); } catch {}
+      return mergedGames;
     });
-    try {
-      localStorage.setItem('jerseyBetGames', JSON.stringify(gamesToCache));
-      localStorage.setItem('jerseyBetPlayInWinners', JSON.stringify(mergedWinners));
-    } catch (e) { console.warn('Could not save to localStorage:', e); }
-    setLiveGames(mergedGames);
+    const mergedWinners = { ...cachedWinners, ...freshWinners };
+    try { localStorage.setItem('jerseyBetPlayInWinners', JSON.stringify(mergedWinners)); } catch {}
     setPlayInWinners(mergedWinners);
     setLastUpdate(new Date());
   };
