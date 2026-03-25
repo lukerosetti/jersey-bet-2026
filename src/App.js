@@ -26,7 +26,14 @@ import RegionsView from './views/bracket/RegionsView';
 import BracketView from './views/bracket/BracketView';
 
 function App() {
-  const [currentTab, setCurrentTab] = useState('regions');
+  const [currentTab, setCurrentTab] = useState(() => {
+    // Default to Schedule when no live games, Regions when games are live
+    try {
+      const cached = JSON.parse(localStorage.getItem('jerseyBetGames') || '{}');
+      const hasLive = Object.values(cached).some(g => g.status === 'live' || g.status === 'halftime');
+      return hasLive ? 'regions' : 'schedule';
+    } catch { return 'schedule'; }
+  });
   const [currentUser, setCurrentUser] = useState(owners[0]);
   const [selectedGame, setSelectedGame] = useState(null);
   const [showSettings, setShowSettings] = useState(false);

@@ -772,10 +772,10 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 .sched-final-badge { font-size: 10px; font-weight: 700; color: var(--green); text-align: center; }
 .sched-score.loser { opacity: 0.45; }
 .sched-left { min-width: 58px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
-.sched-time-col { display: flex; flex-direction: column; align-items: center; gap: 2px; }
-.sched-tip { font-size: 11px; font-weight: 600; color: var(--text); text-align: center; white-space: nowrap; }
+.sched-time-col { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 60px; }
+.sched-tip { font-size: 13px; font-weight: 700; color: var(--cyan); text-align: center; white-space: nowrap; }
 .sched-live-badge { font-size: 9px; font-weight: 800; color: #fff; background: var(--red); padding: 2px 6px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px; animation: pulse 2s infinite; }
-.sched-network { font-size: 9px; color: var(--text2); font-weight: 500; margin-top: 1px; }
+.sched-network { font-size: 10px; color: var(--text2); font-weight: 600; margin-top: 1px; }
 .sched-matchup { flex: 1; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .sched-team { display: flex; align-items: center; gap: 6px; }
 .sched-seed { font-size: 10px; color: var(--text2); font-weight: 600; min-width: 14px; text-align: right; }
