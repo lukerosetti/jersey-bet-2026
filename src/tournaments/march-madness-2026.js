@@ -142,8 +142,8 @@ const regions = {
 };
 
 const finalFourGames = [
-  { id: 'ff1', round: 5, t1: 'TBD', t2: 'TBD', t1From: 'e_e8', t2From: 'w_e8', status: 'upcoming', label: 'East vs West' },
-  { id: 'ff2', round: 5, t1: 'TBD', t2: 'TBD', t1From: 's_e8', t2From: 'm_e8', status: 'upcoming', label: 'South vs Midwest' },
+  { id: 'ff1', round: 5, t1: 'TBD', t2: 'TBD', t1From: 'e_e8', t2From: 's_e8', status: 'upcoming', label: 'East vs South' },
+  { id: 'ff2', round: 5, t1: 'TBD', t2: 'TBD', t1From: 'w_e8', t2From: 'm_e8', status: 'upcoming', label: 'West vs Midwest' },
   { id: 'champ', round: 6, t1: 'TBD', t2: 'TBD', t1From: 'ff1', t2From: 'ff2', status: 'upcoming', label: 'Championship' }
 ];
 
