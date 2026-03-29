@@ -19,21 +19,66 @@ function ProjectionTool({ liveGames, playInWinners, customizations, resolvedMap 
       else if (game.t1 !== 'TBD' && game.t2 !== 'TBD') upcomingGames.push({ ...game, region: region.name });
     });
   });
-  finalFourGames.forEach(fg => {
-    const game = resolved[fg.id] || mergeWithLiveData(fg, liveGames, playInWinners, resolved);
+  // Build FF/Champ games, cascading projected winners into championship
+  const ff1Game = resolved['ff1'] || mergeWithLiveData(finalFourGames[0], liveGames, playInWinners, resolved);
+  const ff2Game = resolved['ff2'] || mergeWithLiveData(finalFourGames[1], liveGames, playInWinners, resolved);
+  const champGame = resolved['champ'] || mergeWithLiveData(finalFourGames[2], liveGames, playInWinners, resolved);
+
+  [ff1Game, ff2Game].forEach(game => {
     if (game.status === 'final') completedGames.push({ ...game, region: 'Final Four' });
     else if (game.t1 !== 'TBD' && game.t2 !== 'TBD') upcomingGames.push({ ...game, region: 'Final Four' });
   });
+
+  // Championship: use projected FF winners if actual teams are TBD
+  const ff1Key = ff1Game.t1 !== 'TBD' && ff1Game.t2 !== 'TBD' ? `${ff1Game.t1}_${ff1Game.t2}` : null;
+  const ff2Key = ff2Game.t1 !== 'TBD' && ff2Game.t2 !== 'TBD' ? `${ff2Game.t1}_${ff2Game.t2}` : null;
+  const ff1ProjectedWinner = ff1Key ? (overrides[ff1Key] || (ff1Game.status === 'final' ? (ff1Game.sc1 > ff1Game.sc2 ? ff1Game.t1 : ff1Game.t2) : null)) : null;
+  const ff2ProjectedWinner = ff2Key ? (overrides[ff2Key] || (ff2Game.status === 'final' ? (ff2Game.sc1 > ff2Game.sc2 ? ff2Game.t1 : ff2Game.t2) : null)) : null;
+
+  if (champGame.status === 'final') {
+    completedGames.push({ ...champGame, region: 'Championship' });
+  } else if (champGame.t1 !== 'TBD' && champGame.t2 !== 'TBD') {
+    upcomingGames.push({ ...champGame, region: 'Championship' });
+  } else if (ff1ProjectedWinner && ff2ProjectedWinner) {
+    // Cascade projected FF winners into championship
+    const projectedChamp = {
+      ...champGame,
+      t1: ff1ProjectedWinner,
+      t2: ff2ProjectedWinner,
+      s1: ff1ProjectedWinner === ff1Game.t1 ? ff1Game.s1 : ff1Game.s2,
+      s2: ff2ProjectedWinner === ff2Game.t1 ? ff2Game.s1 : ff2Game.s2,
+      region: 'Championship'
+    };
+    upcomingGames.push(projectedChamp);
+  }
 
   const calculateWithOverrides = useCallback(() => {
     const allStaticGames = [];
     Object.values(staticRegions).forEach(region => allStaticGames.push(...region.games));
     allStaticGames.push(...finalFourGames);
+
+    // Build a lookup of projected winners for cascading (FF → Champ)
+    const projectedWinners = {};
+    const getProjectedGame = (staticGame) => {
+      const game = resolved[staticGame.id] || mergeWithLiveData(staticGame, liveGames, playInWinners, resolved);
+      // For champ game with TBD teams, cascade from projected FF winners
+      if (staticGame.id === 'champ' && game.t1 === 'TBD' && game.t2 === 'TBD') {
+        const t1 = projectedWinners['ff1'] || null;
+        const t2 = projectedWinners['ff2'] || null;
+        if (t1 && t2) {
+          const ff1g = resolved['ff1'] || mergeWithLiveData(finalFourGames[0], liveGames, playInWinners, resolved);
+          const ff2g = resolved['ff2'] || mergeWithLiveData(finalFourGames[1], liveGames, playInWinners, resolved);
+          return { ...game, t1, t2, s1: t1 === ff1g.t1 ? ff1g.s1 : ff1g.s2, s2: t2 === ff2g.t1 ? ff2g.s1 : ff2g.s2 };
+        }
+      }
+      return game;
+    };
+
     return owners.map(owner => {
       let points = 0;
       let teamsAlive = owner.teams.length;
       allStaticGames.forEach(staticGame => {
-        const game = resolved[staticGame.id] || mergeWithLiveData(staticGame, liveGames, playInWinners, resolved);
+        const game = getProjectedGame(staticGame);
         const gameKey = `${game.t1}_${game.t2}`;
 
         if (game.status === 'final') {
@@ -47,6 +92,7 @@ function ProjectionTool({ liveGames, playInWinners, customizations, resolvedMap 
             points += (scoringSystem.rounds[game.round || 1] || 1) * scoringSystem.getSeedMultiplier(winnerSeed);
           }
           if (owner.teams.includes(loser)) teamsAlive--;
+          if (staticGame.id === 'ff1' || staticGame.id === 'ff2') projectedWinners[staticGame.id] = winner;
         } else if (game.t1 !== 'TBD' && game.t2 !== 'TBD' && overrides[gameKey]) {
           // Upcoming game with a projected winner
           const winner = overrides[gameKey];
@@ -56,6 +102,7 @@ function ProjectionTool({ liveGames, playInWinners, customizations, resolvedMap 
             points += (scoringSystem.rounds[game.round || 1] || 1) * scoringSystem.getSeedMultiplier(winnerSeed);
           }
           if (owner.teams.includes(loser)) teamsAlive--;
+          if (staticGame.id === 'ff1' || staticGame.id === 'ff2') projectedWinners[staticGame.id] = winner;
         }
       });
       return { ...owner, points: Math.round(points * 100) / 100, teamsAlive };
