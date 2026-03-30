@@ -83,8 +83,10 @@
 .draft-player-btn.pickable { cursor: pointer; }
 .draft-player-btn.pickable:hover { border-color: var(--cyan); background: rgba(34,211,238,0.08); }
 .draft-player-btn:disabled { opacity: 0.5; cursor: default; }
-.draft-player-rank { font-size: 11px; font-weight: 700; color: var(--text2); min-width: 20px; }
-.draft-player-name { font-weight: 500; }
+.draft-player-rank { font-size: 11px; font-weight: 700; color: var(--text2); min-width: 24px; text-align: center; }
+.draft-player-flag { font-size: 16px; line-height: 1; flex-shrink: 0; }
+.draft-player-name { font-weight: 500; flex: 1; }
+.draft-roster-flag { font-size: 12px; margin-right: 2px; }
 .draft-empty { text-align: center; color: var(--text2); padding: 20px; font-size: 13px; }
 
 /* Rosters */

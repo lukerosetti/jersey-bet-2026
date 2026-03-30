@@ -23,6 +23,7 @@ export async function createDraft(draftId, data) {
     config: data.config || {},
     owners: data.owners || {},
     availablePlayers: data.availablePlayers || [],
+    playerData: data.playerData || null,
     picks: [],
     currentPick: null,
     createdAt: Date.now()

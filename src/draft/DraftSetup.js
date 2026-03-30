@@ -23,7 +23,9 @@ function DraftSetup({ onDraftCreated }) {
     if (template) {
       setSelectedTemplate(templateId);
       setDraftName(template.name);
-      setPlayersText(template.players.join('\n'));
+      // Players can be strings or objects with { name, country, owgr }
+      const playerNames = template.players.map(p => typeof p === 'string' ? p : p.name);
+      setPlayersText(playerNames.join('\n'));
       setRosterSize(getSuggestedRosterSize(templateId, ownerCount));
       setTimerSeconds(template.defaultTimer || 120);
       applyTheme(templateId);
@@ -120,6 +122,16 @@ function DraftSetup({ onDraftCreated }) {
 
       const template = selectedTemplate ? getTemplate(selectedTemplate) : null;
 
+      // Build player metadata map for flags/rankings in draft board
+      const playerData = {};
+      if (template) {
+        template.players.forEach(p => {
+          if (typeof p === 'object') {
+            playerData[p.name] = { country: p.country, owgr: p.owgr };
+          }
+        });
+      }
+
       await createDraft(draftId, {
         config: {
           name: draftName,
@@ -136,7 +148,8 @@ function DraftSetup({ onDraftCreated }) {
           createdAt: Date.now()
         },
         owners: ownersMap,
-        availablePlayers: players
+        availablePlayers: players,
+        playerData: Object.keys(playerData).length > 0 ? playerData : null
       });
 
       const recentDrafts = JSON.parse(localStorage.getItem('jerseyBetRecentDrafts') || '[]');

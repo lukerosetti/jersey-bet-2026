@@ -11,7 +11,17 @@ function SnakeDraft() {
   const owners = draftState?.owners || {};
   const picks = draftState?.picks || [];
   const available = draftState?.availablePlayers || [];
+  const playerData = draftState?.playerData || {};
   const currentPick = draftState?.currentPick;
+
+  // Convert country code to flag emoji
+  const getFlag = (playerName) => {
+    const data = playerData[playerName];
+    if (!data?.country) return '';
+    const code = data.country.toUpperCase();
+    return String.fromCodePoint(...[...code].map(c => 0x1F1E6 + c.charCodeAt(0) - 65));
+  };
+  const getOwgr = (playerName) => playerData[playerName]?.owgr || '';
 
   const ownerIds = config.draftOrder || Object.keys(owners);
   const snakeOrder = getSnakeOrder(ownerIds, config.rosterSize || 10);
@@ -124,7 +134,8 @@ function SnakeDraft() {
               onClick={() => handlePick(player)}
               disabled={!isMyTurn}
             >
-              <span className="draft-player-rank">{available.indexOf(player) + 1}</span>
+              <span className="draft-player-rank">{getOwgr(player) || (available.indexOf(player) + 1)}</span>
+              <span className="draft-player-flag">{getFlag(player)}</span>
               <span className="draft-player-name">{player}</span>
             </button>
           ))}
@@ -150,6 +161,7 @@ function SnakeDraft() {
                   {teams.map((team, idx) => (
                     <div key={idx} className="draft-roster-item">
                       <span className="draft-roster-pick-num">{idx + 1}.</span>
+                      <span className="draft-roster-flag">{getFlag(team)}</span>
                       <span>{team}</span>
                     </div>
                   ))}
