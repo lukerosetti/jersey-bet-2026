@@ -437,3 +437,18 @@
 
 /* Headshot in player list */
 .draft-player-headshot { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+
+/* ── Scheduled Draft / Countdown ────────────────────────── */
+.lobby-countdown { text-align: center; padding: 20px; margin: 16px 0; background: var(--bg); border: 1px solid var(--border); border-radius: 14px; }
+.lobby-countdown.imminent { border-color: var(--cyan); background: rgba(34,211,238,0.06); animation: pulse 2s infinite; }
+.lobby-countdown-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--text2); margin-bottom: 4px; }
+.lobby-countdown-time { font-size: 36px; font-weight: 900; color: var(--cyan); letter-spacing: 2px; }
+.lobby-countdown-date { font-size: 12px; color: var(--text2); margin-top: 4px; }
+.lobby-countdown-clear { margin-top: 10px; background: none; border: 1px solid var(--border); color: var(--text2); font-size: 11px; padding: 4px 12px; border-radius: 6px; cursor: pointer; }
+.lobby-start-options { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+.draft-schedule-btn { padding: 12px; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: var(--bg); color: var(--text); }
+.lobby-scheduler { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+.lobby-scheduler-label { font-size: 12px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; }
+.lobby-scheduler-btns { display: flex; gap: 8px; }
+.lobby-scheduler-btns .draft-start-btn { flex: 1; }
+.lobby-scheduler-btns .draft-logout-btn { flex: 0; white-space: nowrap; }

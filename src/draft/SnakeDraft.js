@@ -11,7 +11,7 @@ import DraftGrades from './DraftGrades';
 import DraftOrderReveal from './DraftOrderReveal';
 
 function SnakeDraft() {
-  const { draftState, currentUser, makeSnakePick, autoPick, draftId } = useDraft();
+  const { draftState, currentUser, makeSnakePick, autoPick, draftId, isCommissioner } = useDraft();
   const [searchQuery, setSearchQuery] = useState('');
   const [timeLeft, setTimeLeft] = useState(null);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
@@ -96,17 +96,26 @@ function SnakeDraft() {
     }
   }, [config.status, picks.length, ownerIds.length]);
 
-  // Pick timer countdown
+  // Check if the current picker is offline
+  const currentPickerOnline = currentPickInfo ? owners[currentPickInfo.ownerId]?.online : false;
+
+  // Pick timer countdown + auto-pick for offline owners
   useEffect(() => {
     if (!currentPick?.deadline) { setTimeLeft(null); return; }
     const tick = () => {
       const remaining = Math.max(0, Math.ceil((currentPick.deadline - Date.now()) / 1000));
       setTimeLeft(remaining);
-      // Feature #8: Auto-draft from queue instead of BPA
-      if (remaining <= 0 && isMyTurn) {
-        if (activeQueue.length > 0) {
-          makeSnakePick(activeQueue[0]);
-        } else {
+
+      if (remaining <= 0) {
+        if (isMyTurn) {
+          // Feature #8: Auto-draft from queue instead of BPA
+          if (activeQueue.length > 0) {
+            makeSnakePick(activeQueue[0]);
+          } else {
+            autoPick();
+          }
+        } else if (isCommissioner && !currentPickerOnline) {
+          // Commissioner auto-picks for offline owners
           autoPick();
         }
       }
@@ -114,7 +123,7 @@ function SnakeDraft() {
     tick();
     const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
-  }, [currentPick?.deadline, isMyTurn, autoPick, makeSnakePick, activeQueue]);
+  }, [currentPick?.deadline, isMyTurn, isCommissioner, currentPickerOnline, autoPick, makeSnakePick, activeQueue]);
 
   const handlePick = useCallback((player) => {
     if (!isMyTurn) return;

@@ -157,6 +157,11 @@ export function DraftProvider({ draftId, children }) {
   // Check if current user is commissioner (first owner in draft order)
   const isCommissioner = currentUser && draftState?.config?.commissioner === currentUser.ownerId;
 
+  const updateConfig = useCallback(async (updates) => {
+    if (!draftId) return;
+    await updateDraftConfig(draftId, updates);
+  }, [draftId]);
+
   const value = {
     draftState,
     currentUser,
@@ -168,6 +173,7 @@ export function DraftProvider({ draftId, children }) {
     autoPick,
     startDraft,
     uploadDraftResults,
+    updateConfig,
     isCommissioner,
     draftId
   };
