@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { createDraft } from '../firebase';
-import { getTemplates, getTemplate, getSuggestedRosterSize } from './draftTemplates';
+import { getTemplates, getTemplate, getSuggestedRosterSize, applyTheme } from './draftTemplates';
 
 function DraftSetup({ onDraftCreated }) {
   const [step, setStep] = useState(0); // 0 = template select
@@ -26,6 +26,7 @@ function DraftSetup({ onDraftCreated }) {
       setPlayersText(template.players.join('\n'));
       setRosterSize(getSuggestedRosterSize(templateId, ownerCount));
       setTimerSeconds(template.defaultTimer || 120);
+      applyTheme(templateId);
     }
     setStep(1);
   };

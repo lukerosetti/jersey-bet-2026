@@ -30,6 +30,7 @@ import { DraftProvider } from './draft/DraftContext';
 import DraftRouter from './draft/DraftRouter';
 import PoolSelect from './draft/PoolSelect';
 import DraftSetup from './draft/DraftSetup';
+import { removeTheme } from './draft/draftTemplates';
 import './draft/draft.css';
 
 function App() {
@@ -53,6 +54,7 @@ function App() {
   const exitDraft = () => {
     setActiveDraftId(null);
     sessionStorage.removeItem('activeDraftId');
+    removeTheme();
     setAppMode('tournament');
   };
   const [currentTab, setCurrentTab] = useState(() => {

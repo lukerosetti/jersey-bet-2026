@@ -10,6 +10,16 @@ const templates = {
     suggestedRosterSize: { 2: 10, 3: 8, 4: 6, 5: 5, 6: 4, 7: 4, 8: 3 },
     defaultTimer: 120,
     espnEventId: '401811941',
+    theme: {
+      '--bg': '#0a1a0a',
+      '--bg2': '#0f260f',
+      '--card': '#132813',
+      '--border': '#1e3d1e',
+      '--cyan': '#2e7d32',
+      '--green': '#4caf50',
+      '--accent-gradient': 'linear-gradient(135deg, #2e7d32, #66bb6a)',
+      '--header-bg': 'linear-gradient(180deg, #0a1a0a 0%, #1b5e20 100%)',
+    },
     players: [
       'Scottie Scheffler',
       'Rory McIlroy',
@@ -121,6 +131,47 @@ export function getSuggestedRosterSize(templateId, ownerCount) {
   const t = templates[templateId];
   if (!t) return 5;
   return t.suggestedRosterSize[ownerCount] || Math.floor(t.players.length / ownerCount);
+}
+
+// Apply a tournament theme to the document root (CSS custom properties)
+// Saves original values so we can revert cleanly
+let originalTheme = null;
+
+export function applyTheme(templateId) {
+  const t = templates[templateId];
+  if (!t?.theme) return;
+
+  const root = document.documentElement;
+
+  // Save original values on first apply
+  if (!originalTheme) {
+    originalTheme = {};
+    Object.keys(t.theme).forEach(prop => {
+      originalTheme[prop] = getComputedStyle(root).getPropertyValue(prop).trim();
+    });
+  }
+
+  // Apply tournament theme
+  Object.entries(t.theme).forEach(([prop, value]) => {
+    root.style.setProperty(prop, value);
+  });
+}
+
+export function removeTheme() {
+  if (!originalTheme) return;
+  const root = document.documentElement;
+  Object.entries(originalTheme).forEach(([prop, value]) => {
+    if (value) {
+      root.style.setProperty(prop, value);
+    } else {
+      root.style.removeProperty(prop);
+    }
+  });
+  originalTheme = null;
+}
+
+export function getTheme(templateId) {
+  return templates[templateId]?.theme || null;
 }
 
 export default templates;
