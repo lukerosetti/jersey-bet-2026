@@ -2,7 +2,7 @@ import React from 'react';
 import { owners } from '../../data/bracketData';
 import { calculateStandings, calculateBadges } from '../../logic/scoring';
 
-function OtherCoolStuff({ liveGames, playInWinners, setSubView, resolvedMap }) {
+function OtherCoolStuff({ liveGames, playInWinners, setSubView, resolvedMap, onOpenDraft }) {
   const standings = calculateStandings(liveGames, playInWinners, resolvedMap);
   const playerBadges = calculateBadges(liveGames, playInWinners, resolvedMap);
   const totalBadges = owners.reduce((sum, o) => sum + (playerBadges[o.id]?.glory?.length || 0) + (playerBadges[o.id]?.shame?.length || 0), 0);
@@ -14,7 +14,8 @@ function OtherCoolStuff({ liveGames, playInWinners, setSubView, resolvedMap }) {
     { id: 'projection', icon: '\uD83D\uDD2E', title: 'Projection Tool', desc: 'Toggle past game outcomes to see impact.', badge: 'New', badgeType: 'new', color: '#a855f7' },
     { id: 'graveyard', icon: '\uD83E\uDEA6', title: 'Graveyard', desc: 'Cemetery for eliminated teams.', badge: `${totalEliminated} dead`, color: '#ef4444' },
     { id: 'h2h', icon: '\u2694\uFE0F', title: 'Head-to-Head', desc: 'Compare two owners side by side.', badge: 'New', badgeType: 'new', color: '#22d3ee' },
-    { id: 'history', icon: '\uD83D\uDCDC', title: 'Bracket History', desc: 'Relive the bracket round by round.', badge: 'New', badgeType: 'new', color: '#facc15' }
+    { id: 'history', icon: '\uD83D\uDCDC', title: 'Bracket History', desc: 'Relive the bracket round by round.', badge: 'New', badgeType: 'new', color: '#facc15' },
+    { id: 'draft', icon: '\uD83C\uDFC8', title: 'Draft Room', desc: 'Join or create a draft pool.', badge: 'New', badgeType: 'new', color: '#22c55e' }
   ];
 
   return (
@@ -22,7 +23,7 @@ function OtherCoolStuff({ liveGames, playInWinners, setSubView, resolvedMap }) {
       <div className="page-title"><h2>Other Cool Stuff</h2><p>Extra features and fun stuff</p></div>
       <div className="menu-grid">
         {menuItems.map(item => (
-          <div key={item.id} className="menu-card" style={{ '--accent': item.color }} onClick={() => setSubView(item.id)}>
+          <div key={item.id} className="menu-card" style={{ '--accent': item.color }} onClick={() => item.id === 'draft' && onOpenDraft ? onOpenDraft() : setSubView(item.id)}>
             <span className={`menu-badge ${item.badgeType || ''}`}>{item.badge}</span>
             <div className="menu-icon">{item.icon}</div>
             <div className="menu-title">{item.title}</div>

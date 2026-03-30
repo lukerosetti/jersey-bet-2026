@@ -25,7 +25,36 @@ import Settings from './views/shared/Settings';
 import RegionsView from './views/bracket/RegionsView';
 import BracketView from './views/bracket/BracketView';
 
+// Draft components
+import { DraftProvider } from './draft/DraftContext';
+import DraftRouter from './draft/DraftRouter';
+import PoolSelect from './draft/PoolSelect';
+import DraftSetup from './draft/DraftSetup';
+import './draft/draft.css';
+
 function App() {
+  // Draft state
+  const [appMode, setAppMode] = useState(() => {
+    // Check if we have an active draft session
+    const activeDraft = sessionStorage.getItem('activeDraftId');
+    if (activeDraft) return 'draft';
+    return 'tournament'; // default to tournament mode
+  });
+  const [activeDraftId, setActiveDraftId] = useState(() => sessionStorage.getItem('activeDraftId') || null);
+  const [showDraftSetup, setShowDraftSetup] = useState(false);
+
+  const enterDraft = (draftId) => {
+    setActiveDraftId(draftId);
+    sessionStorage.setItem('activeDraftId', draftId);
+    setAppMode('draft');
+    setShowDraftSetup(false);
+  };
+
+  const exitDraft = () => {
+    setActiveDraftId(null);
+    sessionStorage.removeItem('activeDraftId');
+    setAppMode('tournament');
+  };
   const [currentTab, setCurrentTab] = useState(() => {
     // Default to Schedule when no live games, Regions when games are live
     try {
@@ -97,8 +126,49 @@ function App() {
     if (coolStuffSubView === 'graveyard') return <><button className="back-btn" onClick={() => setCoolStuffSubView(null)}>← Back</button><Graveyard liveGames={liveGames} playInWinners={playInWinners} customizations={customizations} resolvedMap={resolvedAll} /></>;
     if (coolStuffSubView === 'h2h') return <><button className="back-btn" onClick={() => setCoolStuffSubView(null)}>← Back</button><HeadToHead liveGames={liveGames} playInWinners={playInWinners} customizations={customizations} resolvedMap={resolvedAll} /></>;
     if (coolStuffSubView === 'history') return <><button className="back-btn" onClick={() => setCoolStuffSubView(null)}>← Back</button><BracketHistory liveGames={liveGames} playInWinners={playInWinners} customizations={customizations} resolvedMap={resolvedAll} /></>;
-    return <OtherCoolStuff liveGames={liveGames} playInWinners={playInWinners} setSubView={setCoolStuffSubView} resolvedMap={resolvedAll} />;
+    return <OtherCoolStuff liveGames={liveGames} playInWinners={playInWinners} setSubView={setCoolStuffSubView} resolvedMap={resolvedAll} onOpenDraft={() => setAppMode('draft')} />;
   };
+
+  // Draft mode rendering
+  if (appMode === 'draft' || showDraftSetup) {
+    if (showDraftSetup) {
+      return (
+        <div className="app">
+          <div className="glass-header-bar" />
+          <header className="header">
+            <div><img src="/logo.png" alt="Jersey Bets" className="header-logo" /><div className="header-sub">DRAFT SETUP</div></div>
+            <div className="header-right">
+              <button className="settings-btn" onClick={() => setShowDraftSetup(false)}>✕</button>
+            </div>
+          </header>
+          <DraftSetup onDraftCreated={enterDraft} />
+        </div>
+      );
+    }
+
+    if (!activeDraftId) {
+      return (
+        <div className="app">
+          <PoolSelect onSelectPool={enterDraft} onCreateNew={() => setShowDraftSetup(true)} />
+        </div>
+      );
+    }
+
+    return (
+      <DraftProvider draftId={activeDraftId}>
+        <div className="app">
+          <div className="glass-header-bar" />
+          <header className="header">
+            <div><img src="/logo.png" alt="Jersey Bets" className="header-logo" /><div className="header-sub">DRAFT</div></div>
+            <div className="header-right">
+              <button className="settings-btn" onClick={exitDraft} title="Exit draft">✕</button>
+            </div>
+          </header>
+          <DraftRouter onDraftComplete={exitDraft} />
+        </div>
+      </DraftProvider>
+    );
+  }
 
   return (
     <TournamentProvider>
