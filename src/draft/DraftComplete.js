@@ -19,6 +19,8 @@ function DraftComplete({ onContinue }) {
     }));
     const tournamentId = config.tournamentId || 'draft';
     localStorage.setItem(`jerseyBetDraft_${tournamentId}`, JSON.stringify({ owners: draftResults, completedAt: Date.now() }));
+    // Set as the active draft so active.js merges these rosters into the tournament
+    localStorage.setItem('jerseyBetActiveDraft', tournamentId);
     if (onContinue) onContinue();
   };
 

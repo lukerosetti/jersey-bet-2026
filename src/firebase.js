@@ -17,11 +17,12 @@ const db = getDatabase(app);
 // ── Draft Helpers ─────────────────────────────────────────────
 
 // Create a new draft
-export async function createDraft(draftId, config) {
+// Expects: { config: {...}, owners: {...}, availablePlayers: [...] }
+export async function createDraft(draftId, data) {
   await set(ref(db, `drafts/${draftId}`), {
-    config,
-    owners: config.owners || {},
-    availablePlayers: config.availablePlayers || [],
+    config: data.config || {},
+    owners: data.owners || {},
+    availablePlayers: data.availablePlayers || [],
     picks: [],
     currentPick: null,
     createdAt: Date.now()
