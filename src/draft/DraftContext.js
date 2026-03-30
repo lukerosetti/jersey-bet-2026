@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { subscribeToDraft, makePick as firebaseMakePick, updateCurrentPick, setOwnerOnline, createDraft, uploadDraft as firebaseUploadDraft, updateDraftConfig } from '../firebase';
 import { getSnakeOrder, getCurrentPick, getAutoPick } from './draftLogic';
+import { applyTheme } from './draftTemplates';
 
 const DraftContext = createContext(null);
 
@@ -19,6 +20,15 @@ export function DraftProvider({ draftId, children }) {
     });
     return () => unsubscribe();
   }, [draftId]);
+
+  // Apply tournament theme when draft loads with a templateId
+  const themeApplied = useRef(false);
+  useEffect(() => {
+    if (draftState?.config?.templateId && !themeApplied.current) {
+      applyTheme(draftState.config.templateId);
+      themeApplied.current = true;
+    }
+  }, [draftState]);
 
   // Set owner online status
   useEffect(() => {
