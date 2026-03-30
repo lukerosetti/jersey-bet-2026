@@ -30,7 +30,9 @@ import { DraftProvider } from './draft/DraftContext';
 import DraftRouter from './draft/DraftRouter';
 import PoolSelect from './draft/PoolSelect';
 import DraftSetup from './draft/DraftSetup';
-import { removeTheme } from './draft/draftTemplates';
+import { removeTheme, applyTheme } from './draft/draftTemplates';
+import { getAvailableTournaments, getTournamentConfig, getActiveTournamentId, setActiveTournamentId, registerDraftTournament } from './tournaments/registry';
+import TournamentSwitcher from './views/shared/TournamentSwitcher';
 import './draft/draft.css';
 
 function App() {
@@ -44,6 +46,24 @@ function App() {
   const [activeDraftId, setActiveDraftId] = useState(() => sessionStorage.getItem('activeDraftId') || null);
   const [showDraftSetup, setShowDraftSetup] = useState(false);
 
+  // Tournament switching
+  const [activeTournamentId, setActiveTournament] = useState(getActiveTournamentId);
+  const [tournamentVersion, setTournamentVersion] = useState(0); // force re-render on switch
+
+  const switchTournament = (id) => {
+    setActiveTournamentId(id);
+    setActiveTournament(id);
+    // Apply theme if tournament has one
+    const tournaments = getAvailableTournaments();
+    const t = tournaments.find(x => x.id === id);
+    if (t?.templateId) {
+      applyTheme(t.templateId);
+    } else {
+      removeTheme();
+    }
+    setTournamentVersion(v => v + 1);
+  };
+
   const enterDraft = (draftId) => {
     setActiveDraftId(draftId);
     sessionStorage.setItem('activeDraftId', draftId);
@@ -51,10 +71,15 @@ function App() {
     setShowDraftSetup(false);
   };
 
-  const exitDraft = () => {
+  const exitDraft = (switchToTournamentId) => {
     setActiveDraftId(null);
     sessionStorage.removeItem('activeDraftId');
-    removeTheme();
+    if (switchToTournamentId) {
+      // Coming from DraftComplete — switch to the new tournament
+      switchTournament(switchToTournamentId);
+    } else {
+      removeTheme();
+    }
     setAppMode('tournament');
   };
   const [currentTab, setCurrentTab] = useState(() => {
@@ -180,6 +205,7 @@ function App() {
       <header className="header">
         <div><img src="/logo.png" alt="Jersey Bets" className="header-logo" /><div className="header-sub">{config.name.toUpperCase()}</div></div>
         <div className="header-right">
+          <TournamentSwitcher activeTournamentId={activeTournamentId} onSwitch={switchTournament} />
           <button className="settings-btn" onClick={() => setShowSearch(true)}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
           <button className="settings-btn" onClick={() => setShowSettings(true)}>⚙</button>
           <div className="user-avatar" style={{ background: getUserColor(currentUser) }}>{getUserInitials(currentUser)}</div>

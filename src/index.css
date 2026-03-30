@@ -11,6 +11,25 @@
   --yellow: #facc15;
 }
 
+/* Tournament Switcher */
+.tournament-switcher { position: relative; }
+.switcher-btn { display: flex; align-items: center; gap: 4px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--card); color: var(--cyan); font-size: 11px; font-weight: 700; cursor: pointer; letter-spacing: 0.5px; transition: border-color 0.2s; }
+.switcher-btn:hover { border-color: var(--cyan); }
+.switcher-arrow { font-size: 8px; color: var(--text2); }
+.switcher-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 99; }
+.switcher-dropdown { position: absolute; top: 100%; right: 0; margin-top: 6px; min-width: 260px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 8px; z-index: 100; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+.switcher-title { font-size: 10px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; padding: 6px 10px 8px; }
+.switcher-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border-radius: 8px; cursor: pointer; transition: background 0.15s; }
+.switcher-item:hover { background: var(--bg); }
+.switcher-item.active { background: rgba(34,211,238,0.08); }
+.switcher-item-info { display: flex; align-items: center; gap: 8px; }
+.switcher-item-sport { font-size: 9px; font-weight: 800; color: #000; background: var(--cyan); padding: 2px 6px; border-radius: 4px; letter-spacing: 0.5px; }
+.switcher-item-name { font-size: 13px; font-weight: 500; }
+.switcher-item-actions { display: flex; align-items: center; gap: 6px; }
+.switcher-check { color: var(--cyan); font-size: 14px; font-weight: 700; }
+.switcher-delete { background: none; border: 1px solid var(--border); border-radius: 6px; color: var(--text2); font-size: 12px; padding: 2px 8px; cursor: pointer; transition: all 0.2s; }
+.switcher-delete:hover { border-color: var(--red); color: var(--red); }
+
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html { background: #060a0e; scrollbar-color: rgba(255,255,255,0.08) transparent; }
 ::-webkit-scrollbar { width: 6px; height: 6px; }

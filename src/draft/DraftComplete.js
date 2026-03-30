@@ -1,5 +1,6 @@
 import React from 'react';
 import { useDraft } from './DraftContext';
+import { registerDraftTournament, setActiveTournamentId } from '../tournaments/registry';
 
 function DraftComplete({ onContinue }) {
   const { draftState } = useDraft();
@@ -19,9 +20,20 @@ function DraftComplete({ onContinue }) {
     }));
     const tournamentId = config.tournamentId || 'draft';
     localStorage.setItem(`jerseyBetDraft_${tournamentId}`, JSON.stringify({ owners: draftResults, completedAt: Date.now() }));
-    // Set as the active draft so active.js merges these rosters into the tournament
-    localStorage.setItem('jerseyBetActiveDraft', tournamentId);
-    if (onContinue) onContinue();
+
+    // Register as a switchable tournament in the registry
+    registerDraftTournament({
+      id: tournamentId,
+      name: config.name || 'Draft Pool',
+      sport: config.sport || 'custom',
+      templateId: config.templateId || null,
+      espnEventId: config.espnEventId || null,
+      owners: draftResults,
+    });
+
+    // Set as active tournament and switch to it
+    setActiveTournamentId(tournamentId);
+    if (onContinue) onContinue(tournamentId);
   };
 
   return (
