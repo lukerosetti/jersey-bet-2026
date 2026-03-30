@@ -66,42 +66,65 @@ function SnakeDraft() {
 
   return (
     <div className="snake-draft">
-      {/* Header with progress */}
-      <div className="draft-header">
-        <div className="draft-progress-bar">
-          <div className="draft-progress-fill" style={{ width: `${progress.percent}%` }}></div>
-        </div>
-        <div className="draft-progress-text">Pick {picks.length + 1} of {snakeOrder.length} &middot; Round {currentPickInfo?.round || '?'}</div>
-      </div>
-
-      {/* Current pick indicator */}
-      {currentPickInfo && (
-        <div className={`draft-current-pick ${isMyTurn ? 'your-turn' : ''}`}>
-          <div className="draft-on-clock">
-            <span className="draft-on-clock-dot" style={{ background: owners[currentPickInfo.ownerId]?.color || '#555' }}></span>
-            <span className="draft-on-clock-name">
-              {isMyTurn ? 'Your Pick!' : `${owners[currentPickInfo.ownerId]?.name || currentPickInfo.ownerId} is picking...`}
-            </span>
-          </div>
-          {timeLeft !== null && (
-            <div className={`draft-timer ${timeLeft <= 15 ? 'urgent' : ''}`}>
-              {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}
+      {/* Sticky draft tracker */}
+      <div className="draft-tracker">
+        {/* Current pick + timer */}
+        <div className="draft-tracker-top">
+          {currentPickInfo && (
+            <div className={`draft-tracker-clock ${isMyTurn ? 'your-turn' : ''}`}>
+              <span className="draft-tracker-dot" style={{ background: owners[currentPickInfo.ownerId]?.color || '#555' }}></span>
+              <span className="draft-tracker-who">
+                {isMyTurn ? 'Your Pick!' : `${owners[currentPickInfo.ownerId]?.name || currentPickInfo.ownerId}`}
+              </span>
+              {timeLeft !== null && (
+                <span className={`draft-tracker-timer ${timeLeft <= 15 ? 'urgent' : ''}`}>
+                  {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}
+                </span>
+              )}
             </div>
           )}
+          <div className="draft-tracker-meta">
+            <span>Rd {currentPickInfo?.round || '?'}</span>
+            <span className="draft-tracker-divider">{'\u00B7'}</span>
+            <span>Pick {picks.length + 1}/{snakeOrder.length}</span>
+          </div>
         </div>
-      )}
 
-      {/* Last pick notification */}
-      {lastPick && (
-        <div className="draft-last-pick">
-          <span className="draft-last-dot" style={{ background: owners[lastPick.ownerId]?.color || '#555' }}></span>
-          <span>{owners[lastPick.ownerId]?.name} picked <strong>{lastPick.player}</strong></span>
-          {lastPick.autoPick && <span className="auto-badge">Auto</span>}
+        {/* Progress bar */}
+        <div className="draft-tracker-progress">
+          <div className="draft-tracker-progress-fill" style={{ width: `${progress.percent}%` }}></div>
         </div>
-      )}
 
-      {/* Upcoming picks */}
-      <div className="draft-upcoming">
+        {/* Pick history ticker — scrollable horizontal */}
+        {picks.length > 0 && (
+          <div className="draft-tracker-history">
+            {[...picks].reverse().map((pick, idx) => (
+              <div key={idx} className="draft-tracker-pick">
+                <span className="draft-tracker-pick-num">#{picks.length - idx}</span>
+                <span className="draft-tracker-pick-dot" style={{ background: owners[pick.ownerId]?.color || '#555' }}></span>
+                <span className="draft-tracker-pick-owner">{owners[pick.ownerId]?.name}</span>
+                <span className="draft-tracker-pick-flag">{getFlag(pick.player)}</span>
+                <span className="draft-tracker-pick-player">{pick.player}</span>
+                {pick.autoPick && <span className="auto-badge">Auto</span>}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Up next */}
+        <div className="draft-tracker-next">
+          <span className="draft-tracker-next-label">Next:</span>
+          {upcoming.slice(1, 6).map((pick, idx) => (
+            <span key={idx} className="draft-tracker-next-item">
+              <span className="draft-tracker-next-dot" style={{ background: owners[pick.ownerId]?.color || '#555' }}></span>
+              {owners[pick.ownerId]?.name}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* Upcoming picks (hidden — moved into tracker) */}
+      <div className="draft-upcoming" style={{ display: 'none' }}>
         <div className="draft-upcoming-title">Up Next</div>
         <div className="draft-upcoming-list">
           {upcoming.slice(1).map((pick, idx) => (

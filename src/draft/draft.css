@@ -64,6 +64,39 @@
 .draft-last-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 .auto-badge { font-size: 9px; background: var(--text2); color: var(--bg); padding: 2px 5px; border-radius: 3px; font-weight: 600; }
 
+/* Draft Tracker (sticky top) */
+.draft-tracker { position: sticky; top: 0; z-index: 50; background: var(--bg); border-bottom: 1px solid var(--border); padding: 10px 0 8px; margin: 0 -16px; padding-left: 16px; padding-right: 16px; max-height: 30vh; overflow: hidden; }
+.draft-tracker-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.draft-tracker-clock { display: flex; align-items: center; gap: 8px; }
+.draft-tracker-clock.your-turn .draft-tracker-who { color: var(--cyan); }
+.draft-tracker-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.draft-tracker-who { font-size: 15px; font-weight: 700; }
+.draft-tracker-timer { font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; margin-left: 8px; }
+.draft-tracker-timer.urgent { color: var(--red); }
+.draft-tracker-meta { font-size: 11px; color: var(--text2); font-weight: 600; display: flex; gap: 4px; }
+.draft-tracker-divider { opacity: 0.5; }
+
+/* Tracker progress */
+.draft-tracker-progress { height: 3px; background: var(--border); border-radius: 2px; margin-bottom: 8px; }
+.draft-tracker-progress-fill { height: 100%; background: var(--cyan); border-radius: 2px; transition: width 0.3s; }
+
+/* Tracker pick history — vertical scroll */
+.draft-tracker-history { max-height: calc(30vh - 100px); overflow-y: auto; display: flex; flex-direction: column; gap: 3px; margin-bottom: 6px; scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+.draft-tracker-history::-webkit-scrollbar { width: 3px; }
+.draft-tracker-history::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+.draft-tracker-pick { display: flex; align-items: center; gap: 6px; padding: 5px 8px; background: var(--card); border-radius: 6px; font-size: 12px; flex-shrink: 0; }
+.draft-tracker-pick-num { font-size: 10px; font-weight: 700; color: var(--text2); min-width: 20px; }
+.draft-tracker-pick-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.draft-tracker-pick-owner { font-weight: 600; font-size: 11px; min-width: 40px; color: var(--text2); }
+.draft-tracker-pick-flag { font-size: 12px; flex-shrink: 0; }
+.draft-tracker-pick-player { font-weight: 500; flex: 1; }
+
+/* Tracker up next */
+.draft-tracker-next { display: flex; align-items: center; gap: 6px; font-size: 11px; overflow-x: auto; padding-bottom: 2px; }
+.draft-tracker-next-label { font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: 0.3px; flex-shrink: 0; font-size: 10px; }
+.draft-tracker-next-item { display: flex; align-items: center; gap: 3px; white-space: nowrap; color: var(--text2); }
+.draft-tracker-next-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
 /* Upcoming picks */
 .draft-upcoming { margin-bottom: 12px; }
 .draft-upcoming-title { font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; margin-bottom: 6px; }
