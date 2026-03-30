@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"/>
+<title>DraftPlay - Masters Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0f14;
+  --bg2: #0f1a24;
+  --card: #131d28;
+  --border: #1e2d3d;
+  --text: #f1f5f9;
+  --text2: #94a3b8;
+  --cyan: #22d3ee;
+  --green: #22c55e;
+  --red: #ef4444;
+  --yellow: #facc15;
+  --masters-green: #006747;
+  --masters-yellow: #f2c75c;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { background: #060a0e; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: linear-gradient(180deg, var(--bg) 0%, var(--bg2) 100%);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.app {
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 16px;
+  padding-bottom: 80px;
+}
+
+/* Header */
+.header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+.header-logo {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+.header-logo .draft { color: var(--text); }
+.header-logo .play { color: var(--cyan); }
+.header-sub {
+  font-size: 13px;
+  color: var(--text2);
+  margin-top: 2px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.header-event {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 6px 14px;
+  background: rgba(0, 103, 71, 0.2);
+  border: 1px solid rgba(0, 103, 71, 0.4);
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--masters-yellow);
+}
+.header-event .event-dot {
+  width: 8px; height: 8px;
+  background: var(--green);
+  border-radius: 50%;
+  animation: pulse-dot 2s infinite;
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* Nav tabs */
+.nav-tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--card);
+  border-radius: 12px;
+  padding: 4px;
+  margin-bottom: 16px;
+}
+.nav-tab {
+  flex: 1;
+  padding: 10px 0;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text2);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  background: none;
+}
+.nav-tab.active {
+  background: rgba(34, 211, 238, 0.12);
+  color: var(--cyan);
+}
+
+/* Live Ticker */
+.live-ticker {
+  margin-bottom: 16px;
+}
+.live-ticker-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text2);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.live-badge {
+  background: var(--red);
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+.live-ticker-scroll {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+.live-ticker-scroll::-webkit-scrollbar { display: none; }
+
+.ticker-card {
+  min-width: 155px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 10px;
+  flex-shrink: 0;
+}
+.ticker-status {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--text2);
+  margin-bottom: 6px;
+}
+.ticker-status .hole { color: var(--green); font-weight: 600; }
+.ticker-golfer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 0;
+}
+.ticker-owner-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.ticker-flag {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.ticker-golfer-name {
+  font-size: 12px;
+  font-weight: 500;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ticker-golfer-score {
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.ticker-golfer-score.under { color: var(--red); }
+.ticker-golfer-score.over { color: var(--text2); }
+
+/* Round selector */
+.round-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 16px;
+  background: var(--card);
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.round-tab {
+  flex: 1;
+  padding: 10px 0;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text2);
+  cursor: pointer;
+  border: none;
+  background: none;
+  transition: all 0.2s;
+  border-right: 1px solid var(--border);
+}
+.round-tab:last-child { border-right: none; }
+.round-tab.active {
+  background: rgba(0, 103, 71, 0.25);
+  color: var(--masters-yellow);
+}
+
+/* Owner Standings Card */
+.standings-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.standings-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 14px;
+}
+.standings-row {
+  display: flex;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.standings-row:last-child { border-bottom: none; }
+.standings-rank {
+  width: 28px;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text2);
+}
+.standings-rank.first { color: var(--masters-yellow); }
+.standings-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  margin-right: 10px;
+  flex-shrink: 0;
+}
+.standings-name {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 600;
+}
+.standings-score {
+  font-size: 18px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  min-width: 50px;
+  text-align: right;
+}
+.standings-score.under { color: var(--red); }
+.standings-golfer-count {
+  font-size: 11px;
+  color: var(--text2);
+  margin-left: 8px;
+}
+
+/* Leaderboard */
+.leaderboard-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.leaderboard-header {
+  display: flex;
+  padding: 10px 16px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: rgba(255,255,255,0.02);
+  border-bottom: 1px solid var(--border);
+}
+.lb-pos { width: 36px; }
+.lb-player { flex: 1; }
+.lb-today { width: 50px; text-align: center; }
+.lb-thru { width: 45px; text-align: center; }
+.lb-total { width: 50px; text-align: right; }
+
+.lb-row {
+  display: flex;
+  align-items: center;
+  padding: 10px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  transition: background 0.15s;
+}
+.lb-row:last-child { border-bottom: none; }
+.lb-row.has-owner {
+  background: rgba(255,255,255,0.02);
+}
+.lb-row .lb-pos {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text2);
+}
+.lb-row.top3 .lb-pos { color: var(--masters-yellow); }
+.lb-row .lb-player {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.lb-row .lb-player-name {
+  font-size: 14px;
+  font-weight: 500;
+}
+.lb-row .lb-player-flag {
+  font-size: 13px;
+}
+.lb-row .lb-owner-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 4px rgba(0,0,0,0.3);
+}
+.lb-row .lb-today {
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+}
+.lb-row .lb-thru {
+  font-size: 12px;
+  color: var(--text2);
+  text-align: center;
+}
+.lb-row .lb-total {
+  font-size: 15px;
+  font-weight: 800;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.score-under { color: #ef4444; }
+.score-over { color: var(--text2); }
+.score-even { color: var(--text); }
+
+/* Movement indicator */
+.lb-movement {
+  font-size: 10px;
+  margin-left: 4px;
+}
+.lb-movement.up { color: var(--green); }
+.lb-movement.down { color: var(--red); }
+
+/* Cut line */
+.cut-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 16px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--red);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.cut-line::before, .cut-line::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--red);
+  opacity: 0.3;
+}
+
+/* Golfer detail modal */
+.golfer-detail {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.golfer-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.golfer-avatar {
+  width: 48px; height: 48px;
+  background: rgba(0, 103, 71, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+}
+.golfer-info h3 {
+  font-size: 18px;
+  font-weight: 700;
+}
+.golfer-info .golfer-meta {
+  font-size: 13px;
+  color: var(--text2);
+  margin-top: 2px;
+}
+.golfer-owner-badge {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.scorecard-grid {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 2px;
+  margin-top: 12px;
+}
+.sc-cell {
+  text-align: center;
+  padding: 6px 0;
+  font-size: 11px;
+  border-radius: 4px;
+}
+.sc-header {
+  color: var(--text2);
+  font-weight: 600;
+  font-size: 10px;
+}
+.sc-birdie { background: rgba(239, 68, 68, 0.15); color: var(--red); font-weight: 700; }
+.sc-bogey { background: rgba(148, 163, 184, 0.1); color: var(--text2); font-weight: 600; }
+.sc-eagle { background: rgba(239, 68, 68, 0.25); color: #ff6b6b; font-weight: 800; }
+.sc-par { color: var(--text); }
+
+/* Bottom nav */
+.bottom-nav {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  display: flex;
+  justify-content: center;
+  background: rgba(19, 29, 40, 0.95);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border);
+  padding: 8px 0;
+  padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+  z-index: 100;
+}
+.bottom-nav-inner {
+  display: flex;
+  gap: 0;
+  max-width: 500px;
+  width: 100%;
+}
+.bottom-nav-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 6px 0;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text2);
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+.bottom-nav-btn.active { color: var(--cyan); }
+.bottom-nav-btn .nav-icon { font-size: 20px; }
+
+/* Draft picks section */
+.my-picks {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.my-picks-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+}
+.pick-row {
+  display: flex;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.pick-row:last-child { border-bottom: none; }
+.pick-rank {
+  width: 32px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text2);
+}
+.pick-flag { font-size: 16px; margin-right: 10px; }
+.pick-name {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+}
+.pick-position {
+  font-size: 12px;
+  color: var(--text2);
+  margin-right: 12px;
+}
+.pick-score {
+  font-size: 16px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.pick-thru {
+  font-size: 11px;
+  color: var(--text2);
+  margin-left: 8px;
+  min-width: 32px;
+  text-align: right;
+}
+
+/* Achievements */
+.achievements {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.achievement-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  background: rgba(34, 211, 238, 0.08);
+  border: 1px solid rgba(34, 211, 238, 0.15);
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--cyan);
+}
+.achievement-badge.masters {
+  background: rgba(0, 103, 71, 0.15);
+  border-color: rgba(0, 103, 71, 0.3);
+  color: var(--masters-yellow);
+}
+
+/* Eagle animation */
+@keyframes eagle-flash {
+  0% { background: rgba(239, 68, 68, 0.25); }
+  50% { background: rgba(239, 68, 68, 0.45); }
+  100% { background: rgba(239, 68, 68, 0.25); }
+}
+.eagle-alert {
+  animation: eagle-flash 1.5s ease infinite;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 10px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-logo"><span class="draft">Draft</span><span class="play">Play</span></div>
+    <div class="header-sub">Luke's Pool</div>
+    <div class="header-event">
+      <span class="event-dot"></span>
+      The Masters 2026 - Round 3
+    </div>
+  </div>
+
+  <!-- Nav Tabs -->
+  <div class="nav-tabs">
+    <button class="nav-tab active">Leaderboard</button>
+    <button class="nav-tab">Standings</button>
+    <button class="nav-tab">My Picks</button>
+    <button class="nav-tab">Draft</button>
+  </div>
+
+  <!-- Eagle Alert -->
+  <div class="eagle-alert">
+    <span>&#129413;</span> Scottie Scheffler just eagled Hole 13!
+  </div>
+
+  <!-- Live Featured Golfers Ticker -->
+  <div class="live-ticker">
+    <div class="live-ticker-label">
+      <span class="live-badge">LIVE</span>
+      <span>Your Golfers on Course</span>
+    </div>
+    <div class="live-ticker-scroll">
+      <div class="ticker-card">
+        <div class="ticker-status">
+          <span class="hole">Hole 14</span>
+          <span>-8 Today</span>
+        </div>
+        <div class="ticker-golfer">
+          <span class="ticker-owner-dot" style="background: #22d3ee;"></span>
+          <span class="ticker-flag">&#127482;&#127480;</span>
+          <span class="ticker-golfer-name">S. Scheffler</span>
+          <span class="ticker-golfer-score under">-14</span>
+        </div>
+      </div>
+      <div class="ticker-card">
+        <div class="ticker-status">
+          <span class="hole">Hole 16</span>
+          <span>-3 Today</span>
+        </div>
+        <div class="ticker-golfer">
+          <span class="ticker-owner-dot" style="background: #22d3ee;"></span>
+          <span class="ticker-flag">&#127467;&#127462;</span>
+          <span class="ticker-golfer-name">R. McIlroy</span>
+          <span class="ticker-golfer-score under">-9</span>
+        </div>
+      </div>
+      <div class="ticker-card">
+        <div class="ticker-status">
+          <span class="hole">Hole 12</span>
+          <span>-1 Today</span>
+        </div>
+        <div class="ticker-golfer">
+          <span class="ticker-owner-dot" style="background: #f97316;"></span>
+          <span class="ticker-flag">&#127482;&#127480;</span>
+          <span class="ticker-golfer-name">X. Schauffele</span>
+          <span class="ticker-golfer-score under">-7</span>
+        </div>
+      </div>
+      <div class="ticker-card">
+        <div class="ticker-status">
+          <span class="hole">Hole 10</span>
+          <span>E Today</span>
+        </div>
+        <div class="ticker-golfer">
+          <span class="ticker-owner-dot" style="background: #a855f7;"></span>
+          <span class="ticker-flag">&#127468;&#127463;</span>
+          <span class="ticker-golfer-name">T. Fleetwood</span>
+          <span class="ticker-golfer-score under">-4</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Round Tabs -->
+  <div class="round-tabs">
+    <button class="round-tab">Rd 1</button>
+    <button class="round-tab">Rd 2</button>
+    <button class="round-tab active">Rd 3</button>
+    <button class="round-tab">Rd 4</button>
+  </div>
+
+  <!-- Owner Standings -->
+  <div class="standings-card">
+    <div class="standings-title">Pool Standings</div>
+    <div class="standings-row">
+      <span class="standings-rank first">1</span>
+      <span class="standings-dot" style="background: #22d3ee;"></span>
+      <span class="standings-name">Luke</span>
+      <span class="standings-golfer-count">5 golfers</span>
+      <span class="standings-score under">-38</span>
+    </div>
+    <div class="standings-row">
+      <span class="standings-rank">2</span>
+      <span class="standings-dot" style="background: #f97316;"></span>
+      <span class="standings-name">Mike</span>
+      <span class="standings-golfer-count">5 golfers</span>
+      <span class="standings-score under">-29</span>
+    </div>
+    <div class="standings-row">
+      <span class="standings-rank">3</span>
+      <span class="standings-dot" style="background: #a855f7;"></span>
+      <span class="standings-name">Sarah</span>
+      <span class="standings-golfer-count">5 golfers</span>
+      <span class="standings-score under">-24</span>
+    </div>
+    <div class="standings-row">
+      <span class="standings-rank">4</span>
+      <span class="standings-dot" style="background: #22c55e;"></span>
+      <span class="standings-name">Jake</span>
+      <span class="standings-golfer-count">5 golfers</span>
+      <span class="standings-score under">-19</span>
+    </div>
+    <div class="standings-row">
+      <span class="standings-rank">5</span>
+      <span class="standings-dot" style="background: #facc15;"></span>
+      <span class="standings-name">Trey</span>
+      <span class="standings-golfer-count">5 golfers</span>
+      <span class="standings-score under">-15</span>
+    </div>
+  </div>
+
+  <!-- Achievements -->
+  <div class="achievements">
+    <span class="achievement-badge masters">&#129413; 2 Eagles</span>
+    <span class="achievement-badge masters">&#9971; Hole-in-One!</span>
+    <span class="achievement-badge">&#128293; Hot Streak: 4 Birdies</span>
+    <span class="achievement-badge">&#127942; Leader Since Rd 1</span>
+  </div>
+
+  <!-- Full Leaderboard -->
+  <div class="leaderboard-card">
+    <div class="leaderboard-header">
+      <span class="lb-pos">Pos</span>
+      <span class="lb-player">Player</span>
+      <span class="lb-today">Today</span>
+      <span class="lb-thru">Thru</span>
+      <span class="lb-total">Total</span>
+    </div>
+
+    <div class="lb-row top3 has-owner">
+      <span class="lb-pos">1</span>
+      <span class="lb-player">
+        <span class="lb-owner-dot" style="background: #22d3ee;"></span>
+        <span class="lb-player-flag">&#127482;&#127480;</span>
+        <span class="lb-player-name">S. Scheffler</span>
+        <span class="lb-movement up">&#9650;2</span>
+      </span>
+      <span class="lb-today score-under">-8</span>
+      <span class="lb-thru">14</span>
+      <span class="lb-total score-under">-14</span>
+    </div>
+
+    <div class="lb-row top3">
+      <span class="lb-pos">2</span>
+      <span class="lb-player">
+        <span class="lb-player-flag">&#127471;&#127477;</span>
+        <span class="lb-player-name">H. Matsuyama</span>
+        <span class="lb-movement down">&#9660;1</span>
+      </span>
+      <span class="lb-today score-under">-2</span>
+      <span class="lb-thru">F</span>
+      <span class="lb-total score-under">-11</span>
+    </div>
+
+    <div class="lb-row top3 has-owner">
+      <span class="lb-pos">3</span>
+      <span class="lb-player">
+        <span class="lb-owner-dot" style="background: #f97316;"></span>
+        <span class="lb-player-flag">&#127482;&#127480;</span>
+        <span class="lb-player-name">X. Schauffele</span>
+      </span>
+      <span class="lb-today score-under">-3</span>
+      <span class="lb-thru">12</span>
+      <span class="lb-total score-under">-10</span>
+    </div>
+
+    <div class="lb-row has-owner">
+      <span class="lb-pos">4</span>
+      <span class="lb-player">
+        <span class="lb-owner-dot" style="background: #22d3ee;"></span>
+        <span class="lb-player-flag">&#127467;&#127462;</span>
+        <span class="lb-player-name">R. McIlroy</span>
+        <span class="lb-movement up">&#9650;5</span>
+      </span>
+      <span class="lb-today score-under">-5</span>
+      <span class="lb-thru">16</span>
+      <span class="lb-total score-under">-9</span>
+    </div>
+
+    <div class="lb-row">
+      <span class="lb-pos">5</span>
+      <span class="lb-player">
+        <span class="lb-player-flag">&#127482;&#127480;</span>
+        <span class="lb-player-name">C. Morikawa</span>
+      </span>
+      <span class="lb-today score-under">-4</span>
+      <span class="lb-thru">F</span>
+      <span class="lb-total score-under">-8</span>
+    </div>
+
+    <div class="lb-row has-owner">
+      <span class="lb-pos">T6</span>
+      <span class="lb-player">
+        <span class="lb-owner-dot" style="background: #22d3ee;"></span>
+        <span class="lb-player-flag">&#127466;&#127480;</span>
+        <span class="lb-player-name">J. Rahm</span>
+      </span>
+      <span class="lb-today score-under">-3</span>
+      <span class="lb-thru">F</span>
+      <span class="lb-total score-under">-7</span>
+    </div>
+
+    <div class="lb-row has-owner">
+      <span class="lb-pos">T6</span>
+      <span class="lb-player">
+        <span class="lb-owner-dot" style="background: #a855f7;"></span>
+        <span class="lb-player-flag">&#127480;&#127466;</span>
+        <span class="lb-player-name">L. Aberg</span>
+        <span class="lb-movement up">&#9650;3</span>
+      </span>
+      <span class="lb-today score-under">-5</span>
+      <span class="lb-thru">15</span>
+      <span class="lb-total score-under">-7</span>
+    </div>
+
+    <div class="lb-row">
+      <span class="lb-pos">8</span>
+      <span class="lb-player">
+        <span class="lb-player-flag">&#127482;&#127480;</span>
+        <span class="lb-player-name">B. DeChambeau</span>
+      </span>
+      <span class="lb-today score-even">E</span>
+      <span class="lb-thru">F</span>
+      <span class="lb-total score-under">-6</span>
+    </div>
+
+    <div class="lb-row has-owner">
+      <span class="lb-pos">T9</span>
+      <span class="lb-player">
+        <span class="lb-owner-dot" style="background: #22c55e;"></span>
+        <span class="lb-player-flag">&#127482;&#127480;</span>
+        <span class="lb-player-name">J. Spieth</span>
+        <span class="lb-movement down">&#9660;2</span>
+      </span>
+      <span class="lb-today score-over">+1</span>
+      <span class="lb-thru">F</span>
+      <span class="lb-total score-under">-5</span>
+    </div>
+
+    <div class="lb-row has-owner">
+      <span class="lb-pos">T9</span>
+      <span class="lb-player">
+        <span class="lb-owner-dot" style="background: #f97316;"></span>
+        <span class="lb-player-flag">&#127482;&#127480;</span>
+        <span class="lb-player-name">P. Cantlay</span>
+      </span>
+      <span class="lb-today score-under">-2</span>
+      <span class="lb-thru">11</span>
+      <span class="lb-total score-under">-5</span>
+    </div>
+
+    <div class="lb-row has-owner">
+      <span class="lb-pos">11</span>
+      <span class="lb-player">
+        <span class="lb-owner-dot" style="background: #a855f7;"></span>
+        <span class="lb-player-flag">&#127468;&#127463;</span>
+        <span class="lb-player-name">T. Fleetwood</span>
+      </span>
+      <span class="lb-today score-even">E</span>
+      <span class="lb-thru">10</span>
+      <span class="lb-total score-under">-4</span>
+    </div>
+
+    <div class="lb-row">
+      <span class="lb-pos">12</span>
+      <span class="lb-player">
+        <span class="lb-player-flag">&#127482;&#127480;</span>
+        <span class="lb-player-name">W. Clark</span>
+      </span>
+      <span class="lb-today score-under">-1</span>
+      <span class="lb-thru">F</span>
+      <span class="lb-total score-under">-3</span>
+    </div>
+
+    <div class="lb-row has-owner">
+      <span class="lb-pos">T13</span>
+      <span class="lb-player">
+        <span class="lb-owner-dot" style="background: #facc15;"></span>
+        <span class="lb-player-flag">&#127482;&#127480;</span>
+        <span class="lb-player-name">S. Burns</span>
+      </span>
+      <span class="lb-today score-even">E</span>
+      <span class="lb-thru">F</span>
+      <span class="lb-total score-under">-2</span>
+    </div>
+
+    <div class="lb-row">
+      <span class="lb-pos">T13</span>
+      <span class="lb-player">
+        <span class="lb-player-flag">&#127472;&#127479;</span>
+        <span class="lb-player-name">S.W. Kim</span>
+      </span>
+      <span class="lb-today score-over">+1</span>
+      <span class="lb-thru">13</span>
+      <span class="lb-total score-under">-2</span>
+    </div>
+
+    <div class="lb-row">
+      <span class="lb-pos">15</span>
+      <span class="lb-player">
+        <span class="lb-player-flag">&#127482;&#127480;</span>
+        <span class="lb-player-name">T. Finau</span>
+      </span>
+      <span class="lb-today score-even">E</span>
+      <span class="lb-thru">F</span>
+      <span class="lb-total score-under">-1</span>
+    </div>
+
+    <!-- Projected cut line -->
+    <div class="cut-line">Projected Cut</div>
+
+    <div class="lb-row has-owner">
+      <span class="lb-pos">T16</span>
+      <span class="lb-player">
+        <span class="lb-owner-dot" style="background: #22c55e;"></span>
+        <span class="lb-player-flag">&#127482;&#127480;</span>
+        <span class="lb-player-name">W. Zalatoris</span>
+      </span>
+      <span class="lb-today score-over">+2</span>
+      <span class="lb-thru">F</span>
+      <span class="lb-total score-even">E</span>
+    </div>
+
+    <div class="lb-row has-owner">
+      <span class="lb-pos">T16</span>
+      <span class="lb-player">
+        <span class="lb-owner-dot" style="background: #facc15;"></span>
+        <span class="lb-player-flag">&#127482;&#127480;</span>
+        <span class="lb-player-name">R. Fowler</span>
+        <span class="lb-movement down">&#9660;4</span>
+      </span>
+      <span class="lb-today score-over">+3</span>
+      <span class="lb-thru">14</span>
+      <span class="lb-total score-even">E</span>
+    </div>
+
+    <div class="lb-row">
+      <span class="lb-pos">18</span>
+      <span class="lb-player">
+        <span class="lb-player-flag">&#127462;&#127482;</span>
+        <span class="lb-player-name">M. Leishman</span>
+      </span>
+      <span class="lb-today score-over">+2</span>
+      <span class="lb-thru">F</span>
+      <span class="lb-total score-over">+1</span>
+    </div>
+  </div>
+
+  <!-- My Picks Detail -->
+  <div class="my-picks">
+    <div class="my-picks-title">Luke's Draft Picks</div>
+    <div class="pick-row">
+      <span class="pick-rank">Rd 1</span>
+      <span class="pick-flag">&#127482;&#127480;</span>
+      <span class="pick-name">S. Scheffler</span>
+      <span class="pick-position">Pos: 1st</span>
+      <span class="pick-score score-under">-14</span>
+      <span class="pick-thru">14</span>
+    </div>
+    <div class="pick-row">
+      <span class="pick-rank">Rd 2</span>
+      <span class="pick-flag">&#127467;&#127462;</span>
+      <span class="pick-name">R. McIlroy</span>
+      <span class="pick-position">Pos: 4th</span>
+      <span class="pick-score score-under">-9</span>
+      <span class="pick-thru">16</span>
+    </div>
+    <div class="pick-row">
+      <span class="pick-rank">Rd 3</span>
+      <span class="pick-flag">&#127466;&#127480;</span>
+      <span class="pick-name">J. Rahm</span>
+      <span class="pick-position">Pos: T6</span>
+      <span class="pick-score score-under">-7</span>
+      <span class="pick-thru">F</span>
+    </div>
+    <div class="pick-row">
+      <span class="pick-rank">Rd 4</span>
+      <span class="pick-flag">&#127482;&#127480;</span>
+      <span class="pick-name">S. Burns</span>
+      <span class="pick-position">Pos: T13</span>
+      <span class="pick-score score-under">-2</span>
+      <span class="pick-thru">F</span>
+    </div>
+    <div class="pick-row">
+      <span class="pick-rank">Rd 5</span>
+      <span class="pick-flag">&#127482;&#127480;</span>
+      <span class="pick-name">K. Bradley</span>
+      <span class="pick-position">MC</span>
+      <span class="pick-score score-over">+6</span>
+      <span class="pick-thru">MC</span>
+    </div>
+  </div>
+
+  <!-- Bottom Nav -->
+  <div class="bottom-nav">
+    <div class="bottom-nav-inner">
+      <button class="bottom-nav-btn active">
+        <span class="nav-icon">&#9971;</span>
+        <span>Leaderboard</span>
+      </button>
+      <button class="bottom-nav-btn">
+        <span class="nav-icon">&#127942;</span>
+        <span>Standings</span>
+      </button>
+      <button class="bottom-nav-btn">
+        <span class="nav-icon">&#128100;</span>
+        <span>My Picks</span>
+      </button>
+      <button class="bottom-nav-btn">
+        <span class="nav-icon">&#128221;</span>
+        <span>Draft</span>
+      </button>
+      <button class="bottom-nav-btn">
+        <span class="nav-icon">&#9881;</span>
+        <span>Settings</span>
+      </button>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

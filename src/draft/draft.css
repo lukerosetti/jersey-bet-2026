@@ -330,3 +330,110 @@
 .confirm-row { display: flex; justify-content: space-between; padding: 12px 16px; background: var(--bg); border-radius: 10px; border: 1px solid var(--border); }
 .confirm-label { font-size: 12px; color: var(--text2); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
 .confirm-value { font-size: 13px; font-weight: 600; text-align: right; max-width: 60%; color: var(--text); }
+
+/* ── Feature 1: Draft Chat ──────────────────────────────── */
+.draft-chat-fab { position: fixed; bottom: 20px; right: 20px; width: 52px; height: 52px; border-radius: 50%; background: var(--cyan); color: #000; border: none; font-size: 22px; cursor: pointer; z-index: 1000; box-shadow: 0 4px 16px rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; }
+.draft-chat-fab.open { background: var(--border); color: var(--text); }
+.draft-chat-unread { position: absolute; top: -4px; right: -4px; background: var(--red); color: #fff; font-size: 10px; font-weight: 700; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+.draft-chat-panel { position: fixed; bottom: 80px; right: 16px; width: calc(100% - 32px); max-width: 360px; max-height: 50vh; background: var(--card); border: 1px solid var(--border); border-radius: 16px; z-index: 999; display: flex; flex-direction: column; box-shadow: 0 8px 32px rgba(0,0,0,0.5); overflow: hidden; }
+.draft-chat-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+.draft-chat-header span:first-child { font-weight: 700; font-size: 14px; }
+.draft-chat-count { font-size: 11px; color: var(--text2); }
+.draft-chat-messages { flex: 1; overflow-y: auto; padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; min-height: 120px; max-height: 35vh; }
+.draft-chat-empty { color: var(--text2); font-size: 12px; text-align: center; padding: 20px 0; }
+.draft-chat-msg { display: flex; align-items: flex-start; gap: 8px; }
+.draft-chat-msg.mine { flex-direction: row-reverse; }
+.draft-chat-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+.draft-chat-bubble { background: var(--bg); border-radius: 12px; padding: 8px 12px; max-width: 80%; }
+.draft-chat-msg.mine .draft-chat-bubble { background: rgba(34,211,238,0.1); }
+.draft-chat-sender { font-size: 10px; font-weight: 700; color: var(--text2); display: block; margin-bottom: 2px; }
+.draft-chat-text { font-size: 13px; line-height: 1.3; word-break: break-word; }
+.draft-chat-input { display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--border); }
+.draft-chat-input input { flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 20px; padding: 8px 14px; color: var(--text); font-size: 13px; outline: none; }
+.draft-chat-input input:focus { border-color: var(--cyan); }
+.draft-chat-input button { background: var(--cyan); color: #000; border: none; border-radius: 20px; padding: 8px 16px; font-size: 12px; font-weight: 700; cursor: pointer; }
+.draft-chat-input button:disabled { opacity: 0.4; }
+
+/* ── Feature 2: Pick Reactions ──────────────────────────── */
+.pick-reactions { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
+.pick-reaction { font-size: 11px; padding: 2px 6px; background: var(--bg); border: 1px solid var(--border); border-radius: 12px; cursor: pointer; }
+.pick-reaction.mine { border-color: var(--cyan); background: rgba(34,211,238,0.1); }
+.pick-reaction-add { font-size: 12px; width: 22px; height: 22px; border-radius: 50%; background: var(--bg); border: 1px solid var(--border); color: var(--text2); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.pick-reaction-picker { display: flex; gap: 4px; position: absolute; bottom: 100%; left: 0; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 6px 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 10; }
+.pick-reaction-option { font-size: 18px; border: none; background: none; cursor: pointer; padding: 2px 4px; border-radius: 6px; }
+.pick-reaction-option:hover { background: var(--border); }
+.draft-tracker-pick { position: relative; }
+
+/* ── Feature 4: Draft Board Grid ────────────────────────── */
+.draft-grid-container { overflow-x: auto; padding: 8px 12px; }
+.draft-grid { display: table; width: 100%; border-collapse: collapse; min-width: 340px; }
+.draft-grid-row { display: table-row; }
+.draft-grid-row.header { background: var(--border); }
+.draft-grid-cell { display: table-cell; padding: 6px 4px; border: 1px solid var(--border); font-size: 11px; text-align: center; vertical-align: middle; }
+.round-label { width: 30px; font-weight: 700; color: var(--text2); font-size: 10px; background: var(--bg); }
+.owner-header { font-weight: 700; font-size: 10px; white-space: nowrap; }
+.draft-grid-owner-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 3px; }
+.pick-cell.filled { background: rgba(34,211,238,0.05); }
+.pick-cell.empty { background: var(--bg); }
+.draft-grid-pick { display: flex; align-items: center; gap: 2px; justify-content: center; }
+.draft-grid-flag { font-size: 10px; }
+.draft-grid-player { font-size: 10px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; }
+.draft-grid-empty-dot { color: var(--text2); opacity: 0.3; }
+
+/* ── Feature 5: Value Badge ─────────────────────────────── */
+.draft-value-badge { font-size: 8px; font-weight: 800; color: #22c55e; background: rgba(34,197,94,0.12); padding: 1px 5px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px; margin-left: auto; }
+.draft-player-btn.value-pick { border-color: rgba(34,197,94,0.3); }
+.draft-player-btn.compare-selected { border-color: var(--cyan); background: rgba(34,211,238,0.08); }
+
+/* ── Feature 6: Player Comparison ───────────────────────── */
+.comparison-modal { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px 16px; max-width: 380px; width: calc(100% - 32px); position: relative; }
+.comparison-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+.comparison-player { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.comparison-flag { font-size: 28px; }
+.comparison-name { font-size: 16px; font-weight: 700; }
+.comparison-vs { font-size: 12px; font-weight: 800; color: var(--text2); text-transform: uppercase; letter-spacing: 1px; }
+.comparison-rows { display: flex; flex-direction: column; gap: 4px; }
+.comparison-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: var(--bg); border-radius: 8px; }
+.comparison-val { font-size: 15px; font-weight: 700; min-width: 50px; text-align: center; }
+.comparison-val.winning { color: var(--cyan); }
+.comparison-label { font-size: 11px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; flex: 1; text-align: center; }
+.player-modal-compare-btn { padding: 10px 16px; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-size: 13px; font-weight: 600; cursor: pointer; width: 100%; }
+
+/* ── Feature 7: Draft Grades ────────────────────────────── */
+.draft-grades { margin: 20px 0; }
+.draft-grades-title { font-size: 16px; font-weight: 700; margin-bottom: 12px; text-align: center; }
+.draft-grades-list { display: flex; flex-direction: column; gap: 8px; }
+.draft-grade-card { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px; }
+.draft-grade-header { display: flex; align-items: center; gap: 8px; }
+.draft-grade-rank { font-size: 18px; font-weight: 800; color: var(--text2); width: 24px; }
+.draft-grade-dot { width: 10px; height: 10px; border-radius: 50%; }
+.draft-grade-name { font-size: 14px; font-weight: 600; flex: 1; }
+.draft-grade-letter { font-size: 24px; font-weight: 900; }
+.grade-a { color: #22c55e; }
+.grade-b { color: #eab308; }
+.grade-c { color: #f97316; }
+.draft-grade-details { display: flex; gap: 12px; margin-top: 6px; padding-left: 32px; }
+.draft-grade-details span { font-size: 11px; color: var(--text2); }
+
+/* ── Feature 9: Draft Order Reveal ──────────────────────── */
+.draft-reveal { display: flex; justify-content: center; align-items: center; min-height: 80vh; padding: 16px; }
+.draft-reveal-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 32px 24px; max-width: 400px; width: 100%; text-align: center; }
+.draft-reveal-card h2 { font-size: 24px; margin-bottom: 4px; }
+.draft-reveal-slots { display: flex; flex-direction: column; gap: 8px; margin-top: 24px; }
+.draft-reveal-slot { display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: var(--bg); border: 1px solid var(--border); border-radius: 12px; transition: all 0.4s ease; }
+.draft-reveal-slot.revealing { border-color: var(--cyan); background: rgba(34,211,238,0.08); transform: scale(1.03); box-shadow: 0 0 20px rgba(34,211,238,0.2); }
+.draft-reveal-slot.revealed { border-color: transparent; }
+.draft-reveal-num { font-size: 22px; font-weight: 900; color: var(--cyan); min-width: 30px; }
+.draft-reveal-owner { display: flex; align-items: center; gap: 8px; }
+.draft-reveal-dot { width: 12px; height: 12px; border-radius: 50%; }
+.draft-reveal-name { font-size: 16px; font-weight: 700; }
+.draft-reveal-shuffle .draft-reveal-name { color: var(--text2); opacity: 0.5; }
+
+/* ── View Mode Tabs ─────────────────────────────────────── */
+.draft-view-tabs { display: flex; gap: 4px; padding: 8px 12px; background: var(--bg); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 5; }
+.draft-view-tab { flex: 1; padding: 8px 0; border: 1px solid var(--border); border-radius: 8px; background: transparent; color: var(--text2); font-size: 12px; font-weight: 600; cursor: pointer; text-align: center; }
+.draft-view-tab.active { background: var(--cyan); color: #000; border-color: var(--cyan); }
+.draft-view-tab.compare-tab { flex: none; padding: 8px 12px; background: rgba(34,211,238,0.1); border-color: var(--cyan); color: var(--cyan); font-size: 11px; }
+
+/* Headshot in player list */
+.draft-player-headshot { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }

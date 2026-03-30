@@ -1,6 +1,7 @@
 import React from 'react';
 import { useDraft } from './DraftContext';
 import { registerDraftTournament, setActiveTournamentId } from '../tournaments/registry';
+import DraftGrades from './DraftGrades';
 
 function DraftComplete({ onContinue }) {
   const { draftState } = useDraft();
@@ -70,6 +71,9 @@ function DraftComplete({ onContinue }) {
           );
         })}
       </div>
+
+      {/* Feature #7: Draft Grades */}
+      <DraftGrades owners={owners} picks={picks} playerData={draftState?.playerData || {}} />
 
       {/* Pick history */}
       {picks.length > 0 && (

@@ -2,12 +2,23 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useDraft } from './DraftContext';
 import { getSnakeOrder, getCurrentPick, getUpcomingPicks, getDraftProgress } from './draftLogic';
 import PlayerModal from './PlayerModal';
+import DraftChat from './DraftChat';
+import PickReactions from './PickReactions';
+import { useTurnAlert, useTimerWarning } from './useTurnAlert';
+import DraftBoardGrid from './DraftBoardGrid';
+import PlayerComparison from './PlayerComparison';
+import DraftGrades from './DraftGrades';
+import DraftOrderReveal from './DraftOrderReveal';
 
 function SnakeDraft() {
-  const { draftState, currentUser, makeSnakePick, autoPick } = useDraft();
+  const { draftState, currentUser, makeSnakePick, autoPick, draftId } = useDraft();
   const [searchQuery, setSearchQuery] = useState('');
   const [timeLeft, setTimeLeft] = useState(null);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
+  const [viewMode, setViewMode] = useState('list'); // 'list' | 'grid' | 'rosters'
+  const [comparePlayer1, setComparePlayer1] = useState(null);
+  const [comparePlayer2, setComparePlayer2] = useState(null);
+  const [showReveal, setShowReveal] = useState(false);
   const [queue, setQueue] = useState(() => {
     try { return JSON.parse(localStorage.getItem('draftQueue') || '[]'); } catch { return []; }
   });
@@ -35,6 +46,7 @@ function SnakeDraft() {
       return updated;
     });
   };
+
   const config = draftState?.config || {};
   const owners = draftState?.owners || {};
   const picks = draftState?.picks || [];
@@ -53,6 +65,11 @@ function SnakeDraft() {
     return String.fromCodePoint(...[...code].map(c => 0x1F1E6 + c.charCodeAt(0) - 65));
   };
   const getOwgr = (playerName) => playerData[playerName]?.owgr || '';
+  const getHeadshotUrl = (playerName) => {
+    const data = playerData[playerName];
+    if (data?.espnId) return `https://a.espncdn.com/i/headshots/golf/players/full/${data.espnId}.png`;
+    return null;
+  };
 
   const ownerIds = config.draftOrder || Object.keys(owners);
   const snakeOrder = getSnakeOrder(ownerIds, config.rosterSize || 10);
@@ -61,26 +78,58 @@ function SnakeDraft() {
   const progress = getDraftProgress(picks.length, snakeOrder.length);
   const isMyTurn = currentPickInfo && currentUser && currentPickInfo.ownerId === currentUser.ownerId;
 
+  // Feature #3: Turn alerts (sound + vibration)
+  useTurnAlert(isMyTurn);
+  useTimerWarning(timeLeft, isMyTurn);
+
+  // Feature #5: Value highlight — player ranked higher than current pick position
+  const isValuePick = (playerName) => {
+    const owgr = playerData[playerName]?.owgr;
+    if (!owgr) return false;
+    return owgr < picks.length + 1; // OWGR better than pick number = value
+  };
+
+  // Feature #9: Show reveal animation if draft just started (0 picks)
+  useEffect(() => {
+    if (config.status === 'active' && picks.length === 0 && ownerIds.length > 1) {
+      setShowReveal(true);
+    }
+  }, [config.status, picks.length, ownerIds.length]);
+
   // Pick timer countdown
   useEffect(() => {
     if (!currentPick?.deadline) { setTimeLeft(null); return; }
     const tick = () => {
       const remaining = Math.max(0, Math.ceil((currentPick.deadline - Date.now()) / 1000));
       setTimeLeft(remaining);
+      // Feature #8: Auto-draft from queue instead of BPA
       if (remaining <= 0 && isMyTurn) {
-        autoPick();
+        if (activeQueue.length > 0) {
+          makeSnakePick(activeQueue[0]);
+        } else {
+          autoPick();
+        }
       }
     };
     tick();
     const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
-  }, [currentPick?.deadline, isMyTurn, autoPick]);
+  }, [currentPick?.deadline, isMyTurn, autoPick, makeSnakePick, activeQueue]);
 
   const handlePick = useCallback((player) => {
     if (!isMyTurn) return;
     makeSnakePick(player);
     setSearchQuery('');
   }, [isMyTurn, makeSnakePick]);
+
+  // Start compare mode
+  const startCompare = (player) => {
+    if (!comparePlayer1) {
+      setComparePlayer1(player);
+    } else if (!comparePlayer2 && player !== comparePlayer1) {
+      setComparePlayer2(player);
+    }
+  };
 
   // Filter available players
   const filteredPlayers = searchQuery
@@ -92,6 +141,11 @@ function SnakeDraft() {
 
   // Last pick
   const lastPick = picks.length > 0 ? picks[picks.length - 1] : null;
+
+  // Feature #9: Draft Order Reveal
+  if (showReveal) {
+    return <DraftOrderReveal owners={owners} draftOrder={ownerIds} onComplete={() => setShowReveal(false)} />;
+  }
 
   if (progress.isComplete) return null; // DraftRouter handles complete state
 
@@ -126,19 +180,26 @@ function SnakeDraft() {
           <div className="draft-tracker-progress-fill" style={{ width: `${progress.percent}%` }}></div>
         </div>
 
-        {/* Pick history ticker — scrollable horizontal */}
+        {/* Pick history ticker with reactions */}
         {picks.length > 0 && (
           <div className="draft-tracker-history">
-            {[...picks].reverse().map((pick, idx) => (
-              <div key={idx} className="draft-tracker-pick">
-                <span className="draft-tracker-pick-num">#{picks.length - idx}</span>
-                <span className="draft-tracker-pick-dot" style={{ background: owners[pick.ownerId]?.color || '#555' }}></span>
-                <span className="draft-tracker-pick-owner">{owners[pick.ownerId]?.name}</span>
-                <span className="draft-tracker-pick-flag">{getFlag(pick.player)}</span>
-                <span className="draft-tracker-pick-player">{pick.player}</span>
-                {pick.autoPick && <span className="auto-badge">Auto</span>}
-              </div>
-            ))}
+            {[...picks].reverse().map((pick, idx) => {
+              const pickIndex = picks.length - 1 - idx;
+              return (
+                <div key={idx} className="draft-tracker-pick">
+                  <div className="draft-tracker-pick-info">
+                    <span className="draft-tracker-pick-num">#{picks.length - idx}</span>
+                    <span className="draft-tracker-pick-dot" style={{ background: owners[pick.ownerId]?.color || '#555' }}></span>
+                    <span className="draft-tracker-pick-owner">{owners[pick.ownerId]?.name}</span>
+                    <span className="draft-tracker-pick-flag">{getFlag(pick.player)}</span>
+                    <span className="draft-tracker-pick-player">{pick.player}</span>
+                    {pick.autoPick && <span className="auto-badge">Auto</span>}
+                  </div>
+                  {/* Feature #2: Pick Reactions */}
+                  <PickReactions draftId={draftId} pickIndex={pickIndex} currentUser={currentUser} />
+                </div>
+              );
+            })}
           </div>
         )}
 
@@ -154,112 +215,143 @@ function SnakeDraft() {
         </div>
       </div>
 
-      {/* Upcoming picks (hidden — moved into tracker) */}
-      <div className="draft-upcoming" style={{ display: 'none' }}>
-        <div className="draft-upcoming-title">Up Next</div>
-        <div className="draft-upcoming-list">
-          {upcoming.slice(1).map((pick, idx) => (
-            <div key={idx} className="draft-upcoming-item">
-              <span className="draft-upcoming-num">{picks.length + idx + 2}</span>
-              <span className="draft-upcoming-dot" style={{ background: owners[pick.ownerId]?.color || '#555' }}></span>
-              <span className="draft-upcoming-name">{owners[pick.ownerId]?.name || pick.ownerId}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Draft Queue */}
-      <div className="draft-queue-bar">
-        <button className={`draft-queue-toggle ${showQueue ? 'open' : ''}`} onClick={() => setShowQueue(!showQueue)}>
-          <span className="draft-queue-icon">My Queue</span>
-          {activeQueue.length > 0 && <span className="draft-queue-count">{activeQueue.length}</span>}
-          <span className="draft-queue-chevron">{showQueue ? '\u25B2' : '\u25BC'}</span>
-        </button>
-        {isMyTurn && activeQueue.length > 0 && !showQueue && (
-          <button className="draft-queue-quick" onClick={() => handlePick(activeQueue[0])}>
-            Draft #{1}: {activeQueue[0]}
+      {/* View mode tabs */}
+      <div className="draft-view-tabs">
+        <button className={`draft-view-tab ${viewMode === 'list' ? 'active' : ''}`} onClick={() => setViewMode('list')}>Players</button>
+        <button className={`draft-view-tab ${viewMode === 'grid' ? 'active' : ''}`} onClick={() => setViewMode('grid')}>Board</button>
+        <button className={`draft-view-tab ${viewMode === 'rosters' ? 'active' : ''}`} onClick={() => setViewMode('rosters')}>Rosters</button>
+        {comparePlayer1 && (
+          <button className="draft-view-tab compare-tab" onClick={() => { setComparePlayer1(null); setComparePlayer2(null); }}>
+            Compare {comparePlayer1 ? '1' : '0'}/2 {'\u00D7'}
           </button>
         )}
       </div>
-      {showQueue && (
-        <div className="draft-queue-panel">
-          {activeQueue.length === 0 ? (
-            <div className="draft-queue-empty">No players queued. Tap a player and select "Add to Queue" to build your wishlist.</div>
-          ) : (
-            activeQueue.map((player, idx) => (
-              <div key={player} className="draft-queue-item">
-                <span className="draft-queue-num">{idx + 1}</span>
-                <span className="draft-queue-flag">{getFlag(player)}</span>
-                <span className="draft-queue-name">{player}</span>
-                <div className="draft-queue-actions">
-                  <button className="draft-queue-move" onClick={() => moveInQueue(player, -1)} disabled={idx === 0}>{'\u25B2'}</button>
-                  <button className="draft-queue-move" onClick={() => moveInQueue(player, 1)} disabled={idx === activeQueue.length - 1}>{'\u25BC'}</button>
-                  <button className="draft-queue-remove" onClick={() => removeFromQueue(player)}>{'\u00D7'}</button>
-                </div>
-              </div>
-            ))
+
+      {/* Feature #4: Draft Board Grid */}
+      {viewMode === 'grid' && (
+        <DraftBoardGrid picks={picks} owners={owners} config={config} playerData={playerData} />
+      )}
+
+      {/* Players list view */}
+      {viewMode === 'list' && (
+        <>
+          {/* Draft Queue */}
+          <div className="draft-queue-bar">
+            <button className={`draft-queue-toggle ${showQueue ? 'open' : ''}`} onClick={() => setShowQueue(!showQueue)}>
+              <span className="draft-queue-icon">My Queue</span>
+              {activeQueue.length > 0 && <span className="draft-queue-count">{activeQueue.length}</span>}
+              <span className="draft-queue-chevron">{showQueue ? '\u25B2' : '\u25BC'}</span>
+            </button>
+            {isMyTurn && activeQueue.length > 0 && !showQueue && (
+              <button className="draft-queue-quick" onClick={() => handlePick(activeQueue[0])}>
+                Draft #{1}: {activeQueue[0]}
+              </button>
+            )}
+          </div>
+          {showQueue && (
+            <div className="draft-queue-panel">
+              {activeQueue.length === 0 ? (
+                <div className="draft-queue-empty">No players queued. Tap a player and select "Add to Queue" to build your wishlist.</div>
+              ) : (
+                activeQueue.map((player, idx) => (
+                  <div key={player} className="draft-queue-item">
+                    <span className="draft-queue-num">{idx + 1}</span>
+                    <span className="draft-queue-flag">{getFlag(player)}</span>
+                    <span className="draft-queue-name">{player}</span>
+                    <div className="draft-queue-actions">
+                      <button className="draft-queue-move" onClick={() => moveInQueue(player, -1)} disabled={idx === 0}>{'\u25B2'}</button>
+                      <button className="draft-queue-move" onClick={() => moveInQueue(player, 1)} disabled={idx === activeQueue.length - 1}>{'\u25BC'}</button>
+                      <button className="draft-queue-remove" onClick={() => removeFromQueue(player)}>{'\u00D7'}</button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           )}
+
+          {/* Available players board */}
+          <div className="draft-board">
+            <div className="draft-board-header">
+              <span className="draft-board-title">Available ({available.length})</span>
+              <input
+                type="text"
+                placeholder="Search players..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="draft-search"
+              />
+            </div>
+            <div className="draft-player-grid">
+              {filteredPlayers.map((player) => {
+                const headshotUrl = getHeadshotUrl(player);
+                const value = isValuePick(player);
+                return (
+                  <button
+                    key={player}
+                    className={`draft-player-btn ${isMyTurn ? 'pickable' : ''} ${value ? 'value-pick' : ''} ${comparePlayer1 === player ? 'compare-selected' : ''}`}
+                    onClick={() => setSelectedPlayer(player)}
+                  >
+                    <span className="draft-player-rank">{getOwgr(player) || '—'}</span>
+                    {headshotUrl ? (
+                      <img className="draft-player-headshot" src={headshotUrl} alt="" onError={e => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'inline'; }} />
+                    ) : null}
+                    <span className="draft-player-flag" style={headshotUrl ? { display: 'none' } : {}}>{getFlag(player)}</span>
+                    <span className="draft-player-name">{player}</span>
+                    {/* Feature #5: Value badge */}
+                    {value && <span className="draft-value-badge">VALUE</span>}
+                    <span className="draft-player-arrow">{'\u203A'}</span>
+                  </button>
+                );
+              })}
+              {filteredPlayers.length === 0 && <div className="draft-empty">No players match "{searchQuery}"</div>}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Rosters view */}
+      {viewMode === 'rosters' && (
+        <div className="draft-rosters">
+          <div className="draft-rosters-grid">
+            {ownerIds.map(ownerId => {
+              const owner = owners[ownerId];
+              const teams = getOwnerTeams(ownerId);
+              return (
+                <div key={ownerId} className={`draft-roster-card ${ownerId === currentUser?.ownerId ? 'mine' : ''}`}>
+                  <div className="draft-roster-header">
+                    <span className="draft-roster-dot" style={{ background: owner?.color || '#555' }}></span>
+                    <span className="draft-roster-name">{owner?.name || ownerId}</span>
+                    <span className="draft-roster-count">{teams.length}/{config.rosterSize || '?'}</span>
+                  </div>
+                  <div className="draft-roster-list">
+                    {teams.map((team, idx) => (
+                      <div key={idx} className="draft-roster-item">
+                        <span className="draft-roster-pick-num">{idx + 1}.</span>
+                        <span className="draft-roster-flag">{getFlag(team)}</span>
+                        <span>{team}</span>
+                      </div>
+                    ))}
+                    {teams.length === 0 && <div className="draft-roster-empty">No picks yet</div>}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 
-      {/* Available players board */}
-      <div className="draft-board">
-        <div className="draft-board-header">
-          <span className="draft-board-title">Available ({available.length})</span>
-          <input
-            type="text"
-            placeholder="Search players..."
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            className="draft-search"
-          />
-        </div>
-        <div className="draft-player-grid">
-          {filteredPlayers.map((player, idx) => (
-            <button
-              key={player}
-              className={`draft-player-btn ${isMyTurn ? 'pickable' : ''}`}
-              onClick={() => setSelectedPlayer(player)}
-            >
-              <span className="draft-player-rank">{getOwgr(player) || (available.indexOf(player) + 1)}</span>
-              <span className="draft-player-flag">{getFlag(player)}</span>
-              <span className="draft-player-name">{player}</span>
-              <span className="draft-player-arrow">{'\u203A'}</span>
-            </button>
-          ))}
-          {filteredPlayers.length === 0 && <div className="draft-empty">No players match "{searchQuery}"</div>}
-        </div>
-      </div>
+      {/* Feature #1: Draft Chat FAB */}
+      <DraftChat draftId={draftId} currentUser={currentUser} owners={owners} />
 
-      {/* Owner rosters */}
-      <div className="draft-rosters">
-        <div className="draft-rosters-title">Rosters</div>
-        <div className="draft-rosters-grid">
-          {ownerIds.map(ownerId => {
-            const owner = owners[ownerId];
-            const teams = getOwnerTeams(ownerId);
-            return (
-              <div key={ownerId} className={`draft-roster-card ${ownerId === currentUser?.ownerId ? 'mine' : ''}`}>
-                <div className="draft-roster-header">
-                  <span className="draft-roster-dot" style={{ background: owner?.color || '#555' }}></span>
-                  <span className="draft-roster-name">{owner?.name || ownerId}</span>
-                  <span className="draft-roster-count">{teams.length}/{config.rosterSize || '?'}</span>
-                </div>
-                <div className="draft-roster-list">
-                  {teams.map((team, idx) => (
-                    <div key={idx} className="draft-roster-item">
-                      <span className="draft-roster-pick-num">{idx + 1}.</span>
-                      <span className="draft-roster-flag">{getFlag(team)}</span>
-                      <span>{team}</span>
-                    </div>
-                  ))}
-                  {teams.length === 0 && <div className="draft-roster-empty">No picks yet</div>}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
+      {/* Feature #6: Player Comparison */}
+      {comparePlayer1 && comparePlayer2 && (
+        <PlayerComparison
+          player1={comparePlayer1}
+          player2={comparePlayer2}
+          playerData={playerData}
+          onClose={() => { setComparePlayer1(null); setComparePlayer2(null); }}
+        />
+      )}
 
       {/* Player detail modal */}
       {selectedPlayer && (
@@ -273,6 +365,8 @@ function SnakeDraft() {
           picks={picks}
           onAddToQueue={addToQueue}
           isQueued={queue.includes(selectedPlayer)}
+          onCompare={startCompare}
+          isComparing={!!comparePlayer1}
         />
       )}
     </div>

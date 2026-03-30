@@ -1,7 +1,7 @@
 import React from 'react';
 import { getPlayerStats } from './playerStats';
 
-function PlayerModal({ player, playerData, isMyTurn, onDraft, onClose, owners, picks, onAddToQueue, isQueued }) {
+function PlayerModal({ player, playerData, isMyTurn, onDraft, onClose, owners, picks, onAddToQueue, isQueued, onCompare, isComparing }) {
   const data = playerData?.[player] || {};
   const stats = getPlayerStats(player);
   const flag = getFlag(data.country);
@@ -115,6 +115,11 @@ function PlayerModal({ player, playerData, isMyTurn, onDraft, onClose, owners, p
             )}
             {isQueued && (
               <div className="player-modal-queued">In your queue</div>
+            )}
+            {onCompare && (
+              <button className="player-modal-compare-btn" onClick={() => { onCompare(player); onClose(); }}>
+                {isComparing ? 'Compare vs...' : 'Compare'}
+              </button>
             )}
           </div>
         )}
