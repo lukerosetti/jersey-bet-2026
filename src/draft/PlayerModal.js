@@ -1,46 +1,19 @@
 import React from 'react';
+import { getPlayerStats } from './playerStats';
 
 function PlayerModal({ player, playerData, isMyTurn, onDraft, onClose, owners, picks }) {
   const data = playerData?.[player] || {};
+  const stats = getPlayerStats(player);
   const flag = getFlag(data.country);
   const owgr = data.owgr || '—';
 
-  // Find who picked this player (if already drafted)
   const pickInfo = picks?.find(p => p.player === player);
   const drafter = pickInfo ? owners?.[pickInfo.ownerId] : null;
-
-  // Count how many times this player has been in the Masters (mock data for now)
-  const mastersHistory = getMastersHistory(player);
 
   function getFlag(countryCode) {
     if (!countryCode) return '';
     const code = countryCode.toUpperCase();
     return String.fromCodePoint(...[...code].map(c => 0x1F1E6 + c.charCodeAt(0) - 65));
-  }
-
-  function getMastersHistory(name) {
-    // Notable Masters records — expand as needed
-    const records = {
-      'Tiger Woods': { wins: 5, cuts: 23, best: '1st (2019)' },
-      'Phil Mickelson': { wins: 3, cuts: 28, best: '1st (2010)' },
-      'Rory McIlroy': { wins: 1, cuts: 10, best: '1st (2025)' },
-      'Scottie Scheffler': { wins: 2, cuts: 4, best: '1st (2024)' },
-      'Jordan Spieth': { wins: 1, cuts: 9, best: '1st (2015)' },
-      'Dustin Johnson': { wins: 1, cuts: 12, best: '1st (2020)' },
-      'Hideki Matsuyama': { wins: 1, cuts: 10, best: '1st (2021)' },
-      'Jon Rahm': { wins: 0, cuts: 6, best: 'T4 (2023)' },
-      'Bubba Watson': { wins: 2, cuts: 14, best: '1st (2014)' },
-      'Sergio Garcia': { wins: 1, cuts: 22, best: '1st (2017)' },
-      'Danny Willett': { wins: 1, cuts: 4, best: '1st (2016)' },
-      'Charl Schwartzel': { wins: 1, cuts: 11, best: '1st (2011)' },
-      'Adam Scott': { wins: 1, cuts: 17, best: '1st (2013)' },
-      'Patrick Reed': { wins: 1, cuts: 7, best: '1st (2018)' },
-      'Xander Schauffele': { wins: 0, cuts: 6, best: 'T2 (2024)' },
-      'Collin Morikawa': { wins: 0, cuts: 4, best: 'T5 (2023)' },
-      'Viktor Hovland': { wins: 0, cuts: 4, best: 'T10 (2023)' },
-      'Cameron Smith': { wins: 0, cuts: 5, best: 'T3 (2022)' },
-    };
-    return records[name] || null;
   }
 
   return (
@@ -55,45 +28,61 @@ function PlayerModal({ player, playerData, isMyTurn, onDraft, onClose, owners, p
             <h2 className="player-modal-name">{player}</h2>
             <div className="player-modal-country">{data.country ? getCountryName(data.country) : ''}</div>
           </div>
+          {stats?.odds && <div className="player-modal-odds">{stats.odds}</div>}
         </div>
 
-        {/* Stats grid */}
+        {/* Primary stats */}
         <div className="player-modal-stats">
           <div className="player-stat-card">
             <div className="player-stat-value">{owgr}</div>
-            <div className="player-stat-label">World Ranking</div>
+            <div className="player-stat-label">World Rank</div>
           </div>
-          {mastersHistory && (
-            <>
-              <div className="player-stat-card">
-                <div className="player-stat-value">{mastersHistory.wins}</div>
-                <div className="player-stat-label">Masters Wins</div>
-              </div>
-              <div className="player-stat-card">
-                <div className="player-stat-value">{mastersHistory.cuts}</div>
-                <div className="player-stat-label">Masters Starts</div>
-              </div>
-              <div className="player-stat-card">
-                <div className="player-stat-value">{mastersHistory.best}</div>
-                <div className="player-stat-label">Best Finish</div>
-              </div>
-            </>
-          )}
-          {!mastersHistory && (
-            <>
-              <div className="player-stat-card">
-                <div className="player-stat-value">—</div>
-                <div className="player-stat-label">Masters Wins</div>
-              </div>
-              <div className="player-stat-card">
-                <div className="player-stat-value">Debut</div>
-                <div className="player-stat-label">Masters History</div>
-              </div>
-            </>
-          )}
+          <div className="player-stat-card">
+            <div className="player-stat-value">{stats?.majors ?? '—'}</div>
+            <div className="player-stat-label">Major Wins</div>
+          </div>
+          <div className="player-stat-card">
+            <div className="player-stat-value">{stats?.seasonWins ?? '—'}</div>
+            <div className="player-stat-label">Wins This Season</div>
+          </div>
+          <div className="player-stat-card">
+            <div className="player-stat-value">{stats?.seasonTop10 ?? '—'}</div>
+            <div className="player-stat-label">Top 10s This Season</div>
+          </div>
         </div>
 
-        {/* Draft status */}
+        {/* Masters history section */}
+        <div className="player-modal-section">
+          <div className="player-modal-section-title">Masters History</div>
+          <div className="player-modal-stats">
+            <div className="player-stat-card">
+              <div className="player-stat-value masters-green">{stats?.mastersWins ?? '—'}</div>
+              <div className="player-stat-label">Green Jackets</div>
+            </div>
+            <div className="player-stat-card">
+              <div className="player-stat-value">{stats?.mastersMade ?? '—'}</div>
+              <div className="player-stat-label">Appearances</div>
+            </div>
+            <div className="player-stat-card">
+              <div className="player-stat-value">{stats?.mastersAvg ? stats.mastersAvg.toFixed(1) : '—'}</div>
+              <div className="player-stat-label">Avg Finish</div>
+            </div>
+            <div className="player-stat-card">
+              <div className="player-stat-value" style={{ fontSize: stats?.bestMasters?.length > 8 ? '14px' : '20px' }}>{stats?.bestMasters || (stats?.mastersMade === 0 ? 'Debut' : '—')}</div>
+              <div className="player-stat-label">Best Finish</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Scouting note */}
+        {stats?.note && (
+          <div className="player-modal-note">
+            <div className="player-modal-note-label">Scouting Report</div>
+            <div className="player-modal-note-text">{stats.note}</div>
+          </div>
+        )}
+
+        {/* Draft status / button */}
         {drafter && (
           <div className="player-modal-drafted">
             <span className="player-modal-drafted-dot" style={{ background: drafter.color }}></span>
@@ -101,7 +90,6 @@ function PlayerModal({ player, playerData, isMyTurn, onDraft, onClose, owners, p
           </div>
         )}
 
-        {/* Draft button */}
         {!drafter && isMyTurn && (
           <button className="player-modal-draft-btn" onClick={() => { onDraft(player); onClose(); }}>
             Draft {player}
