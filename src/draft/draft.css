@@ -1,0 +1,155 @@
+/* ── Draft System Styles ────────────────────────────────── */
+
+/* Login */
+.draft-login { display: flex; justify-content: center; align-items: center; min-height: 80vh; padding: 16px; }
+.draft-login-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 32px 24px; max-width: 400px; width: 100%; text-align: center; }
+.draft-login-card h2 { font-size: 24px; margin: 12px 0 4px; }
+.draft-subtitle { color: var(--text2); font-size: 13px; margin-bottom: 24px; }
+.draft-logo { margin-bottom: 8px; }
+.draft-field { margin-bottom: 20px; text-align: left; }
+.draft-field label { font-size: 12px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; display: block; }
+.draft-owner-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.draft-owner-btn { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border: 2px solid var(--border); border-radius: 10px; background: var(--card); color: var(--text); font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+.draft-owner-btn.selected { border-width: 2px; }
+.draft-owner-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.draft-pin-input { width: 100%; padding: 14px 16px; border: 2px solid var(--border); border-radius: 10px; background: var(--bg); color: var(--text); font-size: 24px; text-align: center; letter-spacing: 8px; font-weight: 700; }
+.draft-pin-input:focus { outline: none; border-color: var(--cyan); }
+.draft-error { color: var(--red); font-size: 13px; margin-bottom: 12px; }
+.draft-submit-btn { width: 100%; padding: 14px; border: none; border-radius: 10px; background: var(--cyan); color: #000; font-size: 16px; font-weight: 700; cursor: pointer; transition: opacity 0.2s; }
+.draft-submit-btn:hover { opacity: 0.9; }
+.draft-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Lobby */
+.draft-lobby { display: flex; justify-content: center; padding: 16px; }
+.draft-lobby-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; max-width: 500px; width: 100%; }
+.draft-lobby-card h2 { font-size: 22px; margin-bottom: 4px; }
+.lobby-status { margin: 16px 0; padding: 8px 12px; background: var(--bg); border-radius: 8px; text-align: center; }
+.lobby-online { font-size: 14px; color: var(--cyan); font-weight: 600; }
+.lobby-owners { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+.lobby-owner { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; background: var(--bg); }
+.lobby-owner.you { border: 1px solid var(--cyan); }
+.lobby-owner-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.lobby-owner-avatar { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #000; flex-shrink: 0; }
+.lobby-owner-name { flex: 1; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 6px; }
+.lobby-you-badge { font-size: 9px; background: var(--cyan); color: #000; padding: 2px 6px; border-radius: 4px; font-weight: 700; }
+.lobby-comm-badge { font-size: 9px; background: var(--yellow, #eab308); color: #000; padding: 2px 6px; border-radius: 4px; font-weight: 700; }
+.lobby-owner-status { font-size: 12px; color: var(--text2); }
+.lobby-order { margin-bottom: 20px; }
+.lobby-order-title { font-size: 12px; font-weight: 600; color: var(--text2); text-transform: uppercase; margin-bottom: 8px; }
+.lobby-order-list { display: flex; gap: 8px; flex-wrap: wrap; }
+.lobby-order-item { display: flex; align-items: center; gap: 6px; padding: 6px 10px; background: var(--bg); border-radius: 6px; font-size: 13px; }
+.lobby-order-num { font-weight: 700; color: var(--cyan); }
+.lobby-order-dot { width: 8px; height: 8px; border-radius: 50%; }
+.lobby-actions { display: flex; flex-direction: column; gap: 8px; }
+.draft-start-btn { padding: 14px; border: none; border-radius: 10px; background: #22c55e; color: #000; font-size: 16px; font-weight: 700; cursor: pointer; }
+.draft-start-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.draft-logout-btn { padding: 10px; border: 1px solid var(--border); border-radius: 8px; background: transparent; color: var(--text2); font-size: 13px; cursor: pointer; }
+.lobby-waiting { text-align: center; color: var(--text2); font-size: 14px; padding: 12px; }
+
+/* Snake Draft */
+.snake-draft { padding: 0 16px 100px; }
+.draft-header { margin-bottom: 12px; }
+.draft-progress-bar { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.draft-progress-fill { height: 100%; background: var(--cyan); transition: width 0.3s; }
+.draft-progress-text { font-size: 11px; color: var(--text2); margin-top: 4px; text-align: center; }
+.draft-current-pick { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: var(--card); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 12px; }
+.draft-current-pick.your-turn { border-color: var(--cyan); box-shadow: 0 0 12px rgba(34,211,238,0.2); animation: pulse 2s infinite; }
+.draft-on-clock { display: flex; align-items: center; gap: 8px; }
+.draft-on-clock-dot { width: 10px; height: 10px; border-radius: 50%; }
+.draft-on-clock-name { font-size: 15px; font-weight: 600; }
+.draft-timer { font-size: 24px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.draft-timer.urgent { color: var(--red); animation: pulse 1s infinite; }
+.draft-last-pick { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--card); border-radius: 8px; margin-bottom: 12px; font-size: 13px; }
+.draft-last-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.auto-badge { font-size: 9px; background: var(--text2); color: var(--bg); padding: 2px 5px; border-radius: 3px; font-weight: 600; }
+
+/* Upcoming picks */
+.draft-upcoming { margin-bottom: 12px; }
+.draft-upcoming-title { font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; margin-bottom: 6px; }
+.draft-upcoming-list { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; }
+.draft-upcoming-item { display: flex; align-items: center; gap: 4px; padding: 4px 8px; background: var(--card); border-radius: 6px; font-size: 12px; white-space: nowrap; flex-shrink: 0; }
+.draft-upcoming-num { font-weight: 700; color: var(--text2); font-size: 10px; }
+.draft-upcoming-dot { width: 6px; height: 6px; border-radius: 50%; }
+
+/* Draft board */
+.draft-board { margin-bottom: 16px; }
+.draft-board-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.draft-board-title { font-size: 14px; font-weight: 600; }
+.draft-search { padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); font-size: 13px; width: 180px; }
+.draft-search:focus { outline: none; border-color: var(--cyan); }
+.draft-player-grid { display: grid; grid-template-columns: 1fr; gap: 4px; max-height: 300px; overflow-y: auto; }
+.draft-player-btn { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--card); color: var(--text); font-size: 14px; cursor: pointer; text-align: left; transition: all 0.15s; }
+.draft-player-btn.pickable { cursor: pointer; }
+.draft-player-btn.pickable:hover { border-color: var(--cyan); background: rgba(34,211,238,0.08); }
+.draft-player-btn:disabled { opacity: 0.5; cursor: default; }
+.draft-player-rank { font-size: 11px; font-weight: 700; color: var(--text2); min-width: 20px; }
+.draft-player-name { font-weight: 500; }
+.draft-empty { text-align: center; color: var(--text2); padding: 20px; font-size: 13px; }
+
+/* Rosters */
+.draft-rosters { margin-bottom: 20px; }
+.draft-rosters-title { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+.draft-rosters-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; }
+.draft-roster-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px; }
+.draft-roster-card.mine { border-color: var(--cyan); }
+.draft-roster-header { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+.draft-roster-dot { width: 8px; height: 8px; border-radius: 50%; }
+.draft-roster-name { font-size: 13px; font-weight: 600; flex: 1; }
+.draft-roster-count { font-size: 11px; color: var(--text2); }
+.draft-roster-list { display: flex; flex-direction: column; gap: 2px; }
+.draft-roster-item { font-size: 12px; display: flex; gap: 4px; }
+.draft-roster-pick-num { color: var(--text2); font-weight: 600; min-width: 18px; }
+.draft-roster-empty { font-size: 11px; color: var(--text2); font-style: italic; }
+
+/* Upload Draft */
+.upload-draft { padding: 16px; }
+.upload-header { margin-bottom: 16px; }
+.upload-header h2 { font-size: 22px; margin-bottom: 4px; }
+.upload-header p { font-size: 13px; color: var(--text2); }
+.upload-grid { display: flex; flex-direction: column; gap: 16px; margin-bottom: 20px; }
+.upload-owners { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
+.upload-owner-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
+.upload-owner-header { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+.upload-owner-dot { width: 10px; height: 10px; border-radius: 50%; }
+.upload-owner-name { font-size: 14px; font-weight: 600; flex: 1; }
+.upload-owner-count { font-size: 12px; color: var(--text2); }
+.upload-owner-players { display: flex; flex-wrap: wrap; gap: 4px; }
+.upload-player-chip { display: flex; align-items: center; gap: 4px; padding: 4px 8px; background: var(--bg); border-radius: 6px; font-size: 12px; }
+.upload-remove { background: none; border: none; color: var(--text2); cursor: pointer; font-size: 16px; padding: 0 2px; }
+.upload-available { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
+.upload-available-title { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+.upload-player-list { max-height: 400px; overflow-y: auto; }
+.upload-available-player { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.upload-assign-btns { display: flex; gap: 4px; }
+.upload-assign-btn { width: 28px; height: 28px; border: none; border-radius: 6px; color: #000; font-size: 10px; font-weight: 700; cursor: pointer; opacity: 0.8; }
+.upload-assign-btn:hover { opacity: 1; }
+.upload-assign-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* Draft Complete */
+.draft-complete { padding: 16px; max-width: 600px; margin: 0 auto; }
+.draft-complete-header { text-align: center; margin-bottom: 24px; }
+.draft-complete-icon { font-size: 48px; margin-bottom: 8px; }
+.draft-complete-header h2 { font-size: 24px; margin-bottom: 4px; }
+.draft-complete-header p { color: var(--text2); font-size: 13px; }
+.draft-complete-rosters { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; margin-bottom: 24px; }
+.draft-complete-roster { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px; }
+.draft-complete-roster-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.draft-complete-avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #000; }
+.draft-complete-name { font-size: 16px; font-weight: 600; flex: 1; }
+.draft-complete-count { font-size: 12px; color: var(--text2); }
+.draft-complete-team-list { display: flex; flex-direction: column; gap: 4px; }
+.draft-complete-team { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+.draft-complete-num { font-size: 10px; color: var(--text2); font-weight: 600; min-width: 22px; }
+.draft-complete-history { margin-bottom: 24px; }
+.draft-complete-history h3 { font-size: 16px; margin-bottom: 8px; }
+.draft-history-list { max-height: 300px; overflow-y: auto; }
+.draft-history-item { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.draft-history-num { font-weight: 700; color: var(--text2); min-width: 28px; }
+.draft-history-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.draft-history-owner { font-weight: 500; min-width: 60px; }
+.draft-history-player { flex: 1; }
+
+/* Loading/spinner */
+.draft-loading { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; gap: 12px; color: var(--text2); }
+.draft-spinner { width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--cyan); border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
