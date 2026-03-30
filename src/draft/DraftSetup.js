@@ -169,22 +169,22 @@ function DraftSetup({ onDraftCreated }) {
         {/* Step 0: Template Selection */}
         {step === 0 && (
           <div className="draft-setup-section">
-            <h2>Choose an Event</h2>
-            <p className="draft-subtitle">Select a tournament or create a custom draft</p>
+            <h2>Select Event</h2>
+            <p className="draft-subtitle">Choose a tournament or create a custom draft pool</p>
             <div className="template-grid">
               {templates.map(t => (
                 <button key={t.id} className="template-card" onClick={() => handleSelectTemplate(t.id)}>
-                  <span className="template-icon">{t.icon}</span>
+                  <div className="template-badge">{t.sport === 'golf' ? 'GOLF' : t.sport.toUpperCase()}</div>
                   <div className="template-info">
                     <div className="template-name">{t.name}</div>
                     <div className="template-desc">{t.description}</div>
                     <div className="template-players">{t.playerCount} players in field</div>
                   </div>
-                  <span className="template-arrow">&#8594;</span>
+                  <span className="template-arrow">&#8250;</span>
                 </button>
               ))}
               <button className="template-card custom" onClick={handleCustomDraft}>
-                <span className="template-icon">&#9998;</span>
+                <div className="template-badge custom-badge">CUSTOM</div>
                 <div className="template-info">
                   <div className="template-name">Custom Draft</div>
                   <div className="template-desc">Enter your own player list</div>
@@ -214,19 +214,13 @@ function DraftSetup({ onDraftCreated }) {
               <label>Draft Type</label>
               <div className="draft-type-grid">
                 <button className={`draft-type-btn ${draftType === 'snake' ? 'selected' : ''}`} onClick={() => setDraftType('snake')}>
-                  <span className="draft-type-icon">&#128013;</span>
-                  <span className="draft-type-label">Snake Draft</span>
-                  <span className="draft-type-desc">Take turns, order reverses each round</span>
+                  <div><span className="draft-type-label">Snake Draft</span><span className="draft-type-desc">Take turns picking, order reverses each round</span></div>
                 </button>
                 <button className={`draft-type-btn ${draftType === 'auction' ? 'selected' : ''}`} onClick={() => setDraftType('auction')}>
-                  <span className="draft-type-icon">&#128176;</span>
-                  <span className="draft-type-label">Auction Draft</span>
-                  <span className="draft-type-desc">Bid on players with a budget</span>
+                  <div><span className="draft-type-label">Auction Draft</span><span className="draft-type-desc">Bid on players with a budget</span></div>
                 </button>
                 <button className={`draft-type-btn ${draftType === 'upload' ? 'selected' : ''}`} onClick={() => setDraftType('upload')}>
-                  <span className="draft-type-icon">&#128203;</span>
-                  <span className="draft-type-label">Upload Draft</span>
-                  <span className="draft-type-desc">Commissioner assigns players manually</span>
+                  <div><span className="draft-type-label">Upload / Manual</span><span className="draft-type-desc">Commissioner assigns players manually</span></div>
                 </button>
               </div>
             </div>
