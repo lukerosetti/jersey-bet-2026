@@ -119,7 +119,30 @@
 .draft-player-rank { font-size: 11px; font-weight: 700; color: var(--text2); min-width: 24px; text-align: center; }
 .draft-player-flag { font-size: 16px; line-height: 1; flex-shrink: 0; }
 .draft-player-name { font-weight: 500; flex: 1; }
+.draft-player-arrow { font-size: 18px; color: var(--text2); opacity: 0.4; transition: opacity 0.2s; }
+.draft-player-btn:hover .draft-player-arrow { opacity: 1; }
 .draft-roster-flag { font-size: 12px; margin-right: 2px; }
+
+/* Player Modal */
+.player-modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 200; display: flex; align-items: flex-end; justify-content: center; padding: 16px; backdrop-filter: blur(4px); }
+.player-modal { background: var(--card); border: 1px solid var(--border); border-radius: 20px 20px 16px 16px; width: 100%; max-width: 420px; max-height: 80vh; overflow-y: auto; padding: 24px 20px; position: relative; box-shadow: 0 -8px 40px rgba(0,0,0,0.4); animation: slideUp 0.25s ease-out; }
+@keyframes slideUp { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.player-modal-close { position: absolute; top: 16px; right: 16px; background: var(--bg); border: 1px solid var(--border); border-radius: 50%; width: 32px; height: 32px; font-size: 18px; color: var(--text2); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+.player-modal-close:hover { border-color: var(--text); color: var(--text); }
+.player-modal-header { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+.player-modal-flag { font-size: 40px; line-height: 1; }
+.player-modal-info { flex: 1; }
+.player-modal-name { font-size: 22px; font-weight: 700; margin: 0; letter-spacing: -0.3px; }
+.player-modal-country { font-size: 13px; color: var(--text2); margin-top: 2px; }
+.player-modal-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 20px; }
+.player-stat-card { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 14px 12px; text-align: center; }
+.player-stat-value { font-size: 20px; font-weight: 800; color: var(--cyan); margin-bottom: 2px; }
+.player-stat-label { font-size: 10px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; }
+.player-modal-drafted { display: flex; align-items: center; gap: 8px; padding: 12px 16px; background: var(--bg); border-radius: 10px; font-size: 13px; margin-bottom: 16px; }
+.player-modal-drafted-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.player-modal-draft-btn { width: 100%; padding: 16px; border: none; border-radius: 12px; background: var(--cyan); color: #000; font-size: 16px; font-weight: 700; cursor: pointer; letter-spacing: 0.3px; box-shadow: 0 4px 16px rgba(0,0,0,0.3); transition: all 0.2s; }
+.player-modal-draft-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(0,0,0,0.4); }
+.player-modal-wait { text-align: center; padding: 14px; color: var(--text2); font-size: 14px; background: var(--bg); border-radius: 10px; }
 .draft-empty { text-align: center; color: var(--text2); padding: 20px; font-size: 13px; }
 
 /* Rosters */

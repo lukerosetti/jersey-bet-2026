@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useDraft } from './DraftContext';
 import { getSnakeOrder, getCurrentPick, getUpcomingPicks, getDraftProgress } from './draftLogic';
+import PlayerModal from './PlayerModal';
 
 function SnakeDraft() {
   const { draftState, currentUser, makeSnakePick, autoPick } = useDraft();
   const [searchQuery, setSearchQuery] = useState('');
   const [timeLeft, setTimeLeft] = useState(null);
+  const [selectedPlayer, setSelectedPlayer] = useState(null);
 
   const config = draftState?.config || {};
   const owners = draftState?.owners || {};
@@ -154,12 +156,12 @@ function SnakeDraft() {
             <button
               key={player}
               className={`draft-player-btn ${isMyTurn ? 'pickable' : ''}`}
-              onClick={() => handlePick(player)}
-              disabled={!isMyTurn}
+              onClick={() => setSelectedPlayer(player)}
             >
               <span className="draft-player-rank">{getOwgr(player) || (available.indexOf(player) + 1)}</span>
               <span className="draft-player-flag">{getFlag(player)}</span>
               <span className="draft-player-name">{player}</span>
+              <span className="draft-player-arrow">{'\u203A'}</span>
             </button>
           ))}
           {filteredPlayers.length === 0 && <div className="draft-empty">No players match "{searchQuery}"</div>}
@@ -195,6 +197,19 @@ function SnakeDraft() {
           })}
         </div>
       </div>
+
+      {/* Player detail modal */}
+      {selectedPlayer && (
+        <PlayerModal
+          player={selectedPlayer}
+          playerData={playerData}
+          isMyTurn={isMyTurn}
+          onDraft={handlePick}
+          onClose={() => setSelectedPlayer(null)}
+          owners={owners}
+          picks={picks}
+        />
+      )}
     </div>
   );
 }
