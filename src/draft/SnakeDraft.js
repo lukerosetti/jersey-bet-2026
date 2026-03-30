@@ -8,13 +8,42 @@ function SnakeDraft() {
   const [searchQuery, setSearchQuery] = useState('');
   const [timeLeft, setTimeLeft] = useState(null);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
+  const [queue, setQueue] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('draftQueue') || '[]'); } catch { return []; }
+  });
+  const [showQueue, setShowQueue] = useState(false);
 
+  // Persist queue to localStorage
+  useEffect(() => {
+    localStorage.setItem('draftQueue', JSON.stringify(queue));
+  }, [queue]);
+
+  const addToQueue = (player) => {
+    if (!queue.includes(player)) setQueue(prev => [...prev, player]);
+  };
+  const removeFromQueue = (player) => {
+    setQueue(prev => prev.filter(p => p !== player));
+  };
+  const moveInQueue = (player, direction) => {
+    setQueue(prev => {
+      const idx = prev.indexOf(player);
+      if (idx < 0) return prev;
+      const newIdx = idx + direction;
+      if (newIdx < 0 || newIdx >= prev.length) return prev;
+      const updated = [...prev];
+      [updated[idx], updated[newIdx]] = [updated[newIdx], updated[idx]];
+      return updated;
+    });
+  };
   const config = draftState?.config || {};
   const owners = draftState?.owners || {};
   const picks = draftState?.picks || [];
   const available = draftState?.availablePlayers || [];
   const playerData = draftState?.playerData || {};
   const currentPick = draftState?.currentPick;
+
+  // Remove drafted players from queue
+  const activeQueue = queue.filter(p => available.includes(p));
 
   // Convert country code to flag emoji
   const getFlag = (playerName) => {
@@ -139,6 +168,40 @@ function SnakeDraft() {
         </div>
       </div>
 
+      {/* Draft Queue */}
+      <div className="draft-queue-bar">
+        <button className={`draft-queue-toggle ${showQueue ? 'open' : ''}`} onClick={() => setShowQueue(!showQueue)}>
+          <span className="draft-queue-icon">My Queue</span>
+          {activeQueue.length > 0 && <span className="draft-queue-count">{activeQueue.length}</span>}
+          <span className="draft-queue-chevron">{showQueue ? '\u25B2' : '\u25BC'}</span>
+        </button>
+        {isMyTurn && activeQueue.length > 0 && !showQueue && (
+          <button className="draft-queue-quick" onClick={() => handlePick(activeQueue[0])}>
+            Draft #{1}: {activeQueue[0]}
+          </button>
+        )}
+      </div>
+      {showQueue && (
+        <div className="draft-queue-panel">
+          {activeQueue.length === 0 ? (
+            <div className="draft-queue-empty">No players queued. Tap a player and select "Add to Queue" to build your wishlist.</div>
+          ) : (
+            activeQueue.map((player, idx) => (
+              <div key={player} className="draft-queue-item">
+                <span className="draft-queue-num">{idx + 1}</span>
+                <span className="draft-queue-flag">{getFlag(player)}</span>
+                <span className="draft-queue-name">{player}</span>
+                <div className="draft-queue-actions">
+                  <button className="draft-queue-move" onClick={() => moveInQueue(player, -1)} disabled={idx === 0}>{'\u25B2'}</button>
+                  <button className="draft-queue-move" onClick={() => moveInQueue(player, 1)} disabled={idx === activeQueue.length - 1}>{'\u25BC'}</button>
+                  <button className="draft-queue-remove" onClick={() => removeFromQueue(player)}>{'\u00D7'}</button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
       {/* Available players board */}
       <div className="draft-board">
         <div className="draft-board-header">
@@ -208,6 +271,8 @@ function SnakeDraft() {
           onClose={() => setSelectedPlayer(null)}
           owners={owners}
           picks={picks}
+          onAddToQueue={addToQueue}
+          isQueued={queue.includes(selectedPlayer)}
         />
       )}
     </div>

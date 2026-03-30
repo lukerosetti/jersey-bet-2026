@@ -1,7 +1,7 @@
 import React from 'react';
 import { getPlayerStats } from './playerStats';
 
-function PlayerModal({ player, playerData, isMyTurn, onDraft, onClose, owners, picks }) {
+function PlayerModal({ player, playerData, isMyTurn, onDraft, onClose, owners, picks, onAddToQueue, isQueued }) {
   const data = playerData?.[player] || {};
   const stats = getPlayerStats(player);
   const flag = getFlag(data.country);
@@ -23,7 +23,15 @@ function PlayerModal({ player, playerData, isMyTurn, onDraft, onClose, owners, p
 
         {/* Player header */}
         <div className="player-modal-header">
-          <div className="player-modal-flag">{flag}</div>
+          {data.espnId ? (
+            <img
+              className="player-modal-headshot"
+              src={`https://a.espncdn.com/i/headshots/golf/players/full/${data.espnId}.png`}
+              alt={player}
+              onError={e => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
+            />
+          ) : null}
+          <div className="player-modal-flag" style={data.espnId ? { display: 'none' } : {}}>{flag}</div>
           <div className="player-modal-info">
             <h2 className="player-modal-name">{player}</h2>
             <div className="player-modal-country">{data.country ? getCountryName(data.country) : ''}</div>
@@ -90,14 +98,25 @@ function PlayerModal({ player, playerData, isMyTurn, onDraft, onClose, owners, p
           </div>
         )}
 
-        {!drafter && isMyTurn && (
-          <button className="player-modal-draft-btn" onClick={() => { onDraft(player); onClose(); }}>
-            Draft {player}
-          </button>
-        )}
-
-        {!drafter && !isMyTurn && (
-          <div className="player-modal-wait">Not your turn</div>
+        {!drafter && (
+          <div className="player-modal-actions">
+            {isMyTurn && (
+              <button className="player-modal-draft-btn" onClick={() => { onDraft(player); onClose(); }}>
+                Draft {player}
+              </button>
+            )}
+            {!isMyTurn && (
+              <div className="player-modal-wait">Not your turn</div>
+            )}
+            {onAddToQueue && !isQueued && (
+              <button className="player-modal-queue-btn" onClick={() => { onAddToQueue(player); onClose(); }}>
+                + Add to Queue
+              </button>
+            )}
+            {isQueued && (
+              <div className="player-modal-queued">In your queue</div>
+            )}
+          </div>
         )}
       </div>
     </div>

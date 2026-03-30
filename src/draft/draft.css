@@ -119,6 +119,35 @@
 .draft-player-rank { font-size: 11px; font-weight: 700; color: var(--text2); min-width: 24px; text-align: center; }
 .draft-player-flag { font-size: 16px; line-height: 1; flex-shrink: 0; }
 .draft-player-name { font-weight: 500; flex: 1; }
+/* Draft Queue */
+.draft-queue-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.draft-queue-toggle { display: flex; align-items: center; gap: 6px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--card); color: var(--text); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.draft-queue-toggle.open { border-color: var(--cyan); }
+.draft-queue-icon { font-size: 13px; }
+.draft-queue-count { font-size: 11px; font-weight: 800; background: var(--cyan); color: #000; padding: 1px 6px; border-radius: 10px; }
+.draft-queue-chevron { font-size: 8px; color: var(--text2); margin-left: 2px; }
+.draft-queue-quick { flex: 1; padding: 8px 12px; border: 1px solid var(--cyan); border-radius: 8px; background: rgba(212,175,55,0.1); color: var(--cyan); font-size: 12px; font-weight: 700; cursor: pointer; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; transition: all 0.2s; }
+.draft-queue-quick:hover { background: rgba(212,175,55,0.2); }
+.draft-queue-panel { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 8px; margin-bottom: 10px; max-height: 180px; overflow-y: auto; }
+.draft-queue-empty { text-align: center; color: var(--text2); font-size: 12px; padding: 16px 8px; line-height: 1.5; }
+.draft-queue-item { display: flex; align-items: center; gap: 6px; padding: 7px 8px; border-radius: 6px; transition: background 0.15s; }
+.draft-queue-item:hover { background: var(--bg); }
+.draft-queue-num { font-size: 11px; font-weight: 800; color: var(--cyan); min-width: 18px; }
+.draft-queue-flag { font-size: 14px; flex-shrink: 0; }
+.draft-queue-name { font-size: 13px; font-weight: 500; flex: 1; }
+.draft-queue-actions { display: flex; gap: 2px; }
+.draft-queue-move { background: none; border: 1px solid var(--border); border-radius: 4px; color: var(--text2); font-size: 9px; width: 22px; height: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+.draft-queue-move:hover:not(:disabled) { border-color: var(--cyan); color: var(--cyan); }
+.draft-queue-move:disabled { opacity: 0.3; cursor: default; }
+.draft-queue-remove { background: none; border: 1px solid var(--border); border-radius: 4px; color: var(--text2); font-size: 14px; width: 22px; height: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+.draft-queue-remove:hover { border-color: var(--red); color: var(--red); }
+
+/* Player modal actions */
+.player-modal-actions { display: flex; flex-direction: column; gap: 8px; }
+.player-modal-queue-btn { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg); color: var(--text); font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.player-modal-queue-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+.player-modal-queued { text-align: center; padding: 12px; color: var(--cyan); font-size: 13px; font-weight: 600; background: var(--bg); border-radius: 10px; border: 1px solid var(--cyan); }
+
 .draft-player-arrow { font-size: 18px; color: var(--text2); opacity: 0.4; transition: opacity 0.2s; }
 .draft-player-btn:hover .draft-player-arrow { opacity: 1; }
 .draft-roster-flag { font-size: 12px; margin-right: 2px; }
@@ -130,6 +159,7 @@
 .player-modal-close { position: absolute; top: 16px; right: 16px; background: var(--bg); border: 1px solid var(--border); border-radius: 50%; width: 32px; height: 32px; font-size: 18px; color: var(--text2); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
 .player-modal-close:hover { border-color: var(--text); color: var(--text); }
 .player-modal-header { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+.player-modal-headshot { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border); flex-shrink: 0; background: var(--bg); }
 .player-modal-flag { font-size: 40px; line-height: 1; }
 .player-modal-info { flex: 1; }
 .player-modal-name { font-size: 22px; font-weight: 700; margin: 0; letter-spacing: -0.3px; }

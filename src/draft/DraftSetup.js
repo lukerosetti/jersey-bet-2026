@@ -127,7 +127,7 @@ function DraftSetup({ onDraftCreated }) {
       if (template) {
         template.players.forEach(p => {
           if (typeof p === 'object') {
-            playerData[p.name] = { country: p.country, owgr: p.owgr };
+            playerData[p.name] = { country: p.country, owgr: p.owgr, ...(p.espnId ? { espnId: p.espnId } : {}) };
           }
         });
       }
