@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { listDrafts } from '../firebase';
 
-function PoolSelect({ onSelectPool, onCreateNew }) {
+function PoolSelect({ onSelectPool, onCreateNew, onBack }) {
   const [poolCode, setPoolCode] = useState('');
   const [recentDrafts, setRecentDrafts] = useState([]);
   const [error, setError] = useState('');
@@ -22,7 +22,6 @@ function PoolSelect({ onSelectPool, onCreateNew }) {
       const drafts = await listDrafts();
       const draftId = poolCode.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
       if (drafts[draftId]) {
-        // Save to recent
         const recent = JSON.parse(localStorage.getItem('jerseyBetRecentDrafts') || '[]');
         if (!recent.find(r => r.id === draftId)) {
           recent.unshift({ id: draftId, name: drafts[draftId].config?.name || draftId, joinedAt: Date.now() });
@@ -38,14 +37,17 @@ function PoolSelect({ onSelectPool, onCreateNew }) {
     setChecking(false);
   };
 
-  const handleRecent = (draftId) => {
-    onSelectPool(draftId);
+  const deleteRecent = (e, draftId) => {
+    e.stopPropagation();
+    const updated = recentDrafts.filter(d => d.id !== draftId);
+    setRecentDrafts(updated);
+    localStorage.setItem('jerseyBetRecentDrafts', JSON.stringify(updated));
   };
 
   return (
     <div className="pool-select">
       <div className="pool-select-card">
-        <img src="/logo.png" alt="Jersey Bets" style={{ width: 70, height: 70, marginBottom: 8 }} />
+        <img src="/logo.png" alt="Jersey Bets" style={{ width: 60, height: 60, marginBottom: 4 }} />
         <h2>DraftPlay</h2>
         <p className="draft-subtitle">Join a draft pool or create a new one</p>
 
@@ -81,12 +83,19 @@ function PoolSelect({ onSelectPool, onCreateNew }) {
           <div className="pool-recent">
             <div className="pool-recent-title">Recent Pools</div>
             {recentDrafts.map(draft => (
-              <button key={draft.id} className="pool-recent-btn" onClick={() => handleRecent(draft.id)}>
+              <div key={draft.id} className="pool-recent-btn" onClick={() => onSelectPool(draft.id)}>
                 <span className="pool-recent-name">{draft.name || draft.id}</span>
-                <span className="pool-recent-arrow">&#8594;</span>
-              </button>
+                <div className="pool-recent-actions">
+                  <span className="pool-recent-arrow">{'\u203A'}</span>
+                  <button className="pool-recent-delete" onClick={(e) => deleteRecent(e, draft.id)} title="Remove from recents">{'\u00D7'}</button>
+                </div>
+              </div>
             ))}
           </div>
+        )}
+
+        {onBack && (
+          <button className="draft-back-link" onClick={onBack}>Back to Tournament</button>
         )}
       </div>
     </div>

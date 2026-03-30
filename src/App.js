@@ -176,7 +176,7 @@ function App() {
     if (!activeDraftId) {
       return (
         <div className="app">
-          <PoolSelect onSelectPool={enterDraft} onCreateNew={() => setShowDraftSetup(true)} />
+          <PoolSelect onSelectPool={enterDraft} onCreateNew={() => setShowDraftSetup(true)} onBack={() => { removeTheme(); setAppMode('tournament'); }} />
         </div>
       );
     }

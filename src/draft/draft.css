@@ -168,10 +168,14 @@
 .pool-create-btn:hover { border-color: var(--cyan); background: rgba(34,211,238,0.05); }
 .pool-recent { margin-top: 24px; text-align: left; }
 .pool-recent-title { font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
-.pool-recent-btn { display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); font-size: 14px; cursor: pointer; margin-bottom: 6px; transition: border-color 0.2s; }
-.pool-recent-btn:hover { border-color: var(--cyan); }
+.pool-recent-btn { display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg); color: var(--text); font-size: 14px; cursor: pointer; margin-bottom: 6px; transition: all 0.2s; }
+.pool-recent-btn:hover { border-color: var(--cyan); background: rgba(34,211,238,0.03); }
 .pool-recent-name { font-weight: 500; }
-.pool-recent-arrow { color: var(--text2); }
+.pool-recent-actions { display: flex; align-items: center; gap: 8px; }
+.pool-recent-arrow { color: var(--text2); font-size: 18px; }
+.pool-recent-delete { background: none; border: 1px solid transparent; border-radius: 6px; color: var(--text2); font-size: 16px; padding: 2px 6px; cursor: pointer; transition: all 0.2s; opacity: 0.5; }
+.pool-recent-delete:hover { opacity: 1; border-color: var(--red); color: var(--red); }
+.pool-recent-btn:hover .pool-recent-delete { opacity: 0.8; }
 
 /* Draft Setup */
 .draft-setup { display: flex; justify-content: center; padding: 16px; position: relative; }
@@ -201,9 +205,12 @@
 .draft-owner-form-row { display: flex; align-items: center; gap: 8px; }
 .draft-owner-num { font-size: 13px; font-weight: 700; color: var(--text2); min-width: 28px; display: flex; align-items: center; gap: 4px; }
 .draft-color-pick { width: 36px; height: 36px; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; padding: 2px; background: var(--bg); }
-.draft-setup-nav { display: flex; gap: 8px; margin-top: 16px; }
+.draft-setup-nav { display: flex; gap: 10px; margin-top: 24px; }
 .draft-setup-nav .draft-submit-btn { flex: 1; }
-.draft-setup-nav .draft-logout-btn { flex-shrink: 0; }
+.draft-setup-nav .draft-logout-btn { flex-shrink: 0; padding: 14px 20px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg); color: var(--text2); font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.draft-setup-nav .draft-logout-btn:hover { border-color: var(--text2); color: var(--text); }
+.draft-back-link { display: block; width: 100%; margin-top: 20px; padding: 12px; border: none; background: none; color: var(--text2); font-size: 13px; cursor: pointer; text-align: center; transition: color 0.2s; }
+.draft-back-link:hover { color: var(--text); }
 
 /* Template cards */
 .template-grid { display: flex; flex-direction: column; gap: 10px; }
