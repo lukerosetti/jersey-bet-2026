@@ -460,6 +460,28 @@
 .draft-view-tab.active { background: var(--cyan); color: #000; border-color: var(--cyan); }
 .draft-view-tab.compare-tab { flex: none; padding: 8px 12px; background: rgba(34,211,238,0.1); border-color: var(--cyan); color: var(--cyan); font-size: 11px; }
 
+/* Claim slot flow */
+.draft-claim-row { display: flex; gap: 8px; }
+.draft-claim-row .draft-input { flex: 1; }
+.draft-claim-row .draft-submit-btn { flex-shrink: 0; padding: 10px 20px; }
+.draft-divider { text-align: center; margin: 12px 0; position: relative; }
+.draft-divider::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: var(--border); }
+.draft-divider span { position: relative; background: var(--card); padding: 0 12px; font-size: 12px; color: var(--text2); }
+
+/* Pool Created / Share Screen */
+.pool-created { text-align: center; }
+.pool-created-icon { width: 60px; height: 60px; border-radius: 50%; background: var(--cyan); color: #000; font-size: 28px; font-weight: 900; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
+.pool-code-display { background: var(--bg); border: 2px dashed var(--cyan); border-radius: 14px; padding: 20px; margin: 20px 0; cursor: pointer; transition: border-color 0.2s; }
+.pool-code-display:active { border-color: var(--text); }
+.pool-code-label { font-size: 10px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+.pool-code-value { font-size: 28px; font-weight: 900; color: var(--cyan); letter-spacing: 2px; font-family: monospace; }
+.pool-code-hint { font-size: 11px; color: var(--text2); margin-top: 6px; }
+.pool-share-actions { display: flex; gap: 8px; margin: 16px 0; }
+.pool-share-actions .draft-submit-btn { flex: 1; }
+.pool-copy-btn { background: var(--card) !important; color: var(--text) !important; border: 1px solid var(--border) !important; }
+.pool-share-note { font-size: 12px; color: var(--text2); line-height: 1.5; padding: 12px; background: var(--bg); border-radius: 10px; }
+.pool-share-note strong { color: var(--text); }
+
 /* Headshot in player list */
 .draft-player-headshot { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
 

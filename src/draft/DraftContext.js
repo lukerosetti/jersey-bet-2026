@@ -72,6 +72,37 @@ export function DraftProvider({ draftId, children }) {
     return { success: true };
   }, [draftState]);
 
+  // Claim an open slot (new user joining)
+  const claimSlot = useCallback(async (slotId, name) => {
+    if (!draftId || !draftState?.owners?.[slotId]) throw new Error('Invalid slot');
+    const initials = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+    const ownerId = name.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+
+    // Update the slot in Firebase
+    const { update, ref: dbRef } = await import('firebase/database');
+    const { db } = await import('../firebase');
+
+    const existingSlot = draftState.owners[slotId];
+    await update(dbRef(db, `drafts/${draftId}/owners/${slotId}`), {
+      name,
+      initials,
+      claimed: true,
+      color: existingSlot.color
+    });
+
+    // If this is the first person to claim, make them commissioner
+    const config = draftState.config || {};
+    if (!config.commissioner) {
+      await update(dbRef(db, `drafts/${draftId}/config`), { commissioner: slotId });
+    }
+
+    // Auto-login after claiming
+    const user = { ownerId: slotId, name, pin: '' };
+    setCurrentUser(user);
+    sessionStorage.setItem('draftUser', JSON.stringify(user));
+    saveMyPool(draftId, { name: config.name || draftId, ownerId: slotId, ownerName: name, sport: config.sport || '', templateId: config.templateId || '' });
+  }, [draftId, draftState]);
+
   const logout = useCallback(() => {
     if (currentUser && draftId) setOwnerOnline(draftId, currentUser.ownerId, false);
     setCurrentUser(null);
@@ -181,6 +212,7 @@ export function DraftProvider({ draftId, children }) {
     error,
     login,
     logout,
+    claimSlot,
     makeSnakePick,
     autoPick,
     startDraft,

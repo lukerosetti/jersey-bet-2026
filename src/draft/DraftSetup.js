@@ -3,19 +3,21 @@ import { createDraft } from '../firebase';
 import { getTemplates, getTemplate, getSuggestedRosterSize, applyTheme } from './draftTemplates';
 
 function DraftSetup({ onDraftCreated }) {
-  const [step, setStep] = useState(0); // 0 = template select
+  const [step, setStep] = useState(0);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [draftName, setDraftName] = useState('');
   const [draftType, setDraftType] = useState('snake');
   const [rosterSize, setRosterSize] = useState(5);
   const [timerSeconds, setTimerSeconds] = useState(120);
   const [ownerCount, setOwnerCount] = useState(4);
-  const [owners, setOwners] = useState([]);
   const [playersText, setPlayersText] = useState('');
   const [creating, setCreating] = useState(false);
+  const [createdPoolCode, setCreatedPoolCode] = useState(null);
+  const [copied, setCopied] = useState(false);
   const [error, setError] = useState('');
 
   const templates = getTemplates();
+  const defaultColors = ['#22d3ee', '#a855f7', '#f97316', '#f43f5e', '#22c55e', '#eab308', '#3b82f6', '#ec4899'];
 
   // Step 0: Template selection
   const handleSelectTemplate = (templateId) => {
@@ -23,7 +25,6 @@ function DraftSetup({ onDraftCreated }) {
     if (template) {
       setSelectedTemplate(templateId);
       setDraftName(template.name);
-      // Players can be strings or objects with { name, country, owgr }
       const playerNames = template.players.map(p => typeof p === 'string' ? p : p.name);
       setPlayersText(playerNames.join('\n'));
       setRosterSize(getSuggestedRosterSize(templateId, ownerCount));
@@ -40,61 +41,30 @@ function DraftSetup({ onDraftCreated }) {
     setStep(1);
   };
 
-  // Step 1: Basic config
+  // Step 1: Basic config → next goes to player entry (custom) or confirm (template)
   const handleStep1 = () => {
     if (!draftName.trim()) { setError('Enter a draft name'); return; }
     setError('');
-    const slots = [];
-    for (let i = 0; i < ownerCount; i++) {
-      slots.push({ id: '', name: '', pin: '', color: '', initials: '' });
-    }
-    setOwners(slots);
-    // Update roster size suggestion when owner count changes with a template
     if (selectedTemplate) {
       setRosterSize(getSuggestedRosterSize(selectedTemplate, ownerCount));
-    }
-    setStep(2);
-  };
-
-  // Step 2: Owner details
-  const updateOwner = (idx, field, value) => {
-    setOwners(prev => {
-      const updated = [...prev];
-      updated[idx] = { ...updated[idx], [field]: value };
-      if (field === 'name') {
-        updated[idx].id = value.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
-        updated[idx].initials = value.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
-      }
-      return updated;
-    });
-  };
-
-  const handleStep2 = () => {
-    const incomplete = owners.filter(o => !o.name.trim() || !o.pin.trim());
-    if (incomplete.length > 0) { setError('All owners need a name and PIN'); return; }
-    const duplicateIds = owners.filter((o, i) => owners.findIndex(x => x.id === o.id) !== i);
-    if (duplicateIds.length > 0) { setError('Owner names must be unique'); return; }
-    setError('');
-    // If template was selected, skip player entry (step 3) and go to confirmation
-    if (selectedTemplate) {
-      setStep(4); // confirmation step
+      setStep(3); // skip to confirm
     } else {
-      setStep(3);
+      setStep(2); // player entry for custom
     }
   };
 
-  // Step 3: Player pool (only for custom drafts)
-  const handleStep3 = () => {
+  // Step 2: Player pool (custom only)
+  const handleStep2 = () => {
     const players = playersText.split('\n').map(p => p.trim()).filter(p => p.length > 0);
     if (players.length < ownerCount * rosterSize) {
       setError(`Need at least ${ownerCount * rosterSize} players. You have ${players.length}.`);
       return;
     }
     setError('');
-    setStep(4);
+    setStep(3);
   };
 
-  // Step 4: Create the draft
+  // Step 3: Create the draft
   const handleCreate = async () => {
     const players = playersText.split('\n').map(p => p.trim()).filter(p => p.length > 0);
     if (players.length < ownerCount * rosterSize) {
@@ -105,32 +75,34 @@ function DraftSetup({ onDraftCreated }) {
     setError('');
 
     try {
-      // Generate unique pool code: short name prefix + random 4-char suffix
       const prefix = draftName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').replace(/-+/g, '-').replace(/^-|-$/g, '').slice(0, 12);
       const suffix = Math.random().toString(36).substring(2, 6).toUpperCase();
       const draftId = `${prefix}-${suffix}`;
+
+      // Create empty owner slots — people claim them when they join
       const ownersMap = {};
-      const draftOrder = [];
-      owners.forEach((o, idx) => {
-        ownersMap[o.id] = {
-          name: o.name,
-          pin: o.pin,
-          color: o.color || defaultColors[idx % defaultColors.length],
-          initials: o.initials,
+      for (let i = 0; i < ownerCount; i++) {
+        const slotId = `slot_${i + 1}`;
+        ownersMap[slotId] = {
+          name: '',
+          pin: '',
+          color: defaultColors[i % defaultColors.length],
+          initials: '',
           teams: [],
-          online: false
+          online: false,
+          claimed: false
         };
-        draftOrder.push(o.id);
-      });
+      }
 
       const template = selectedTemplate ? getTemplate(selectedTemplate) : null;
 
-      // Build player metadata map for flags/rankings in draft board
+      // Build player metadata map
       const playerData = {};
       if (template) {
         template.players.forEach(p => {
           if (typeof p === 'object') {
-            playerData[p.name] = { country: p.country, owgr: p.owgr, ...(p.espnId ? { espnId: p.espnId } : {}) };
+            const sanitizedName = p.name.replace(/\./g, '_');
+            playerData[sanitizedName] = { name: p.name, country: p.country, owgr: p.owgr, ...(p.espnId ? { espnId: p.espnId } : {}) };
           }
         });
       }
@@ -141,8 +113,9 @@ function DraftSetup({ onDraftCreated }) {
           type: draftType,
           rosterSize,
           timerSeconds,
-          commissioner: draftOrder[0],
-          draftOrder,
+          ownerSlots: ownerCount,
+          commissioner: null, // First person to join becomes commissioner
+          draftOrder: [], // Set when all slots are claimed
           status: 'waiting',
           tournamentId: draftId,
           templateId: selectedTemplate || null,
@@ -159,28 +132,47 @@ function DraftSetup({ onDraftCreated }) {
       recentDrafts.unshift({ id: draftId, name: draftName, createdAt: Date.now() });
       localStorage.setItem('jerseyBetRecentDrafts', JSON.stringify(recentDrafts.slice(0, 10)));
 
-      onDraftCreated(draftId);
+      setCreatedPoolCode(draftId);
+      setStep(4); // Show share screen
     } catch (err) {
       setError('Error creating draft: ' + err.message);
       setCreating(false);
     }
   };
 
-  const defaultColors = ['#22d3ee', '#a855f7', '#f97316', '#f43f5e', '#22c55e', '#eab308', '#3b82f6', '#ec4899'];
+  const handleCopy = () => {
+    const shareText = `Join my draft pool!\n\nPool Code: ${createdPoolCode}\n\nGo to jerseybet.onrender.com → More → Draft Room → Enter the code above`;
+    navigator.clipboard?.writeText(shareText).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  const handleShare = () => {
+    const shareText = `Join my draft pool!\n\nPool Code: ${createdPoolCode}\n\nGo to jerseybet.onrender.com → More → Draft Room → Enter the code above`;
+    if (navigator.share) {
+      navigator.share({ title: draftName, text: shareText }).catch(() => {});
+    } else {
+      handleCopy();
+    }
+  };
+
   const playerCount = playersText.split('\n').filter(p => p.trim()).length;
 
   const stepLabels = selectedTemplate
-    ? ['Event', 'Setup', 'Owners', 'Confirm']
-    : ['Event', 'Setup', 'Owners', 'Players', 'Confirm'];
+    ? ['Event', 'Setup', 'Confirm']
+    : ['Event', 'Setup', 'Players', 'Confirm'];
 
   return (
     <div className="draft-setup">
       <div className="draft-setup-card">
-        <div className="draft-setup-steps">
-          {stepLabels.map((label, i) => (
-            <div key={i} className={`draft-step ${step >= i ? 'active' : ''}`}>{i + 1}. {label}</div>
-          ))}
-        </div>
+        {step < 4 && (
+          <div className="draft-setup-steps">
+            {stepLabels.map((label, i) => (
+              <div key={i} className={`draft-step ${step >= (i === 0 ? 0 : i === 1 ? 1 : selectedTemplate ? i + 1 : i) ? 'active' : ''}`}>{i + 1}. {label}</div>
+            ))}
+          </div>
+        )}
 
         {/* Step 0: Template Selection */}
         {step === 0 && (
@@ -242,17 +234,17 @@ function DraftSetup({ onDraftCreated }) {
             </div>
             <div className="draft-field-row">
               <div className="draft-field">
-                <label>Number of Owners</label>
+                <label>Number of Slots</label>
                 <select value={ownerCount} onChange={e => {
                   const count = Number(e.target.value);
                   setOwnerCount(count);
                   if (selectedTemplate) setRosterSize(getSuggestedRosterSize(selectedTemplate, count));
                 }} className="draft-select">
-                  {[2,3,4,5,6,7,8].map(n => <option key={n} value={n}>{n} owners</option>)}
+                  {[2,3,4,5,6,7,8].map(n => <option key={n} value={n}>{n} players</option>)}
                 </select>
               </div>
               <div className="draft-field">
-                <label>Picks Per Owner</label>
+                <label>Picks Per Player</label>
                 <select value={rosterSize} onChange={e => setRosterSize(Number(e.target.value))} className="draft-select">
                   {[3,4,5,6,7,8,10,12,15,20].map(n => <option key={n} value={n}>{n} picks</option>)}
                 </select>
@@ -273,38 +265,15 @@ function DraftSetup({ onDraftCreated }) {
             {error && <div className="draft-error">{error}</div>}
             <div className="draft-setup-nav">
               <button className="draft-logout-btn" onClick={() => setStep(0)}>Back</button>
-              <button className="draft-submit-btn" onClick={handleStep1}>Next: Add Owners</button>
-            </div>
-          </div>
-        )}
-
-        {/* Step 2: Owner details */}
-        {step === 2 && (
-          <div className="draft-setup-section">
-            <h2>Add Owners</h2>
-            <p className="draft-subtitle">Set a name and PIN for each owner. The first owner is the commissioner.</p>
-            <div className="draft-owners-form">
-              {owners.map((owner, idx) => (
-                <div key={idx} className="draft-owner-form-row">
-                  <div className="draft-owner-num">{idx + 1}{idx === 0 && <span className="lobby-comm-badge">Comm</span>}</div>
-                  <input type="text" placeholder="Name" value={owner.name} onChange={e => updateOwner(idx, 'name', e.target.value)} className="draft-input draft-input-sm" />
-                  <input type="text" placeholder="PIN" maxLength={6} value={owner.pin} onChange={e => updateOwner(idx, 'pin', e.target.value)} className="draft-input draft-input-pin" />
-                  <input type="color" value={owner.color || defaultColors[idx % defaultColors.length]} onChange={e => updateOwner(idx, 'color', e.target.value)} className="draft-color-pick" />
-                </div>
-              ))}
-            </div>
-            {error && <div className="draft-error">{error}</div>}
-            <div className="draft-setup-nav">
-              <button className="draft-logout-btn" onClick={() => setStep(1)}>Back</button>
-              <button className="draft-submit-btn" onClick={handleStep2}>
-                {selectedTemplate ? 'Next: Confirm' : 'Next: Add Players'}
+              <button className="draft-submit-btn" onClick={handleStep1}>
+                {selectedTemplate ? 'Create Pool' : 'Next: Add Players'}
               </button>
             </div>
           </div>
         )}
 
-        {/* Step 3: Player pool (custom only) */}
-        {step === 3 && !selectedTemplate && (
+        {/* Step 2: Player pool (custom only) */}
+        {step === 2 && !selectedTemplate && (
           <div className="draft-setup-section">
             <h2>Player Pool</h2>
             <p className="draft-subtitle">Paste the list of available players, one per line. Rank them best to worst (used for auto-pick).</p>
@@ -320,32 +289,63 @@ function DraftSetup({ onDraftCreated }) {
             </div>
             {error && <div className="draft-error">{error}</div>}
             <div className="draft-setup-nav">
-              <button className="draft-logout-btn" onClick={() => setStep(2)}>Back</button>
-              <button className="draft-submit-btn" onClick={handleStep3}>Next: Confirm</button>
+              <button className="draft-logout-btn" onClick={() => setStep(1)}>Back</button>
+              <button className="draft-submit-btn" onClick={handleStep2}>Create Pool</button>
             </div>
           </div>
         )}
 
-        {/* Step 4: Confirmation */}
-        {step === 4 && (
+        {/* Step 3: Confirm + Creating */}
+        {step === 3 && !createdPoolCode && (
           <div className="draft-setup-section">
             <h2>Confirm Draft</h2>
             <div className="confirm-summary">
               <div className="confirm-row"><span className="confirm-label">Event</span><span className="confirm-value">{draftName}</span></div>
               <div className="confirm-row"><span className="confirm-label">Type</span><span className="confirm-value">{draftType === 'snake' ? 'Snake Draft' : draftType === 'auction' ? 'Auction Draft' : 'Upload Draft'}</span></div>
-              <div className="confirm-row"><span className="confirm-label">Owners</span><span className="confirm-value">{owners.map(o => o.name).join(', ')}</span></div>
-              <div className="confirm-row"><span className="confirm-label">Picks/Owner</span><span className="confirm-value">{rosterSize}</span></div>
-              <div className="confirm-row"><span className="confirm-label">Player Pool</span><span className="confirm-value">{playerCount} players</span></div>
+              <div className="confirm-row"><span className="confirm-label">Slots</span><span className="confirm-value">{ownerCount} players</span></div>
+              <div className="confirm-row"><span className="confirm-label">Picks/Player</span><span className="confirm-value">{rosterSize}</span></div>
+              <div className="confirm-row"><span className="confirm-label">Player Pool</span><span className="confirm-value">{playerCount} available</span></div>
               {draftType === 'snake' && <div className="confirm-row"><span className="confirm-label">Timer</span><span className="confirm-value">{timerSeconds}s per pick</span></div>}
-              <div className="confirm-row"><span className="confirm-label">Commissioner</span><span className="confirm-value">{owners[0]?.name || '?'}</span></div>
             </div>
             {error && <div className="draft-error">{error}</div>}
             <div className="draft-setup-nav">
-              <button className="draft-logout-btn" onClick={() => selectedTemplate ? setStep(2) : setStep(3)}>Back</button>
+              <button className="draft-logout-btn" onClick={() => selectedTemplate ? setStep(1) : setStep(2)}>Back</button>
               <button className="draft-submit-btn" onClick={handleCreate} disabled={creating}>
                 {creating ? 'Creating...' : 'Create Draft Pool'}
               </button>
             </div>
+          </div>
+        )}
+
+        {/* Step 4: Pool Created — Share Screen */}
+        {step === 4 && createdPoolCode && (
+          <div className="draft-setup-section pool-created">
+            <div className="pool-created-icon">&#x2713;</div>
+            <h2>Pool Created</h2>
+            <p className="draft-subtitle">Share the code below with your group</p>
+
+            <div className="pool-code-display" onClick={handleCopy}>
+              <div className="pool-code-label">POOL CODE</div>
+              <div className="pool-code-value">{createdPoolCode}</div>
+              <div className="pool-code-hint">{copied ? 'Copied!' : 'Tap to copy'}</div>
+            </div>
+
+            <div className="pool-share-actions">
+              <button className="draft-submit-btn" onClick={handleShare}>
+                Share Invite
+              </button>
+              <button className="draft-submit-btn pool-copy-btn" onClick={handleCopy}>
+                {copied ? 'Copied!' : 'Copy Invite Text'}
+              </button>
+            </div>
+
+            <div className="pool-share-note">
+              Tell your friends to go to <strong>jerseybet.onrender.com</strong> then <strong>More → Draft Room</strong> and enter the code.
+            </div>
+
+            <button className="draft-submit-btn" onClick={() => onDraftCreated(createdPoolCode)} style={{ marginTop: 16 }}>
+              Enter Lobby
+            </button>
           </div>
         )}
       </div>
