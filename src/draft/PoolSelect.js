@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { listDrafts } from '../firebase';
+// getDraftExists imported dynamically in handleJoin
 
 // localStorage key for saved pools
 const POOLS_KEY = 'jerseyBetMyPools';
@@ -91,10 +91,10 @@ function PoolSelect({ onSelectPool, onCreateNew, onBack }) {
     setError('');
     setChecking(true);
     try {
-      const drafts = await listDrafts();
-      const draftId = poolCode.trim().toLowerCase().replace(/\s+/g, '-');
-      if (drafts[draftId]) {
-        const config = drafts[draftId].config || {};
+      const draftId = poolCode.trim().replace(/\s+/g, '-');
+      const { getDraftExists } = await import('../firebase');
+      const config = await getDraftExists(draftId);
+      if (config) {
         saveMyPool(draftId, { name: config.name || draftId, sport: config.sport, templateId: config.templateId });
         onSelectPool(draftId);
       } else {

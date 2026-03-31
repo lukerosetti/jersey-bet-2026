@@ -106,7 +106,7 @@ function DraftSetup({ onDraftCreated }) {
 
     try {
       // Generate unique pool code: short name prefix + random 4-char suffix
-      const prefix = draftName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').slice(0, 12);
+      const prefix = draftName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').replace(/-+/g, '-').replace(/^-|-$/g, '').slice(0, 12);
       const suffix = Math.random().toString(36).substring(2, 6).toUpperCase();
       const draftId = `${prefix}-${suffix}`;
       const ownersMap = {};

@@ -106,10 +106,16 @@ export async function uploadDraft(draftId, ownerTeams) {
   await update(ref(db, `drafts/${draftId}`), updates);
 }
 
-// List all drafts
+// List all drafts (shallow - just keys and config, not full player data)
 export async function listDrafts() {
   const snapshot = await get(ref(db, 'drafts'));
   return snapshot.val() || {};
+}
+
+// Check if a specific draft exists (efficient single-key lookup)
+export async function getDraftExists(draftId) {
+  const snapshot = await get(ref(db, `drafts/${draftId}/config`));
+  return snapshot.val();
 }
 
 // Delete a draft
