@@ -140,8 +140,9 @@ function DraftSetup({ onDraftCreated }) {
     }
   };
 
+  const shareText = `Join my draft pool!\nhttps://jerseybet.onrender.com\n\nPool Code: ${createdPoolCode}\n\nOpen the link above, tap More → Draft Room, and enter the pool code to join.`;
+
   const handleCopy = () => {
-    const shareText = `Join my draft pool!\n\nPool Code: ${createdPoolCode}\n\nGo to jerseybet.onrender.com → More → Draft Room → Enter the code above`;
     navigator.clipboard?.writeText(shareText).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -149,9 +150,8 @@ function DraftSetup({ onDraftCreated }) {
   };
 
   const handleShare = () => {
-    const shareText = `Join my draft pool!\n\nPool Code: ${createdPoolCode}\n\nGo to jerseybet.onrender.com → More → Draft Room → Enter the code above`;
     if (navigator.share) {
-      navigator.share({ title: draftName, text: shareText }).catch(() => {});
+      navigator.share({ title: draftName, text: shareText, url: 'https://jerseybet.onrender.com' }).catch(() => {});
     } else {
       handleCopy();
     }
@@ -340,7 +340,7 @@ function DraftSetup({ onDraftCreated }) {
             </div>
 
             <div className="pool-share-note">
-              Tell your friends to go to <strong>jerseybet.onrender.com</strong> then <strong>More → Draft Room</strong> and enter the code.
+              Once they open the link, tap <strong>More → Draft Room</strong> and enter the pool code to join.
             </div>
 
             <button className="draft-submit-btn" onClick={() => onDraftCreated(createdPoolCode)} style={{ marginTop: 16 }}>
