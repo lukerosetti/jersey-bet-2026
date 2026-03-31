@@ -54,7 +54,9 @@ export function DraftProvider({ draftId, children }) {
   // Login with PIN
   const login = useCallback((ownerId, pin) => {
     if (!draftState?.owners?.[ownerId]) return { success: false, error: 'Owner not found' };
-    if (draftState.owners[ownerId].pin !== pin) return { success: false, error: 'Wrong PIN' };
+    const ownerPin = draftState.owners[ownerId].pin;
+    // If owner has a PIN set, require it. If no PIN, allow direct login.
+    if (ownerPin && ownerPin !== pin) return { success: false, error: 'Wrong PIN' };
     const user = { ownerId, name: draftState.owners[ownerId].name, pin };
     setCurrentUser(user);
     sessionStorage.setItem('draftUser', JSON.stringify(user));

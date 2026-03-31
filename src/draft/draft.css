@@ -9,8 +9,12 @@
 .draft-field { margin-bottom: 20px; text-align: left; }
 .draft-field label { font-size: 12px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; display: block; }
 .draft-owner-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.draft-owner-btn { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border: 2px solid var(--border); border-radius: 10px; background: var(--card); color: var(--text); font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+.draft-owner-btn { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border: 2px solid var(--border); border-radius: 10px; background: var(--card); color: var(--text); font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; position: relative; }
 .draft-owner-btn.selected { border-width: 2px; }
+.draft-owner-online-dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; margin-left: auto; flex-shrink: 0; }
+.draft-selected-owner { display: flex; align-items: center; gap: 8px; padding: 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 16px; }
+.draft-selected-owner span { font-size: 14px; font-weight: 600; }
+.draft-change-owner { margin-left: auto; background: none; border: 1px solid var(--border); color: var(--text2); font-size: 11px; padding: 4px 10px; border-radius: 6px; cursor: pointer; }
 .draft-owner-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
 .draft-pin-input { width: 100%; padding: 14px 16px; border: 2px solid var(--border); border-radius: 10px; background: var(--bg); color: var(--text); font-size: 24px; text-align: center; letter-spacing: 8px; font-weight: 700; }
 .draft-pin-input:focus { outline: none; border-color: var(--cyan); }
