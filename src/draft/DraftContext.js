@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { subscribeToDraft, makePick as firebaseMakePick, updateCurrentPick, setOwnerOnline, createDraft, uploadDraft as firebaseUploadDraft, updateDraftConfig } from '../firebase';
+import { saveMyPool } from './PoolSelect';
 import { getSnakeOrder, getCurrentPick, getAutoPick } from './draftLogic';
 import { applyTheme } from './draftTemplates';
 
@@ -57,6 +58,15 @@ export function DraftProvider({ draftId, children }) {
     const user = { ownerId, name: draftState.owners[ownerId].name, pin };
     setCurrentUser(user);
     sessionStorage.setItem('draftUser', JSON.stringify(user));
+    // Save pool identity for dashboard
+    const config = draftState.config || {};
+    saveMyPool(draftId, {
+      name: config.name || draftId,
+      ownerId,
+      ownerName: draftState.owners[ownerId].name,
+      sport: config.sport || '',
+      templateId: config.templateId || ''
+    });
     return { success: true };
   }, [draftState]);
 
