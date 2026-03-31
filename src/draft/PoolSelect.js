@@ -91,7 +91,7 @@ function PoolSelect({ onSelectPool, onCreateNew, onBack }) {
     setError('');
     setChecking(true);
     try {
-      const draftId = poolCode.trim().replace(/\s+/g, '-');
+      const draftId = poolCode.trim().replace(/[\u2014\u2013]/g, '-').replace(/\s+/g, '-');
       const { getDraftExists } = await import('../firebase');
       const config = await getDraftExists(draftId);
       if (config) {

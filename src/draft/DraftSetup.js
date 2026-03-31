@@ -75,9 +75,11 @@ function DraftSetup({ onDraftCreated }) {
     setError('');
 
     try {
-      const prefix = draftName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').replace(/-+/g, '-').replace(/^-|-$/g, '').slice(0, 12);
-      const suffix = Math.random().toString(36).substring(2, 6).toUpperCase();
-      const draftId = `${prefix}-${suffix}`;
+      // Simple 6-char code: easy to type, easy to share
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no I/O/1/0 to avoid confusion
+      let code = '';
+      for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+      const draftId = code;
 
       // Create empty owner slots — people claim them when they join
       const ownersMap = {};
