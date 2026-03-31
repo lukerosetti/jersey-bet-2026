@@ -1,9 +1,10 @@
 import React from 'react';
+import { getPlayerData } from './draftUtils';
 
 function DraftGrades({ owners, picks, playerData }) {
   const ownerIds = Object.keys(owners);
 
-  const getOwgr = (name) => playerData?.[name]?.owgr || 99;
+  const getOwgr = (name) => getPlayerData(playerData, name)?.owgr || 99;
 
   const grades = ownerIds.map(ownerId => {
     const owner = owners[ownerId];

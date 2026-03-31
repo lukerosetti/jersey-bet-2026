@@ -1,14 +1,13 @@
 import React from 'react';
+import { getPlayerData, getFlag as getFlagEmoji } from './draftUtils';
 
 function DraftBoardGrid({ picks, owners, config, playerData }) {
   const ownerIds = config.draftOrder || Object.keys(owners);
   const rosterSize = config.rosterSize || 10;
 
   const getFlag = (playerName) => {
-    const data = playerData?.[playerName];
-    if (!data?.country) return '';
-    const code = data.country.toUpperCase();
-    return String.fromCodePoint(...[...code].map(c => 0x1F1E6 + c.charCodeAt(0) - 65));
+    const data = getPlayerData(playerData, playerName);
+    return getFlagEmoji(data?.country);
   };
 
   // Build grid: rows = rounds, cols = owners

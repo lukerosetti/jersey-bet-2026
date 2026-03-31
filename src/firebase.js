@@ -18,12 +18,24 @@ const db = getDatabase(app);
 
 // Create a new draft
 // Expects: { config: {...}, owners: {...}, availablePlayers: [...] }
+// Sanitize keys for Firebase (no . # $ / [ ])
+const sanitizeKey = (key) => key.replace(/[.#$/\[\]]/g, '_');
+
 export async function createDraft(draftId, data) {
+  // Sanitize playerData keys (names like "J.J. Spaun" have dots)
+  let sanitizedPlayerData = null;
+  if (data.playerData) {
+    sanitizedPlayerData = {};
+    Object.entries(data.playerData).forEach(([name, val]) => {
+      sanitizedPlayerData[sanitizeKey(name)] = { ...val, originalName: name };
+    });
+  }
+
   await set(ref(db, `drafts/${draftId}`), {
     config: data.config || {},
     owners: data.owners || {},
     availablePlayers: data.availablePlayers || [],
-    playerData: data.playerData || null,
+    playerData: sanitizedPlayerData,
     picks: [],
     currentPick: null,
     createdAt: Date.now()

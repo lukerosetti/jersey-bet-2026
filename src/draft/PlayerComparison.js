@@ -1,9 +1,10 @@
 import React from 'react';
 import { getPlayerStats } from './playerStats';
+import { getPlayerData } from './draftUtils';
 
 function PlayerComparison({ player1, player2, playerData, onClose }) {
-  const data1 = playerData?.[player1] || {};
-  const data2 = playerData?.[player2] || {};
+  const data1 = getPlayerData(playerData, player1);
+  const data2 = getPlayerData(playerData, player2);
   const stats1 = getPlayerStats(player1);
   const stats2 = getPlayerStats(player2);
 

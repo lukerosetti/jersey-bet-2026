@@ -1,10 +1,11 @@
 import React from 'react';
 import { getPlayerStats } from './playerStats';
+import { getPlayerData, getFlag as getFlagEmoji } from './draftUtils';
 
 function PlayerModal({ player, playerData, isMyTurn, onDraft, onClose, owners, picks, onAddToQueue, isQueued, onCompare, isComparing }) {
-  const data = playerData?.[player] || {};
+  const data = getPlayerData(playerData, player);
   const stats = getPlayerStats(player);
-  const flag = getFlag(data.country);
+  const flag = getFlagEmoji(data.country);
   const owgr = data.owgr || '—';
 
   const pickInfo = picks?.find(p => p.player === player);

@@ -6,6 +6,7 @@ import DraftChat from './DraftChat';
 import PickReactions from './PickReactions';
 import { useTurnAlert, useTimerWarning } from './useTurnAlert';
 import DraftBoardGrid from './DraftBoardGrid';
+import * as pdUtils from './draftUtils';
 import PlayerComparison from './PlayerComparison';
 import DraftGrades from './DraftGrades';
 import DraftOrderReveal from './DraftOrderReveal';
@@ -57,19 +58,11 @@ function SnakeDraft() {
   // Remove drafted players from queue
   const activeQueue = queue.filter(p => available.includes(p));
 
-  // Convert country code to flag emoji
-  const getFlag = (playerName) => {
-    const data = playerData[playerName];
-    if (!data?.country) return '';
-    const code = data.country.toUpperCase();
-    return String.fromCodePoint(...[...code].map(c => 0x1F1E6 + c.charCodeAt(0) - 65));
-  };
-  const getOwgr = (playerName) => playerData[playerName]?.owgr || '';
-  const getHeadshotUrl = (playerName) => {
-    const data = playerData[playerName];
-    if (data?.espnId) return `https://a.espncdn.com/i/headshots/golf/players/full/${data.espnId}.png`;
-    return null;
-  };
+  // Player data helpers (sanitized Firebase key lookups)
+  const _pd = (name) => pdUtils.getPlayerData(playerData, name);
+  const getFlag = (name) => pdUtils.getFlag(_pd(name)?.country);
+  const getOwgr = (name) => _pd(name)?.owgr || '';
+  const getHeadshotUrl = (name) => pdUtils.getHeadshotUrl(playerData, name);
 
   const ownerIds = config.draftOrder || Object.keys(owners);
   const snakeOrder = getSnakeOrder(ownerIds, config.rosterSize || 10);
@@ -84,7 +77,7 @@ function SnakeDraft() {
 
   // Feature #5: Value highlight — player ranked higher than current pick position
   const isValuePick = (playerName) => {
-    const owgr = playerData[playerName]?.owgr;
+    const owgr = _pd(playerName)?.owgr;
     if (!owgr) return false;
     return owgr < picks.length + 1; // OWGR better than pick number = value
   };
