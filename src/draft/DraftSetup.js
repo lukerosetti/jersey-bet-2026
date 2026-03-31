@@ -151,7 +151,7 @@ function DraftSetup({ onDraftCreated }) {
 
   const handleShare = () => {
     if (navigator.share) {
-      navigator.share({ title: draftName, text: shareText }).catch(() => {});
+      navigator.share({ text: shareText }).catch(() => {});
     } else {
       handleCopy();
     }
