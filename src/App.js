@@ -153,7 +153,7 @@ function App() {
     if (coolStuffSubView === 'graveyard') return <><button className="back-btn" onClick={() => setCoolStuffSubView(null)}>← Back</button><Graveyard liveGames={liveGames} playInWinners={playInWinners} customizations={customizations} resolvedMap={resolvedAll} /></>;
     if (coolStuffSubView === 'h2h') return <><button className="back-btn" onClick={() => setCoolStuffSubView(null)}>← Back</button><HeadToHead liveGames={liveGames} playInWinners={playInWinners} customizations={customizations} resolvedMap={resolvedAll} /></>;
     if (coolStuffSubView === 'history') return <><button className="back-btn" onClick={() => setCoolStuffSubView(null)}>← Back</button><BracketHistory liveGames={liveGames} playInWinners={playInWinners} customizations={customizations} resolvedMap={resolvedAll} /></>;
-    return <OtherCoolStuff liveGames={liveGames} playInWinners={playInWinners} setSubView={setCoolStuffSubView} resolvedMap={resolvedAll} onOpenDraft={() => setAppMode('draft')} />;
+    return <OtherCoolStuff liveGames={liveGames} playInWinners={playInWinners} setSubView={setCoolStuffSubView} resolvedMap={resolvedAll} onOpenDraft={() => { removeTheme(); setAppMode('draft'); }} />;
   };
 
   // Draft mode rendering
@@ -175,7 +175,7 @@ function App() {
 
     if (!activeDraftId) {
       return (
-        <div className="app">
+        <div className="app" style={{ background: 'var(--bg, #0a0f14)' }}>
           <PoolSelect onSelectPool={enterDraft} onCreateNew={() => setShowDraftSetup(true)} onBack={() => { removeTheme(); setAppMode('tournament'); }} />
         </div>
       );
