@@ -203,14 +203,16 @@ function App() {
       <div className={`ptr-indicator ${ptrVisible ? 'visible' : ''} ${ptrRefreshing ? 'refreshing' : ''}`}><div className="ptr-spinner"></div></div>
       <div className="glass-header-bar" />
       <header className="header">
-        <div><img src="/logo.png" alt="Jersey Bets" className="header-logo" /><div className="header-sub">{config.name.toUpperCase()}</div></div>
+        <div className="header-left">
+          <img src="/logo.png" alt="Jersey Bets" className="header-logo" />
+        </div>
         <div className="header-right">
-          <TournamentSwitcher activeTournamentId={activeTournamentId} onSwitch={switchTournament} />
           <button className="settings-btn" onClick={() => setShowSearch(true)}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
           <button className="settings-btn" onClick={() => setShowSettings(true)}>⚙</button>
           <div className="user-avatar" style={{ background: getUserColor(currentUser) }}>{getUserInitials(currentUser)}</div>
         </div>
       </header>
+      <TournamentSwitcher activeTournamentId={activeTournamentId} onSwitch={switchTournament} />
       <nav className="nav-tabs">
         <button className={`nav-tab ${currentTab === 'regions' ? 'active' : ''}`} onClick={() => { setCurrentTab('regions'); setCoolStuffSubView(null); }}>Regions{hasLiveGames && <span className="live-dot"></span>}</button>
         <button className={`nav-tab ${currentTab === 'schedule' ? 'active' : ''}`} onClick={() => { setCurrentTab('schedule'); setCoolStuffSubView(null); }}>Schedule</button>

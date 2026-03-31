@@ -32,11 +32,12 @@ function TournamentSwitcher({ activeTournamentId, onSwitch }) {
   };
 
   return (
-    <div className="tournament-switcher">
-      <button className="switcher-btn" onClick={() => setShowDropdown(!showDropdown)}>
-        <span className="switcher-label">{active?.shortLabel || 'NCAA'}</span>
-        <span className="switcher-arrow">{showDropdown ? '\u25B2' : '\u25BC'}</span>
-      </button>
+    <div className="tournament-bar">
+      <div className="tournament-bar-inner" onClick={() => setShowDropdown(!showDropdown)}>
+        <span className="tournament-bar-sport">{active?.sport === 'golf' ? 'GOLF' : active?.sport === 'basketball' ? 'NCAAB' : active?.sport?.toUpperCase()}</span>
+        <span className="tournament-bar-name">{active?.label || 'Tournament'}</span>
+        <span className="tournament-bar-arrow">{showDropdown ? '\u25B2' : '\u25BC'}</span>
+      </div>
       {showDropdown && (
         <>
           <div className="switcher-overlay" onClick={() => { setShowDropdown(false); setConfirmDelete(null); }} />

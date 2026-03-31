@@ -11,13 +11,15 @@
   --yellow: #facc15;
 }
 
-/* Tournament Switcher */
-.tournament-switcher { position: relative; }
-.switcher-btn { display: flex; align-items: center; gap: 4px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--card); color: var(--cyan); font-size: 11px; font-weight: 700; cursor: pointer; letter-spacing: 0.5px; transition: border-color 0.2s; }
-.switcher-btn:hover { border-color: var(--cyan); }
-.switcher-arrow { font-size: 8px; color: var(--text2); }
+/* Tournament Switcher Bar */
+.tournament-bar { position: relative; margin-bottom: 8px; }
+.tournament-bar-inner { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--card); border: 1px solid var(--border); border-radius: 10px; cursor: pointer; transition: border-color 0.2s; }
+.tournament-bar-inner:active { border-color: var(--cyan); }
+.tournament-bar-sport { font-size: 9px; font-weight: 800; color: #000; background: var(--cyan); padding: 2px 6px; border-radius: 4px; letter-spacing: 0.5px; flex-shrink: 0; }
+.tournament-bar-name { font-size: 13px; font-weight: 600; color: var(--text); flex: 1; }
+.tournament-bar-arrow { font-size: 8px; color: var(--text2); flex-shrink: 0; }
 .switcher-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 99; }
-.switcher-dropdown { position: absolute; top: 100%; right: 0; margin-top: 6px; min-width: 260px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 8px; z-index: 100; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+.switcher-dropdown { position: absolute; top: 100%; left: 0; right: 0; margin-top: 4px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 8px; z-index: 100; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
 .switcher-title { font-size: 10px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; padding: 6px 10px 8px; }
 .switcher-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border-radius: 8px; cursor: pointer; transition: background 0.15s; }
 .switcher-item:hover { background: var(--bg); }
@@ -61,10 +63,11 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 }
 
 /* Header */
-.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.header-left { display: flex; align-items: center; }
 .header h1 { font-size: 28px; font-weight: 700; background: linear-gradient(135deg, var(--cyan), #67e8f9); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-.header-logo { height: 96px; width: auto; display: block; margin-bottom: 2px; }
-.header-sub { font-size: 11px; color: var(--text2); text-transform: uppercase; letter-spacing: 1px; }
+.header-logo { height: 56px; width: auto; display: block; }
+.header-sub { font-size: 9px; color: var(--text2); text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
 .user-avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; cursor: pointer; }
 
 /* Navigation */
