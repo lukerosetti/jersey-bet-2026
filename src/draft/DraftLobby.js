@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useDraft } from './DraftContext';
 
 function DraftLobby() {
-  const { draftState, currentUser, startDraft, isCommissioner, logout, updateConfig } = useDraft();
+  const { draftState, currentUser, startDraft, isCommissioner, logout, updateConfig, draftId } = useDraft();
+  const [copied, setCopied] = useState(false);
   const config = draftState?.config || {};
   const owners = draftState?.owners || {};
   const ownerList = Object.entries(owners).map(([id, data]) => ({ id, ...data }));
@@ -83,6 +84,16 @@ function DraftLobby() {
       <div className="draft-lobby-card">
         <h2>{config.name || 'Draft Lobby'}</h2>
         <p className="draft-subtitle">{draftTypeLabel} &middot; {config.rosterSize || '?'} picks per person &middot; {config.timerSeconds || 120}s timer</p>
+
+        {draftId && (
+          <div className="lobby-pool-code" onClick={() => {
+            navigator.clipboard?.writeText(draftId).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
+          }}>
+            <span className="lobby-pool-label">Pool Code</span>
+            <span className="lobby-pool-value">{draftId}</span>
+            <span className="lobby-pool-copy">{copied ? 'Copied!' : 'Tap to copy'}</span>
+          </div>
+        )}
 
         {/* Scheduled draft countdown */}
         {config.scheduledTime && countdown !== null && (

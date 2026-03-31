@@ -445,6 +445,13 @@
 .lobby-countdown-time { font-size: 36px; font-weight: 900; color: var(--cyan); letter-spacing: 2px; }
 .lobby-countdown-date { font-size: 12px; color: var(--text2); margin-top: 4px; }
 .lobby-countdown-clear { margin-top: 10px; background: none; border: 1px solid var(--border); color: var(--text2); font-size: 11px; padding: 4px 12px; border-radius: 6px; cursor: pointer; }
+
+/* Pool Code Display */
+.lobby-pool-code { display: flex; flex-direction: column; align-items: center; gap: 2px; margin: 12px 0 16px; padding: 12px; background: var(--bg); border: 1px dashed var(--border); border-radius: 10px; cursor: pointer; transition: border-color 0.2s; }
+.lobby-pool-code:active { border-color: var(--cyan); }
+.lobby-pool-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--text2); }
+.lobby-pool-value { font-size: 22px; font-weight: 800; color: var(--cyan); letter-spacing: 2px; font-family: monospace; }
+.lobby-pool-copy { font-size: 10px; color: var(--text2); }
 .lobby-start-options { display: flex; flex-direction: column; gap: 8px; width: 100%; }
 .draft-schedule-btn { padding: 12px; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: var(--bg); color: var(--text); }
 .lobby-scheduler { display: flex; flex-direction: column; gap: 10px; width: 100%; }
