@@ -1,9 +1,9 @@
 /* ── Draft System Styles ────────────────────────────────── */
 
 /* Login */
-.draft-login { display: flex; justify-content: center; align-items: center; min-height: 80vh; padding: 16px; }
-.draft-login-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 32px 24px; max-width: 400px; width: 100%; text-align: center; }
-.draft-login-card h2 { font-size: 24px; margin: 12px 0 4px; }
+.draft-login { display: flex; justify-content: center; align-items: flex-start; min-height: 80vh; padding: 24px 16px; padding-top: 10vh; }
+.draft-login-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 32px 20px; max-width: 400px; width: 100%; text-align: center; }
+.draft-login-card h2 { font-size: 22px; margin: 12px 0 4px; }
 .draft-subtitle { color: var(--text2); font-size: 13px; margin-bottom: 24px; }
 .draft-logo { margin-bottom: 8px; }
 .draft-field { margin-bottom: 20px; text-align: left; }
@@ -462,8 +462,8 @@
 
 /* Claim slot flow */
 .draft-claim-row { display: flex; gap: 8px; }
-.draft-claim-row .draft-input { flex: 1; }
-.draft-claim-row .draft-submit-btn { flex-shrink: 0; padding: 10px 20px; }
+.draft-claim-row .draft-input { flex: 1; padding: 14px 16px; font-size: 16px; }
+.draft-claim-row .draft-submit-btn { flex-shrink: 0; width: auto; padding: 14px 24px; font-size: 15px; }
 .draft-divider { text-align: center; margin: 12px 0; position: relative; }
 .draft-divider::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: var(--border); }
 .draft-divider span { position: relative; background: var(--card); padding: 0 12px; font-size: 12px; color: var(--text2); }

@@ -46,7 +46,7 @@ function DraftSetup({ onDraftCreated }) {
     if (!draftName.trim()) { setError('Enter a draft name'); return; }
     setError('');
     if (selectedTemplate) {
-      setRosterSize(getSuggestedRosterSize(selectedTemplate, ownerCount));
+      // Don't override rosterSize here — user may have changed it manually
       setStep(3); // skip to confirm
     } else {
       setStep(2); // player entry for custom
