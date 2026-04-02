@@ -31,24 +31,35 @@ export function DraftProvider({ draftId, children }) {
     }
   }, [draftState]);
 
-  // Set owner online status — only after draftState loads AND owner is verified
+  // Set owner online status — run ONCE when user logs in, not on every draftState change
+  const onlineSet = useRef(false);
   useEffect(() => {
-    if (!draftId || !currentUser || !draftState?.owners) return;
-    // Validate that this owner ID actually exists in this draft
-    if (!draftState.owners[currentUser.ownerId]) {
-      // Stale session from a different draft — clear it
-      setCurrentUser(null);
-      sessionStorage.removeItem('draftUser');
+    if (!draftId || !currentUser) {
+      onlineSet.current = false;
       return;
     }
+    // Only set online once per login session
+    if (onlineSet.current) return;
+    onlineSet.current = true;
     setOwnerOnline(draftId, currentUser.ownerId, true);
     const handleBeforeUnload = () => setOwnerOnline(draftId, currentUser.ownerId, false);
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => {
-      handleBeforeUnload();
+      setOwnerOnline(draftId, currentUser.ownerId, false);
       window.removeEventListener('beforeunload', handleBeforeUnload);
+      onlineSet.current = false;
     };
-  }, [draftId, currentUser, draftState?.owners]);
+  }, [draftId, currentUser?.ownerId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Validate current user still exists in this draft (handles stale sessions)
+  useEffect(() => {
+    if (!currentUser || !draftState?.owners) return;
+    if (!draftState.owners[currentUser.ownerId]) {
+      setCurrentUser(null);
+      sessionStorage.removeItem('draftUser');
+      onlineSet.current = false;
+    }
+  }, [currentUser, draftState?.owners]);
 
   // Restore session from sessionStorage
   useEffect(() => {
