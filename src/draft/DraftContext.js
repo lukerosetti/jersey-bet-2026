@@ -31,11 +31,11 @@ export function DraftProvider({ draftId, children }) {
     }
   }, [draftState]);
 
-  // Set owner online status — only if this owner exists in the current draft
+  // Set owner online status — only after draftState loads AND owner is verified
   useEffect(() => {
-    if (!draftId || !currentUser) return;
+    if (!draftId || !currentUser || !draftState?.owners) return;
     // Validate that this owner ID actually exists in this draft
-    if (draftState?.owners && !draftState.owners[currentUser.ownerId]) {
+    if (!draftState.owners[currentUser.ownerId]) {
       // Stale session from a different draft — clear it
       setCurrentUser(null);
       sessionStorage.removeItem('draftUser');
@@ -48,7 +48,7 @@ export function DraftProvider({ draftId, children }) {
       handleBeforeUnload();
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [draftId, currentUser]);
+  }, [draftId, currentUser, draftState?.owners]);
 
   // Restore session from sessionStorage
   useEffect(() => {
