@@ -49,7 +49,7 @@ export function DraftProvider({ draftId, children }) {
       window.removeEventListener('beforeunload', handleBeforeUnload);
       onlineSet.current = false;
     };
-  }, [draftId, currentUser?.ownerId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [draftId, currentUser?.ownerId]);
 
   // Validate current user still exists in this draft (handles stale sessions)
   useEffect(() => {
@@ -195,31 +195,40 @@ export function DraftProvider({ draftId, children }) {
 
   // Start the draft (commissioner only)
   const startDraft = useCallback(async () => {
-    if (!draftState) return;
+    if (!draftState) { console.error('startDraft: no draftState'); return; }
     const config = draftState.config;
     const owners = draftState.owners || {};
 
     // Build draft order from claimed owners (randomized)
     const claimedIds = Object.keys(owners).filter(id => owners[id]?.claimed || owners[id]?.name);
-    if (claimedIds.length < 2) return; // Need at least 2 players
+    console.log('startDraft: claimedIds =', claimedIds);
+    if (claimedIds.length < 1) { console.error('startDraft: no claimed owners'); return; }
 
     // Randomize the draft order
     const shuffled = [...claimedIds].sort(() => Math.random() - 0.5);
-    const rosterSize = config.rosterSize || 10;
+    const rosterSize = parseInt(config.rosterSize) || 10;
     const snakeOrder = getSnakeOrder(shuffled, rosterSize);
     const firstPick = snakeOrder[0];
-    if (!firstPick) return;
+    if (!firstPick) { console.error('startDraft: no firstPick from snakeOrder'); return; }
 
-    await updateDraftConfig(draftId, {
-      status: 'active',
-      draftOrder: shuffled
-    });
-    await updateCurrentPick(draftId, {
-      round: firstPick.round,
-      pickIndex: firstPick.pickIndex,
-      ownerId: firstPick.ownerId,
-      deadline: Date.now() + ((config.timerSeconds || 120) * 1000)
-    });
+    console.log('startDraft: writing status=active, draftOrder=', shuffled, 'firstPick=', firstPick);
+
+    // Write config and currentPick in sequence to ensure both land
+    try {
+      await updateDraftConfig(draftId, {
+        status: 'active',
+        draftOrder: shuffled
+      });
+      await updateCurrentPick(draftId, {
+        round: firstPick.round,
+        pickIndex: firstPick.pickIndex,
+        ownerId: firstPick.ownerId,
+        deadline: Date.now() + ((config.timerSeconds || 120) * 1000)
+      });
+      console.log('startDraft: success');
+    } catch (err) {
+      console.error('startDraft: Firebase write failed', err);
+    }
   }, [draftState, draftId]);
 
   // Upload draft (commissioner)

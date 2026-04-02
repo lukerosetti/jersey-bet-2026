@@ -94,7 +94,7 @@ function SnakeDraft() {
 
   // Pick timer countdown + auto-pick for offline owners
   useEffect(() => {
-    if (!currentPick?.deadline) { setTimeLeft(null); return; }
+    if (!currentPick?.deadline || showReveal) { setTimeLeft(null); return; }
     const tick = () => {
       const remaining = Math.max(0, Math.ceil((currentPick.deadline - Date.now()) / 1000));
       setTimeLeft(remaining);
