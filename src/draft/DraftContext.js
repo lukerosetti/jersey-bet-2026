@@ -31,9 +31,16 @@ export function DraftProvider({ draftId, children }) {
     }
   }, [draftState]);
 
-  // Set owner online status
+  // Set owner online status — only if this owner exists in the current draft
   useEffect(() => {
     if (!draftId || !currentUser) return;
+    // Validate that this owner ID actually exists in this draft
+    if (draftState?.owners && !draftState.owners[currentUser.ownerId]) {
+      // Stale session from a different draft — clear it
+      setCurrentUser(null);
+      sessionStorage.removeItem('draftUser');
+      return;
+    }
     setOwnerOnline(draftId, currentUser.ownerId, true);
     const handleBeforeUnload = () => setOwnerOnline(draftId, currentUser.ownerId, false);
     window.addEventListener('beforeunload', handleBeforeUnload);
