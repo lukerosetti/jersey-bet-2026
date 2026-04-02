@@ -113,10 +113,10 @@ function DraftSetup({ onDraftCreated }) {
         config: {
           name: draftName,
           type: draftType,
-          rosterSize,
-          timerSeconds,
-          ownerSlots: ownerCount,
-          commissioner: null, // First person to join becomes commissioner
+          rosterSize: Number(rosterSize),
+          timerSeconds: Number(timerSeconds),
+          ownerSlots: Number(ownerCount),
+          commissioner: 'slot_1', // Creator claims slot_1 and is always commissioner
           draftOrder: [], // Set when all slots are claimed
           status: 'waiting',
           tournamentId: draftId,
