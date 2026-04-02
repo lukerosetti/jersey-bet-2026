@@ -186,11 +186,23 @@ export function DraftProvider({ draftId, children }) {
   const startDraft = useCallback(async () => {
     if (!draftState) return;
     const config = draftState.config;
-    const ownerIds = config.draftOrder || Object.keys(draftState.owners);
-    const snakeOrder = getSnakeOrder(ownerIds, config.rosterSize || 10);
-    const firstPick = snakeOrder[0];
+    const owners = draftState.owners || {};
 
-    await updateDraftConfig(draftId, { status: 'active' });
+    // Build draft order from claimed owners (randomized)
+    const claimedIds = Object.keys(owners).filter(id => owners[id]?.claimed || owners[id]?.name);
+    if (claimedIds.length < 2) return; // Need at least 2 players
+
+    // Randomize the draft order
+    const shuffled = [...claimedIds].sort(() => Math.random() - 0.5);
+    const rosterSize = config.rosterSize || 10;
+    const snakeOrder = getSnakeOrder(shuffled, rosterSize);
+    const firstPick = snakeOrder[0];
+    if (!firstPick) return;
+
+    await updateDraftConfig(draftId, {
+      status: 'active',
+      draftOrder: shuffled
+    });
     await updateCurrentPick(draftId, {
       round: firstPick.round,
       pickIndex: firstPick.pickIndex,
