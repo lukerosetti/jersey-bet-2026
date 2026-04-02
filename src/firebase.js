@@ -92,7 +92,14 @@ export async function updateCurrentPick(draftId, currentPick) {
 
 // Mark owner as online/offline
 export async function setOwnerOnline(draftId, ownerId, isOnline) {
-  await update(ref(db, `drafts/${draftId}/owners/${ownerId}`), { online: isOnline, lastSeen: Date.now() });
+  const updates = { online: isOnline, lastSeen: Date.now() };
+  // Clear AFK flag when owner comes back online
+  if (isOnline) updates.afk = false;
+  await update(ref(db, `drafts/${draftId}/owners/${ownerId}`), updates);
+}
+
+export async function setOwnerAFK(draftId, ownerId, isAfk) {
+  await update(ref(db, `drafts/${draftId}/owners/${ownerId}`), { afk: isAfk });
 }
 
 // Upload a completed draft (commissioner manual entry)

@@ -56,18 +56,18 @@ export function DraftProvider({ draftId, children }) {
     if (!currentUser || !draftState?.owners) return;
     if (!draftState.owners[currentUser.ownerId]) {
       setCurrentUser(null);
-      sessionStorage.removeItem('draftUser');
+      localStorage.removeItem(`draftUser_${draftId}`);
       onlineSet.current = false;
     }
   }, [currentUser, draftState?.owners]);
 
-  // Restore session from sessionStorage
+  // Restore session from localStorage (persists across tab/browser close for PWA)
   useEffect(() => {
-    const saved = sessionStorage.getItem('draftUser');
-    if (saved) {
+    const saved = localStorage.getItem(`draftUser_${draftId}`);
+    if (saved && !currentUser) {
       try { setCurrentUser(JSON.parse(saved)); } catch {}
     }
-  }, []);
+  }, [draftId]);
 
   // Login with PIN
   const login = useCallback((ownerId, pin) => {
@@ -77,7 +77,7 @@ export function DraftProvider({ draftId, children }) {
     if (ownerPin && ownerPin !== pin) return { success: false, error: 'Wrong PIN' };
     const user = { ownerId, name: draftState.owners[ownerId].name, pin };
     setCurrentUser(user);
-    sessionStorage.setItem('draftUser', JSON.stringify(user));
+    localStorage.setItem(`draftUser_${draftId}`, JSON.stringify(user));
     // Save pool identity for dashboard
     const config = draftState.config || {};
     saveMyPool(draftId, {
@@ -117,14 +117,14 @@ export function DraftProvider({ draftId, children }) {
     // Auto-login after claiming
     const user = { ownerId: slotId, name, pin: '' };
     setCurrentUser(user);
-    sessionStorage.setItem('draftUser', JSON.stringify(user));
+    localStorage.setItem(`draftUser_${draftId}`, JSON.stringify(user));
     saveMyPool(draftId, { name: config.name || draftId, ownerId: slotId, ownerName: name, sport: config.sport || '', templateId: config.templateId || '' });
   }, [draftId, draftState]);
 
   const logout = useCallback(() => {
     if (currentUser && draftId) setOwnerOnline(draftId, currentUser.ownerId, false);
     setCurrentUser(null);
-    sessionStorage.removeItem('draftUser');
+    localStorage.removeItem(`draftUser_${draftId}`);
   }, [currentUser, draftId]);
 
   // Make a pick (snake draft)

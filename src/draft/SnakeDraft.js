@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useDraft } from './DraftContext';
+import { setOwnerAFK } from '../firebase';
 import { getSnakeOrder, getCurrentPick, getUpcomingPicks, getDraftProgress } from './draftLogic';
 import PlayerModal from './PlayerModal';
 import DraftChat from './DraftChat';
@@ -89,10 +90,43 @@ function SnakeDraft() {
     }
   }, [config.status, picks.length, ownerIds.length]);
 
-  // Check if the current picker is offline
+  // Check if the current picker is offline or AFK
   const currentPickerOnline = currentPickInfo ? owners[currentPickInfo.ownerId]?.online : false;
+  const currentPickerAfk = currentPickInfo ? owners[currentPickInfo.ownerId]?.afk : false;
 
-  // Pick timer countdown + auto-pick for offline owners
+  // AFK auto-pick: if it's an AFK player's turn, commissioner auto-picks immediately
+  const afkPickedRef = useRef(null);
+  useEffect(() => {
+    if (!currentPickInfo || showReveal) return;
+    const pickerId = currentPickInfo.ownerId;
+    if (owners[pickerId]?.afk && isCommissioner && afkPickedRef.current !== picks.length) {
+      // Prevent double-pick with ref
+      afkPickedRef.current = picks.length;
+      autoPick();
+    }
+  }, [currentPickInfo, owners, isCommissioner, showReveal, autoPick, picks.length]);
+
+  // Wake Lock — keep screen awake during draft
+  useEffect(() => {
+    let wakeLock = null;
+    const requestWakeLock = async () => {
+      try {
+        if ('wakeLock' in navigator) {
+          wakeLock = await navigator.wakeLock.request('screen');
+        }
+      } catch {}
+    };
+    requestWakeLock();
+    // Re-acquire on visibility change (iOS drops it when tab switches)
+    const handleVisibility = () => { if (document.visibilityState === 'visible') requestWakeLock(); };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      if (wakeLock) wakeLock.release().catch(() => {});
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, []);
+
+  // Pick timer countdown + auto-pick on timeout
   useEffect(() => {
     if (!currentPick?.deadline || showReveal) { setTimeLeft(null); return; }
     const tick = () => {
@@ -101,14 +135,18 @@ function SnakeDraft() {
 
       if (remaining <= 0) {
         if (isMyTurn) {
-          // Feature #8: Auto-draft from queue instead of BPA
+          // My timer expired — flag myself as AFK and auto-pick
+          setOwnerAFK(draftId, currentUser.ownerId, true).catch(() => {});
           if (activeQueue.length > 0) {
             makeSnakePick(activeQueue[0]);
           } else {
             autoPick();
           }
-        } else if (isCommissioner && !currentPickerOnline) {
-          // Commissioner auto-picks for offline owners
+        } else if (isCommissioner && (!currentPickerOnline || currentPickerAfk)) {
+          // Commissioner auto-picks for offline/AFK owners
+          if (!currentPickerAfk) {
+            setOwnerAFK(draftId, currentPickInfo.ownerId, true).catch(() => {});
+          }
           autoPick();
         }
       }
@@ -116,7 +154,7 @@ function SnakeDraft() {
     tick();
     const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
-  }, [currentPick?.deadline, isMyTurn, isCommissioner, currentPickerOnline, autoPick, makeSnakePick, activeQueue]);
+  }, [currentPick?.deadline, isMyTurn, isCommissioner, currentPickerOnline, currentPickerAfk, autoPick, makeSnakePick, activeQueue, draftId, currentUser, currentPickInfo]);
 
   const handlePick = useCallback((player) => {
     if (!isMyTurn) return;

@@ -172,6 +172,18 @@ function PoolSelect({ onSelectPool, onCreateNew, onBack }) {
           + Create New Draft Pool
         </button>
 
+        {/* LIVE DRAFT - Rejoin Banner */}
+        {myPools.filter(p => poolStatuses[p.id]?.status === 'active').map(pool => (
+          <div key={pool.id} className="rejoin-banner" onClick={() => onSelectPool(pool.id)}>
+            <div className="rejoin-pulse"></div>
+            <div className="rejoin-info">
+              <span className="rejoin-label">LIVE DRAFT</span>
+              <span className="rejoin-name">{pool.name || pool.id}</span>
+            </div>
+            <span className="rejoin-btn">Rejoin</span>
+          </div>
+        ))}
+
         {/* My Pools Dashboard */}
         {myPools.length > 0 && (
           <div className="my-pools">

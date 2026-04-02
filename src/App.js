@@ -39,12 +39,12 @@ import './draft/draft.css';
 function App() {
   // Draft state
   const [appMode, setAppMode] = useState(() => {
-    // Check if we have an active draft session
-    const activeDraft = sessionStorage.getItem('activeDraftId');
+    // Check if we have an active draft session (persists across browser close for PWA)
+    const activeDraft = localStorage.getItem('activeDraftId');
     if (activeDraft) return 'draft';
     return 'tournament'; // default to tournament mode
   });
-  const [activeDraftId, setActiveDraftId] = useState(() => sessionStorage.getItem('activeDraftId') || null);
+  const [activeDraftId, setActiveDraftId] = useState(() => localStorage.getItem('activeDraftId') || null);
   const [showDraftSetup, setShowDraftSetup] = useState(false);
 
   // Tournament switching
@@ -67,14 +67,14 @@ function App() {
 
   const enterDraft = (draftId) => {
     setActiveDraftId(draftId);
-    sessionStorage.setItem('activeDraftId', draftId);
+    localStorage.setItem('activeDraftId', draftId);
     setAppMode('draft');
     setShowDraftSetup(false);
   };
 
   const exitDraft = (switchToTournamentId) => {
     setActiveDraftId(null);
-    sessionStorage.removeItem('activeDraftId');
+    localStorage.removeItem('activeDraftId');
     if (switchToTournamentId) {
       // Coming from DraftComplete — switch to the new tournament
       switchTournament(switchToTournamentId);

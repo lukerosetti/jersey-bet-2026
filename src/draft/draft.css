@@ -1,5 +1,15 @@
 /* ── Draft System Styles ────────────────────────────────── */
 
+/* Rejoin Banner */
+.rejoin-banner { display: flex; align-items: center; gap: 12px; padding: 14px 16px; margin-bottom: 16px; background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.4); border-radius: 12px; cursor: pointer; animation: rejoinGlow 2s infinite; }
+.rejoin-banner:active { transform: scale(0.98); }
+@keyframes rejoinGlow { 0%, 100% { box-shadow: 0 0 8px rgba(239,68,68,0.2); } 50% { box-shadow: 0 0 16px rgba(239,68,68,0.4); } }
+.rejoin-pulse { width: 10px; height: 10px; border-radius: 50%; background: #ef4444; flex-shrink: 0; animation: pulse 2s infinite; }
+.rejoin-info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.rejoin-label { font-size: 10px; font-weight: 800; color: #ef4444; text-transform: uppercase; letter-spacing: 1px; }
+.rejoin-name { font-size: 14px; font-weight: 600; color: var(--text); }
+.rejoin-btn { padding: 6px 16px; border-radius: 8px; background: #ef4444; color: white; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+
 /* Login */
 .draft-login { display: flex; justify-content: center; align-items: flex-start; min-height: 80vh; padding: 24px 16px; padding-top: 10vh; }
 .draft-login-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 32px 20px; max-width: 400px; width: 100%; text-align: center; }
