@@ -30,7 +30,7 @@ function DraftOrderReveal({ owners, draftOrder, onComplete }) {
     }, 2000);
 
     return () => { clearInterval(interval); clearTimeout(timer); };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // Run once on mount
 
   // Reveal each position one by one
   useEffect(() => {
