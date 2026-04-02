@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { createDraft } from '../firebase';
 import { getTemplates, getTemplate, getSuggestedRosterSize, applyTheme } from './draftTemplates';
 
-function DraftSetup({ onDraftCreated }) {
+function DraftSetup({ onDraftCreated, currentUser }) {
   const [step, setStep] = useState(0);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [draftName, setDraftName] = useState('');
@@ -10,6 +10,7 @@ function DraftSetup({ onDraftCreated }) {
   const [rosterSize, setRosterSize] = useState(5);
   const [timerSeconds, setTimerSeconds] = useState(120);
   const [ownerCount, setOwnerCount] = useState(4);
+  const [creatorName, setCreatorName] = useState('');
   const [playersText, setPlayersText] = useState('');
   const [creating, setCreating] = useState(false);
   const [createdPoolCode, setCreatedPoolCode] = useState(null);
@@ -81,18 +82,19 @@ function DraftSetup({ onDraftCreated }) {
       for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
       const draftId = code;
 
-      // Create empty owner slots — people claim them when they join
+      // Create owner slots — slot_1 is pre-claimed by the creator
       const ownersMap = {};
       for (let i = 0; i < ownerCount; i++) {
         const slotId = `slot_${i + 1}`;
+        const isCreator = i === 0 && currentUser;
         ownersMap[slotId] = {
-          name: '',
+          name: isCreator ? currentUser.name : '',
           pin: '',
-          color: defaultColors[i % defaultColors.length],
-          initials: '',
+          color: isCreator ? currentUser.color : defaultColors[i % defaultColors.length],
+          initials: isCreator ? (currentUser.initials || currentUser.name.substring(0, 2).toUpperCase()) : '',
           teams: [],
           online: false,
-          claimed: false
+          claimed: isCreator ? true : false
         };
       }
 

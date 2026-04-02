@@ -20,6 +20,7 @@ import HeadToHead from './views/shared/HeadToHead';
 import BracketHistory from './views/shared/BracketHistory';
 import OtherCoolStuff from './views/shared/OtherCoolStuff';
 import Settings from './views/shared/Settings';
+import ProfileSelect from './views/shared/ProfileSelect';
 
 // Bracket components
 import RegionsView from './views/bracket/RegionsView';
@@ -90,7 +91,17 @@ function App() {
       return hasLive ? 'regions' : 'schedule';
     } catch { return 'schedule'; }
   });
-  const [currentUser, setCurrentUser] = useState(owners[0]);
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem('jerseyBetProfile');
+      if (saved) {
+        const profile = JSON.parse(saved);
+        const match = owners.find(o => o.id === profile.id);
+        if (match) return match;
+      }
+    } catch {}
+    return null; // No profile selected yet
+  });
   const [selectedGame, setSelectedGame] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
@@ -139,8 +150,8 @@ function App() {
     }
   }, [selectedGame, showSettings, showSearch]);
 
-  const getUserColor = (user) => customizations[user.id]?.color || user.color;
-  const getUserInitials = (user) => customizations[user.id]?.initials || user.initials;
+  const getUserColor = (user) => user ? (customizations[user.id]?.color || user.color) : '#555';
+  const getUserInitials = (user) => user ? (customizations[user.id]?.initials || user.initials) : '??';
 
   const handleGameClick = (game, region) => setSelectedGame({ ...game, region });
   const resolvedAll = useMemo(() => buildResolvedGames(liveGames, playInWinners), [liveGames, playInWinners]);
@@ -156,6 +167,15 @@ function App() {
     return <OtherCoolStuff liveGames={liveGames} playInWinners={playInWinners} setSubView={setCoolStuffSubView} resolvedMap={resolvedAll} onOpenDraft={() => { removeTheme(); setAppMode('draft'); }} />;
   };
 
+  // Profile selection gate — must pick who you are before using the app
+  if (!currentUser) {
+    return (
+      <div className="app">
+        <ProfileSelect onSelect={(owner) => setCurrentUser(owner)} />
+      </div>
+    );
+  }
+
   // Draft mode rendering
   if (appMode === 'draft' || showDraftSetup) {
     if (showDraftSetup) {
@@ -168,7 +188,7 @@ function App() {
               <button className="settings-btn" onClick={() => setShowDraftSetup(false)}>✕</button>
             </div>
           </header>
-          <DraftSetup onDraftCreated={enterDraft} />
+          <DraftSetup onDraftCreated={enterDraft} currentUser={currentUser} />
         </div>
       );
     }

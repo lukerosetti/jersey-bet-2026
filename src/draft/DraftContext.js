@@ -97,7 +97,11 @@ export function DraftProvider({ draftId, children }) {
       color: existingSlot.color
     });
 
-    // Commissioner is set at creation (slot_1). Don't override.
+    // If no commissioner set yet, or this is slot_1 (creator), claim commissioner
+    const config = draftState.config || {};
+    if (!config.commissioner || slotId === 'slot_1') {
+      await update(dbRef(db, `drafts/${draftId}/config`), { commissioner: slotId });
+    }
 
     // Auto-login after claiming
     const user = { ownerId: slotId, name, pin: '' };

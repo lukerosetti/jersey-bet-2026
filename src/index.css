@@ -48,6 +48,19 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 @keyframes ptrSpin { to { transform: rotate(360deg); } }
 .app { max-width: 500px; margin: 0 auto; padding: 16px; padding-bottom: 80px; padding-top: calc(env(safe-area-inset-top, 0px) + 16px); }
 
+/* Profile Selection */
+.profile-select { display: flex; align-items: center; justify-content: center; min-height: 100vh; min-height: 100dvh; padding: 20px; }
+.profile-select-card { text-align: center; width: 100%; max-width: 360px; }
+.profile-logo { width: 80px; height: 80px; margin-bottom: 12px; }
+.profile-title { font-size: 28px; font-weight: 800; color: var(--text); margin: 0 0 4px; }
+.profile-subtitle { font-size: 14px; color: var(--text2); margin: 0 0 28px; }
+.profile-grid { display: flex; flex-direction: column; gap: 10px; }
+.profile-btn { display: flex; align-items: center; gap: 14px; padding: 14px 18px; border: 1px solid var(--border); border-radius: 12px; background: var(--card); color: var(--text); font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.profile-btn:hover { border-color: var(--cyan); background: rgba(34,211,238,0.06); }
+.profile-btn:active { transform: scale(0.98); }
+.profile-avatar { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; color: #000; flex-shrink: 0; }
+.profile-name { flex: 1; text-align: left; }
+
 /* Glass Header Bar - fills the iOS status bar area */
 .glass-header-bar {
   position: fixed;
