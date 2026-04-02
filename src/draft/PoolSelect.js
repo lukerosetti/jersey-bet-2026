@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { listDrafts } from '../firebase';
 // getDraftExists imported dynamically in handleJoin
 
 // localStorage key for saved pools
