@@ -65,7 +65,7 @@ function SnakeDraft() {
   const getOwgr = (name) => _pd(name)?.owgr || '';
   const getHeadshotUrl = (name) => pdUtils.getHeadshotUrl(playerData, name);
 
-  const ownerIds = config.draftOrder || Object.keys(owners);
+  const ownerIds = config.draftOrder?.length > 0 ? config.draftOrder : Object.keys(owners).filter(id => owners[id]?.claimed || owners[id]?.name);
   const snakeOrder = getSnakeOrder(ownerIds, config.rosterSize || 10);
   const currentPickInfo = getCurrentPick(snakeOrder, picks.length);
   const upcoming = getUpcomingPicks(snakeOrder, picks.length, 8);

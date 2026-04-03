@@ -51,23 +51,27 @@ export function DraftProvider({ draftId, children }) {
     };
   }, [draftId, currentUser?.ownerId]);
 
-  // Validate current user still exists in this draft (handles stale sessions)
-  useEffect(() => {
-    if (!currentUser || !draftState?.owners) return;
-    if (!draftState.owners[currentUser.ownerId]) {
-      setCurrentUser(null);
-      localStorage.removeItem(`draftUser_${draftId}`);
-      onlineSet.current = false;
-    }
-  }, [currentUser, draftState?.owners]);
-
-  // Restore session from localStorage (persists across tab/browser close for PWA)
+  // Restore session from localStorage FIRST (before validation runs)
+  const sessionRestored = useRef(false);
   useEffect(() => {
     const saved = localStorage.getItem(`draftUser_${draftId}`);
     if (saved && !currentUser) {
       try { setCurrentUser(JSON.parse(saved)); } catch {}
     }
+    sessionRestored.current = true;
   }, [draftId]);
+
+  // Validate current user still exists in this draft (only after session restore)
+  useEffect(() => {
+    if (!sessionRestored.current) return; // Don't validate until restore ran
+    if (!currentUser || !draftState?.owners) return;
+    if (!draftState.owners[currentUser.ownerId]) {
+      console.log('Clearing stale session: owner not found in draft');
+      setCurrentUser(null);
+      localStorage.removeItem(`draftUser_${draftId}`);
+      onlineSet.current = false;
+    }
+  }, [currentUser, draftState?.owners, draftId]);
 
   // Login with PIN
   const login = useCallback((ownerId, pin) => {
@@ -213,19 +217,22 @@ export function DraftProvider({ draftId, children }) {
 
     console.log('startDraft: writing status=active, draftOrder=', shuffled, 'firstPick=', firstPick);
 
-    // Write config and currentPick in sequence to ensure both land
+    // Single atomic write — config + currentPick together so clients never see
+    // status=active without a currentPick (which would crash SnakeDraft)
     try {
-      await updateDraftConfig(draftId, {
-        status: 'active',
-        draftOrder: shuffled
+      const { update: fbUpdate } = await import('firebase/database');
+      const { db, ref: dbRef } = await import('../firebase');
+      await fbUpdate(dbRef(db, `drafts/${draftId}`), {
+        'config/status': 'active',
+        'config/draftOrder': shuffled,
+        'currentPick': {
+          round: firstPick.round,
+          pickIndex: firstPick.pickIndex,
+          ownerId: firstPick.ownerId,
+          deadline: Date.now() + ((config.timerSeconds || 120) * 1000)
+        }
       });
-      await updateCurrentPick(draftId, {
-        round: firstPick.round,
-        pickIndex: firstPick.pickIndex,
-        ownerId: firstPick.ownerId,
-        deadline: Date.now() + ((config.timerSeconds || 120) * 1000)
-      });
-      console.log('startDraft: success');
+      console.log('startDraft: success (atomic write)');
     } catch (err) {
       console.error('startDraft: Firebase write failed', err);
     }
